@@ -28,8 +28,14 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+
   flutter:
     sdk: flutter
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  url_launcher: ^6.0.20  # Ensure this is the version you're using
+  google_fonts: ^4.0.4
+
     
     
 
@@ -39,7 +45,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
 # Add this line for Font Awesome icons
-  google_fonts: ^5.0.0
+  #google_fonts: ^5.0.0
   
   font_awesome_flutter: ^10.1.0
 
@@ -66,7 +72,8 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/wallpaper.webp  # Add the image path here
+    - assets/images/image1.png
+ # Add the image path here
 
 
   # To add assets to your application, add an assets section, like this:
