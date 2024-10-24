@@ -1,10 +1,8 @@
+// main.dart
 import 'package:flutter/material.dart';
-//import 'login_page.dart';
-//import 'admin_dashboard_page.dart';
-import 'customer_management_page.dart'; // Assuming you have a LoginPage implemented
+import 'login_page.dart'; // Import the login_page.dart file
 
 void main() {
-  // Removed Firebase initialization
   runApp(const MyApp());
 }
 
@@ -14,12 +12,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ZMITUT 81',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const CustomerManagementPage(), // Starts with the Login Page
-      debugShowCheckedModeBanner: false, // Remove the debug banner
+          // You can define a global theme here if needed
+          ),
+      home: const LoginPage(), // Set LoginPage as the home widget
     );
   }
 }
