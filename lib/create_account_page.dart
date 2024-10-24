@@ -8,6 +8,7 @@ class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _CreateAccountPageState createState() => _CreateAccountPageState();
 }
 
@@ -108,6 +109,18 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               },
             ),
           ),
+          Positioned(
+            top: screenHeight * 0.04,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Image.asset(
+                'assets/images/logo_zmitut.png',
+                height: screenHeight * 0.08, // Adjust the height as needed
+              ),
+            ),
+          ),
+
           // White frame coming up from the bottom
           Positioned(
             bottom: 0,
