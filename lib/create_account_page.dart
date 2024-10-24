@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'package:google_fonts/google_fonts.dart'; // Google fonts package
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome for icons
+import 'terms_of_service.dart'; // Import the Terms of Service page
 
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
@@ -9,419 +12,376 @@ class CreateAccountPage extends StatefulWidget {
 }
 
 class _CreateAccountPageState extends State<CreateAccountPage> {
-  final TextEditingController _firstPartController =
-      TextEditingController(text: '05'); // Pre-filled with '05'
-  final TextEditingController _secondPartController =
-      TextEditingController(); // For the remaining 7 digits
+  bool isHoveredEmail = false;
+  bool isEmailFocused = false;
+  bool isHoveredPassword = false;
+  bool isPasswordFocused = false;
+  bool isHoveredConfirmPassword = false;
+  bool isConfirmPasswordFocused = false;
 
-  // Date of Birth Lists
-  List<String> days = List.generate(31, (index) => (index + 1).toString());
-  List<String> months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December'
-  ];
-  List<String> years =
-      List.generate(100, (index) => (DateTime.now().year - index).toString());
+  final FocusNode emailFocusNode = FocusNode();
+  final FocusNode passwordFocusNode = FocusNode();
+  final FocusNode confirmPasswordFocusNode = FocusNode();
 
-  String? selectedDay;
-  String? selectedMonth;
-  String? selectedYear;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
-    // Listen to changes in the first text field and restrict deletion of '05'
-    _firstPartController.addListener(() {
-      if (_firstPartController.text.length < 2) {
-        // If less than "05", force it to stay "05"
-        _firstPartController.text = '05';
-        _firstPartController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _firstPartController.text.length));
-      } else if (!_firstPartController.text.startsWith('05')) {
-        // Force the text to always start with "05"
-        _firstPartController.text =
-            '05${_firstPartController.text.substring(2)}';
-        _firstPartController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _firstPartController.text.length));
-      }
+    emailFocusNode.addListener(() {
+      setState(() {
+        isEmailFocused = emailFocusNode.hasFocus;
+      });
+    });
+    passwordFocusNode.addListener(() {
+      setState(() {
+        isPasswordFocused = passwordFocusNode.hasFocus;
+      });
+    });
+    confirmPasswordFocusNode.addListener(() {
+      setState(() {
+        isConfirmPasswordFocused = confirmPasswordFocusNode.hasFocus;
+      });
     });
   }
 
   @override
+  void dispose() {
+    emailFocusNode.dispose();
+    passwordFocusNode.dispose();
+    confirmPasswordFocusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signUp() async {
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+    String confirmPassword = _confirmPasswordController.text.trim();
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Account created successfully!')),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Get screen size using MediaQuery
     final screenSize = MediaQuery.of(context).size;
     final double screenHeight = screenSize.height;
     final double screenWidth = screenSize.width;
 
     return Scaffold(
-      resizeToAvoidBottomInset:
-          true, // Resizes the content when the keyboard appears
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Background Image
-            Container(
-              height: screenHeight,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: const AssetImage(
-                      'assets/images/wallpaper.webp'), // Your image path
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withOpacity(0.7), // Dim the image
-                    BlendMode.darken,
-                  ),
+      body: Stack(
+        children: [
+          // Background Image
+          Container(
+            height: screenHeight,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const AssetImage('assets/images/image1.png'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  const Color.fromARGB(255, 57, 51, 42).withOpacity(0.6),
+                  BlendMode.darken,
                 ),
               ),
             ),
-
-            // Foreground Content
-            SingleChildScrollView(
+          ),
+          // Back arrow button
+          Positioned(
+            top: screenHeight * 0.05,
+            left: screenWidth * 0.05,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          // White frame coming up from the bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: screenHeight * 0.8,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(screenWidth * 0.1),
+                  topRight: Radius.circular(screenWidth * 0.1),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: screenHeight * 0.05), // Add some top space
-
-                    // Title "Create an Account"
+                    SizedBox(height: screenHeight * 0.05),
                     Center(
                       child: Text(
-                        'Create an Account',
+                        'Create your account',
                         style: GoogleFonts.exo2(
-                          color: Colors.white,
-                          fontSize: screenHeight * 0.04, // Adjusted font size
-                          fontWeight: FontWeight.bold,
+                          textStyle: TextStyle(
+                            color: const Color.fromARGB(255, 141, 126, 106),
+                            fontSize: screenHeight * 0.027,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
-                    SizedBox(height: screenHeight * 0.05),
-
-                    // Row for First Name and Last Name
-                    Row(
-                      children: [
-                        // First Name Field
-                        Expanded(
-                          child: TextField(
-                            style: const TextStyle(
-                                color: Colors.white), // Text color while typing
-                            decoration: InputDecoration(
-                              labelText: 'First Name',
-                              labelStyle: GoogleFonts.exo2(color: Colors.white),
-                              filled: true,
-                              fillColor: Colors.black.withOpacity(0.5),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                            width:
-                                screenWidth * 0.03), // Space between the fields
-
-                        // Last Name Field
-                        Expanded(
-                          child: TextField(
-                            style: const TextStyle(
-                                color: Colors.white), // Text color while typing
-                            decoration: InputDecoration(
-                              labelText: 'Last Name',
-                              labelStyle: GoogleFonts.exo2(color: Colors.white),
-                              filled: true,
-                              fillColor: Colors.black.withOpacity(0.5),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: screenHeight * 0.03), // Space between rows
-
-                    // Phone Number Label
-                    Padding(
-                      padding: EdgeInsets.only(bottom: screenHeight * 0.001),
-                      child: Text(
-                        'Phone Number',
-                        style: GoogleFonts.exo2(
-                          color: Colors.white,
-                          fontSize: screenHeight *
-                              0.013, // Adjusted font size for the label
-                        ),
-                      ),
-                    ),
-
-                    // Phone Number Field (divided into two parts with a dash)
-                    Row(
-                      children: [
-                        // First part (uneditable "05", but can add a third digit)
-                        Expanded(
-                          flex: 3,
-                          child: TextField(
-                            controller: _firstPartController,
-                            keyboardType: TextInputType.number,
-                            maxLength: 3,
-                            style: const TextStyle(
-                                color: Colors.white), // Text color while typing
-                            decoration: InputDecoration(
-                              counterText: '', // Removes character counter
-                              filled: true,
-                              fillColor: Colors.black.withOpacity(0.5),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onChanged: (value) {
-                              if (value.length == 3) {
-                                FocusScope.of(context)
-                                    .nextFocus(); // Automatically move to next field
-                              }
-                            },
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: screenWidth * 0.02),
-                          child: Text(
-                            '-',
-                            style: GoogleFonts.exo2(
-                                color: Colors.white,
-                                fontSize: screenHeight * 0.03),
-                          ),
-                        ),
-                        // Second part (7 digits)
-                        Expanded(
-                          flex: 7,
-                          child: TextField(
-                            controller: _secondPartController,
-                            keyboardType: TextInputType.number,
-                            maxLength: 7,
-                            style: const TextStyle(
-                                color: Colors.white), // Text color while typing
-                            decoration: InputDecoration(
-                              counterText: '', // Removes character counter
-                              filled: true,
-                              fillColor: Colors.black.withOpacity(0.5),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: screenHeight * 0.03),
-
-                    // Date of Birth Label
-                    Padding(
-                      padding: EdgeInsets.only(bottom: screenHeight * 0.01),
-                      child: Text(
-                        'Date of Birth',
-                        style: GoogleFonts.exo2(
-                          color: Colors.white,
-                          fontSize: screenHeight *
-                              0.02, // Adjusted font size for the label
-                        ),
-                      ),
-                    ),
-
-                    // Date of Birth Dropdown (Day, Month, Year)
-                    Row(
-                      children: [
-                        // Day Dropdown
-                        Expanded(
-                          flex: 3,
-                          child: DropdownButtonFormField<String>(
-                            value: selectedDay,
-                            dropdownColor: Colors.black,
-                            iconEnabledColor: Colors.white,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.black.withOpacity(0.5),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            hint: Text('Day',
-                                style: GoogleFonts.exo2(color: Colors.white)),
-                            items: days.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedDay = newValue;
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(
-                            width:
-                                screenWidth * 0.03), // Space between dropdowns
-
-                        // Month Dropdown
-                        Expanded(
-                          flex: 5,
-                          child: DropdownButtonFormField<String>(
-                            value: selectedMonth,
-                            dropdownColor: Colors.black,
-                            iconEnabledColor: Colors.white,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.black.withOpacity(0.5),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            hint: Text('Month',
-                                style: GoogleFonts.exo2(color: Colors.white)),
-                            items: months.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedMonth = newValue;
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(width: screenWidth * 0.03),
-
-                        // Year Dropdown
-                        Expanded(
-                          flex: 4,
-                          child: DropdownButtonFormField<String>(
-                            value: selectedYear,
-                            dropdownColor: Colors.black,
-                            iconEnabledColor: Colors.white,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.black.withOpacity(0.5),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            hint: Text('Year',
-                                style: GoogleFonts.exo2(color: Colors.white)),
-                            items: years.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedYear = newValue;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-
                     SizedBox(height: screenHeight * 0.03),
 
                     // Email Field
-                    TextField(
-                      keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(
-                          color: Colors.white), // Text color while typing
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        labelStyle: GoogleFonts.exo2(color: Colors.white),
-                        filled: true,
-                        fillColor: Colors.black.withOpacity(0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
+                    buildTextField(
+                      'Email',
+                      Icons.email,
+                      screenWidth,
+                      _emailController,
+                      focusNode: emailFocusNode,
+                      isFocused: isEmailFocused,
+                      isHovered: isHoveredEmail,
                     ),
-                    SizedBox(height: screenHeight * 0.03),
+                    SizedBox(height: screenHeight * 0.02),
 
                     // Password Field
-                    TextField(
+                    buildTextField(
+                      'Password',
+                      Icons.lock,
+                      screenWidth,
+                      _passwordController,
+                      focusNode: passwordFocusNode,
+                      isFocused: isPasswordFocused,
+                      isHovered: isHoveredPassword,
                       obscureText: true,
-                      style: const TextStyle(
-                          color: Colors.white), // Text color while typing
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        labelStyle: GoogleFonts.exo2(color: Colors.white),
-                        filled: true,
-                        fillColor: Colors.black.withOpacity(0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.02),
+
+                    // Confirm Password Field
+                    buildTextField(
+                      'Confirm Password',
+                      Icons.lock,
+                      screenWidth,
+                      _confirmPasswordController,
+                      focusNode: confirmPasswordFocusNode,
+                      isFocused: isConfirmPasswordFocused,
+                      isHovered: isHoveredConfirmPassword,
+                      obscureText: true,
                     ),
                     SizedBox(height: screenHeight * 0.03),
 
                     // Create Account Button
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        padding:
-                            EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                        backgroundColor:
+                            const Color.fromARGB(255, 141, 126, 106),
+                        padding: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.015),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius:
+                              BorderRadius.circular(screenWidth * 0.05),
                         ),
                       ),
-                      onPressed: () {
-                        // Handle sign-up logic here
-                      },
+                      onPressed: _signUp,
                       child: Text(
-                        'Create Account',
-                        style: GoogleFonts.exo2(
-                          color: const Color(0xFFD6985D),
-                          fontSize: screenHeight * 0.025,
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: screenHeight * 0.03),
-
-                    // Cancel Button
-                    TextButton(
-                      onPressed: () {
-                        // Pop the current page (CreateAccountPage) and return to the previous page (LoginPage)
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        'Cancel',
+                        'SIGN UP',
                         style: GoogleFonts.exo2(
                           color: Colors.white,
-                          fontSize: screenHeight * 0.02,
-                          decoration: TextDecoration.underline,
+                          fontSize: screenHeight * 0.023,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 2.3,
                         ),
                       ),
                     ),
+                    SizedBox(height: screenHeight * 0.03),
+
+                    // Social Media Sign-up Buttons
+                    Center(
+                      child: Text(
+                        'Or sign up with',
+                        style: GoogleFonts.exo2(
+                          textStyle: TextStyle(
+                            color: const Color.fromARGB(255, 141, 126, 106),
+                            fontSize: screenHeight * 0.02,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.04),
+
+                    // Social Media Buttons Row (like login page)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: buildSocialButton(
+                            FontAwesomeIcons.facebookF,
+                            screenWidth,
+                            screenHeight,
+                            const Color.fromARGB(255, 141, 126, 106),
+                          ),
+                        ),
+                        Expanded(
+                          child: buildSocialButton(
+                            FontAwesomeIcons.google,
+                            screenWidth,
+                            screenHeight,
+                            const Color.fromARGB(255, 141, 126, 106),
+                          ),
+                        ),
+                        Expanded(
+                          child: buildSocialButton(
+                            Icons.phone,
+                            screenWidth,
+                            screenHeight,
+                            const Color.fromARGB(255, 141, 126, 106),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: screenHeight * 0.03),
                   ],
                 ),
               ),
             ),
-          ],
+          ),
+          // Bottom Section (Terms of Service) - Fixed at the bottom
+          Positioned(
+            bottom: 0,
+            child: Container(
+              alignment: Alignment.bottomCenter,
+              padding: EdgeInsets.only(bottom: screenHeight * 0.02),
+              width: screenWidth,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'By using Zmitut 81 App, you are agreeing to our',
+                    style: GoogleFonts.exo2(
+                      color: const Color.fromARGB(255, 0, 0, 0),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const TermsOfServicePage()),
+                      );
+                    },
+                    child: Text(
+                      'Terms of Service',
+                      style: GoogleFonts.exo2(
+                        color: const Color.fromARGB(255, 141, 126, 106),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildTextField(
+    String hintText,
+    IconData icon,
+    double screenWidth,
+    TextEditingController controller, {
+    bool obscureText = false,
+    required FocusNode focusNode,
+    required bool isHovered,
+    required bool isFocused,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 255, 255, 255),
+        borderRadius: BorderRadius.circular(screenWidth * 0.05),
+        border: Border.all(
+          color: const Color.fromARGB(255, 141, 126, 106),
+          width: 1.0,
         ),
+        boxShadow: isHovered || isFocused
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ]
+            : [],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color.fromARGB(255, 141, 126, 106)),
+          SizedBox(width: screenWidth * 0.03),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              obscureText: obscureText,
+              style: GoogleFonts.exo2(
+                textStyle: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                ),
+              ),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: GoogleFonts.exo2(
+                  textStyle: const TextStyle(
+                    color: Color.fromARGB(255, 141, 126, 106),
+                  ),
+                ),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildSocialButton(IconData icon, double screenWidth,
+      double screenHeight, Color borderColor) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
+      height: screenHeight * 0.07, // Dynamically set height for buttons
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(screenWidth * 0.07), // Rounded corners
+        border: Border.all(
+          color: borderColor,
+          width: 1.5,
+        ),
+      ),
+      child: IconButton(
+        icon: FaIcon(icon),
+        color: borderColor,
+        onPressed: () {
+          // Handle social button press here
+        },
       ),
     );
   }
