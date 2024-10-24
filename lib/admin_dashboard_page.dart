@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart'; // for launching URLs
+import 'customer_management_page.dart'; // Import CustomerManagementPage
 
 void main() => runApp(const AdminDashboardApp());
 
@@ -30,25 +31,10 @@ class AdminDashboardPage extends StatelessWidget {
           onSelected: (value) {
             switch (value) {
               case 'Notifications':
-                // Navigate to Notifications History
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => NotificationsPage()),
-                // );
                 break;
               case 'Drivers Information':
-                // Navigate to Drivers Information
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => DriversInfoPage()),
-                // );
                 break;
               case 'Delivery Reports':
-                // Navigate to Delivery Reports
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => DeliveryReportsPage()),
-                // );
                 break;
               // Add more cases as needed
             }
@@ -139,12 +125,27 @@ class DeliveryOverviewWidget extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          DeliveryStatusCard(status: "Active", count: 12),
-          DeliveryStatusCard(status: "Pending", count: 5),
-          DeliveryStatusCard(status: "Completed", count: 24),
+          DeliveryStatusCard(
+            status: "Active",
+            icon: Icons.local_shipping,
+            count: 12,
+            iconColor: Colors.green, // Random number for Active
+          ),
+          DeliveryStatusCard(
+            status: "Pending",
+            icon: Icons.access_time,
+            count: 5,
+            iconColor: Colors.orange, // Random number for Pending
+          ),
+          DeliveryStatusCard(
+            status: "Completed",
+            icon: Icons.check_circle,
+            count: 24,
+            iconColor: Colors.blue, // Random number for Completed
+          ),
         ],
       ),
     );
@@ -153,21 +154,50 @@ class DeliveryOverviewWidget extends StatelessWidget {
 
 class DeliveryStatusCard extends StatelessWidget {
   final String status;
+  final IconData icon;
   final int count;
+  final Color iconColor;
 
-  const DeliveryStatusCard(
-      {super.key, required this.status, required this.count});
+  const DeliveryStatusCard({
+    super.key,
+    required this.status,
+    required this.icon,
+    required this.count,
+    required this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Text(
-          count.toString(),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        Text(status),
-      ],
+    return InkWell(
+      onTap: () {
+        // Navigate to CustomerManagementPage
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CustomerManagementPage(),
+          ),
+        );
+      },
+      child: Column(
+        children: <Widget>[
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 40,
+                color: iconColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                count.toString(),
+                style: const TextStyle(
+                    fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          Text(status),
+        ],
+      ),
     );
   }
 }
@@ -185,20 +215,17 @@ class PerformanceMetricsWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              MetricCard(title: "Delay Rate", value: "30%"), // named arguments
-              MetricCard(
-                  title: "On-time Rate", value: "90%"), // named arguments
+              MetricCard(title: "Delay Rate", value: "30%"),
+              MetricCard(title: "On-time Rate", value: "90%"),
             ],
           ),
-          SizedBox(height: 10), // Space between rows
+          SizedBox(height: 10),
           // Second Row (Success Rate and Avg Cost per Delivery)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              MetricCard(title: "Return Rate", value: "20%"), // named arguments
-              MetricCard(
-                  title: "Avg Cost/Delivery",
-                  value: "\$250"), // named arguments
+              MetricCard(title: "Return Rate", value: "20%"),
+              MetricCard(title: "Avg Cost/Delivery", value: "\$250"),
             ],
           ),
         ],
@@ -239,7 +266,8 @@ class MetricCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -260,7 +288,7 @@ class MapWidget extends StatelessWidget {
         children: [
           FlutterMap(
             options: const MapOptions(
-              initialCenter: LatLng(35.217018, 31.771959), // Center point
+              initialCenter: LatLng(35.217018, 31.771959),
               initialZoom: 13.0,
             ),
             children: [
@@ -274,8 +302,7 @@ class MapWidget extends StatelessWidget {
                 attributions: [
                   TextSourceAttribution(
                     'OpenStreetMap contributors',
-                    onTap: () =>
-                        _launchURL('https://openstreetmap.org/copyright'),
+                    onTap: () => _launchURL('https://openstreetmap.org/copyright'),
                   ),
                 ],
               ),
@@ -288,8 +315,7 @@ class MapWidget extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const FullScreenMap()),
+                  MaterialPageRoute(builder: (context) => const FullScreenMap()),
                 );
               },
             ),
@@ -309,17 +335,14 @@ class FullScreenMap extends StatelessWidget {
       appBar: AppBar(title: const Text('Full Screen Map')),
       body: FlutterMap(
         options: const MapOptions(
-          initialCenter:
-              LatLng(35.217018, 31.771959), // Same location as before
+          initialCenter: LatLng(35.217018, 31.771959),
           initialZoom: 13.0,
         ),
         children: [
-          // Tile Layer for OpenStreetMap
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.example.app',
           ),
-          // Rich Attribution
           RichAttributionWidget(
             attributions: [
               TextSourceAttribution(
