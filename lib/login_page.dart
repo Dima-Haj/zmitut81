@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart'; // Google fonts package
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome package for icons
 import 'create_account_page.dart'; // Make sure this path is correct
 import 'terms_of_service.dart';
+import 'admin_dashboard_page.dart'; // Import the AdminDashboard page
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +20,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final FocusNode emailFocusNode = FocusNode();
   final FocusNode passwordFocusNode = FocusNode();
+  final TextEditingController emailController = TextEditingController(); // Controller to access email text
 
   @override
   void initState() {
@@ -39,7 +41,28 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     emailFocusNode.dispose();
     passwordFocusNode.dispose();
+    emailController.dispose(); // Dispose the controller
     super.dispose();
+  }
+
+  // Method to handle login logic
+  void handleLogin() {
+    String email = emailController.text.trim();
+
+    // Check if the email contains 'manager'
+    if (email.toLowerCase() == 'manager') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AdminDashboardApp(),
+        ),
+      );
+    } else {
+      // If not 'manager', show a SnackBar (or handle login normally)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Incorrect login credentials')),
+      );
+    }
   }
 
   @override
@@ -65,6 +88,18 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
+          Positioned(
+            top: screenHeight * 0.04,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Image.asset(
+                'assets/images/logo_zmitut.png',
+                height: screenHeight * 0.08, // Adjust the height as needed
+              ),
+            ),
+          ),
+
           // White frame coming up from the bottom
           Positioned(
             bottom: 0,
@@ -91,7 +126,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: screenHeight * 0.05),
+                    SizedBox(height: screenHeight * 0.03),
+
+                    // "Sign in to continue" Text
                     Center(
                       child: Text(
                         'Sign in to continue',
@@ -105,6 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.03),
+
                     // Email Field
                     MouseRegion(
                       onEnter: (_) => setState(() => isHoveredEmail = true),
@@ -116,9 +154,11 @@ class _LoginPageState extends State<LoginPage> {
                         focusNode: emailFocusNode,
                         isFocused: isEmailFocused,
                         isHovered: isHoveredEmail,
+                        controller: emailController, // Use controller to access text
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.02),
+
                     // Password Field
                     MouseRegion(
                       onEnter: (_) => setState(() => isHoveredPassword = true),
@@ -133,6 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                         obscureText: true,
                       ),
                     ),
+
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton(
@@ -146,19 +187,20 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.01),
+
                     // Login Button
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             const Color.fromARGB(255, 141, 126, 106),
-                        padding:
-                            EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                        padding: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.01),
                         shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.circular(screenWidth * 0.05),
                         ),
                       ),
-                      onPressed: () {},
+                      onPressed: handleLogin, // Call handleLogin on press
                       child: Text(
                         'SIGN IN',
                         style: GoogleFonts.exo2(
@@ -170,6 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.01),
+
                     // Sign Up Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -197,6 +240,7 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     SizedBox(height: screenHeight * 0.04),
+
                     // Social Media Buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -232,6 +276,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
+
           // Bottom Section (Terms of Service)
           Positioned(
             bottom: 0,
@@ -276,7 +321,8 @@ class _LoginPageState extends State<LoginPage> {
       {bool obscureText = false,
       required FocusNode focusNode,
       required bool isHovered,
-      required bool isFocused}) {
+      required bool isFocused,
+      TextEditingController? controller}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
       decoration: BoxDecoration(
@@ -302,6 +348,7 @@ class _LoginPageState extends State<LoginPage> {
           SizedBox(width: screenWidth * 0.03),
           Expanded(
             child: TextField(
+              controller: controller, // Connect the controller here
               focusNode: focusNode,
               obscureText: obscureText,
               style: GoogleFonts.exo2(
