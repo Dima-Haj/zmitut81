@@ -3,7 +3,8 @@ import 'package:google_fonts/google_fonts.dart'; // Google fonts package
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome package for icons
 import 'create_account_page.dart'; // Make sure this path is correct
 import 'terms_of_service.dart';
-import 'admin_dashboard_page.dart'; // Import the AdminDashboard page
+import 'admin_dashboard_page.dart';
+import 'employee_home_page.dart'; // Import the AdminDashboard page
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,7 +21,8 @@ class _LoginPageState extends State<LoginPage> {
 
   final FocusNode emailFocusNode = FocusNode();
   final FocusNode passwordFocusNode = FocusNode();
-  final TextEditingController emailController = TextEditingController(); // Controller to access email text
+  final TextEditingController emailController =
+      TextEditingController(); // Controller to access email text
 
   @override
   void initState() {
@@ -57,6 +59,13 @@ class _LoginPageState extends State<LoginPage> {
           builder: (context) => const AdminDashboardApp(),
         ),
       );
+    } else if (email.toLowerCase() == 'employee') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const EmployeeHomePage(),
+        ),
+      );
     } else {
       // If not 'manager', show a SnackBar (or handle login normally)
       ScaffoldMessenger.of(context).showSnackBar(
@@ -89,13 +98,13 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           Positioned(
-            top: screenHeight * 0.04,
+            top: screenHeight * 0.03,
             left: 0,
             right: 0,
             child: Center(
               child: Image.asset(
                 'assets/images/logo_zmitut.png',
-                height: screenHeight * 0.08, // Adjust the height as needed
+                height: screenHeight * 0.06, // Adjust the height as needed
               ),
             ),
           ),
@@ -154,7 +163,8 @@ class _LoginPageState extends State<LoginPage> {
                         focusNode: emailFocusNode,
                         isFocused: isEmailFocused,
                         isHovered: isHoveredEmail,
-                        controller: emailController, // Use controller to access text
+                        controller:
+                            emailController, // Use controller to access text
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.02),
@@ -193,8 +203,8 @@ class _LoginPageState extends State<LoginPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             const Color.fromARGB(255, 141, 126, 106),
-                        padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.01),
+                        padding:
+                            EdgeInsets.symmetric(vertical: screenHeight * 0.01),
                         shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.circular(screenWidth * 0.05),
