@@ -50,7 +50,7 @@ class _EmployeeHomePageState extends State<EmployeeHomePage> {
 
           // Logo Positioned at the top center
           Positioned(
-            top: screenHeight * 0.03,
+            top: screenHeight * 0.07,
             left: 0,
             right: 0,
             child: Center(
