@@ -7,15 +7,15 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  SplashScreenState createState() => SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
 
-    // Navigate to login page after 3 seconds
+    // Navigate to login page after 7 seconds
     Timer(const Duration(seconds: 7), () {
       Navigator.pushReplacement(
         context,
@@ -28,8 +28,6 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final double screenHeight = screenSize.height;
-    // ignore: unused_local_variable
-    final double screenWidth = screenSize.width;
 
     return Scaffold(
       body: Stack(
@@ -54,43 +52,38 @@ class _SplashScreenState extends State<SplashScreen> {
               text: TextSpan(
                 children: [
                   TextSpan(
-                    text: 'ZMIT', // First part with the regular theme color
+                    text: 'ZMIT',
                     style: GoogleFonts.exo2(
                       textStyle: TextStyle(
-                        color: const Color.fromARGB(
-                            255, 255, 255, 255), // Same color as other elements
-                        fontSize: screenHeight * 0.07, // Adjust size as needed
+                        color: const Color.fromARGB(255, 255, 255, 255),
+                        fontSize: screenHeight * 0.07,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2.0,
-
                         shadows: [
                           Shadow(
                             offset: const Offset(2, 2),
                             blurRadius: 8.0,
                             color: const Color.fromARGB(255, 141, 126, 106)
-                                .withOpacity(0.9), // White shadow
+                                .withOpacity(0.9),
                           ),
                         ],
                       ),
                     ),
                   ),
                   TextSpan(
-                    text: 'UT 81', // Second part ("UT 81") in white
+                    text: 'UT 81',
                     style: GoogleFonts.exo2(
                       textStyle: TextStyle(
-                        color:
-                            const Color(0xFFFFFFFF), // White color for "UT 81"
-                        fontSize: screenHeight *
-                            0.07, // Adjust size to match the first part
+                        color: const Color(0xFFFFFFFF),
+                        fontSize: screenHeight * 0.07,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2.0,
-
                         shadows: [
                           Shadow(
                             offset: const Offset(2, 2),
                             blurRadius: 8.0,
                             color: const Color.fromARGB(255, 141, 126, 106)
-                                .withOpacity(0.9), // White shadow
+                                .withOpacity(0.9),
                           ),
                         ],
                       ),

@@ -1,19 +1,25 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'dart:math'; // For sin, cos, and pi
+import 'dart:math';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StopwatchWidget extends StatefulWidget {
-  const StopwatchWidget({super.key});
+  final Function(DateTime, int) onShiftEnd;
+
+  const StopwatchWidget({super.key, required this.onShiftEnd});
 
   @override
-  _StopwatchWidgetState createState() => _StopwatchWidgetState();
+  StopwatchWidgetState createState() => StopwatchWidgetState();
 }
 
-class _StopwatchWidgetState extends State<StopwatchWidget> with SingleTickerProviderStateMixin {
+class StopwatchWidgetState extends State<StopwatchWidget>
+    with SingleTickerProviderStateMixin {
   late Timer _timer;
   int _seconds = 0;
   bool _isRunning = false;
-  bool _isShiftStarted = false; // To track if the shift has started
+  bool _isShiftStarted = false;
+  DateTime? _startTime; // To keep track of the start time
   late AnimationController _controller;
 
   @override
@@ -21,48 +27,90 @@ class _StopwatchWidgetState extends State<StopwatchWidget> with SingleTickerProv
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1), // Animation duration for the flip
+      duration: const Duration(seconds: 1),
     );
+    _loadShiftState(); // Load state on startup
+  }
+
+  // Load state on startup to check if shift was active and continue counting if needed
+  Future<void> _loadShiftState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedStartTime = prefs.getString('start_time');
+    final savedSeconds = prefs.getInt('elapsed_seconds') ?? 0;
+    
+    if (savedStartTime != null) {
+      _startTime = DateTime.parse(savedStartTime);
+      final now = DateTime.now();
+      final difference = now.difference(_startTime!);
+      
+      setState(() {
+        _seconds = savedSeconds + difference.inSeconds;
+        _isRunning = true;
+        _isShiftStarted = true;
+      });
+      
+      _startTimer(); // Resume timer
+    }
+  }
+
+  Future<void> _saveShiftState() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_isRunning && _startTime != null) {
+      await prefs.setString('start_time', _startTime!.toIso8601String());
+      await prefs.setInt('elapsed_seconds', _seconds);
+    } else {
+      await prefs.remove('start_time');
+      await prefs.remove('elapsed_seconds');
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _timer.cancel();
     super.dispose();
   }
 
-  // Start the stopwatch and trigger the flip animation
+  // Start the stopwatch and save the start time
   void _startStopwatch() {
     if (!_isRunning) {
-      _controller.forward().then((_) {
-        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-          setState(() {
-            _seconds++;
-          });
-        });
-        setState(() {
-          _isRunning = true;
-          _isShiftStarted = true; // Mark that the shift has started
-        });
+      setState(() {
+        _startTime = DateTime.now(); // Set the start time
+        _isRunning = true;
+        _isShiftStarted = true;
       });
+      _startTimer();
+      _saveShiftState();
     }
+  }
+
+  void _startTimer() {
+    _controller.forward();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _seconds++;
+      });
+      _saveShiftState();
+    });
   }
 
   // Reset the stopwatch and shift status
   void _resetStopwatch() {
     if (_isRunning) {
       _timer.cancel();
+      DateTime endTime = DateTime.now();
+      widget.onShiftEnd(endTime, _seconds); // Save the shift end time and duration
     }
-    _controller.reverse().then((_) {
-      setState(() {
-        _seconds = 0;
-        _isRunning = false;
-        _isShiftStarted = false; // Reset shift status
-      });
+    setState(() {
+      _seconds = 0;
+      _isRunning = false;
+      _isShiftStarted = false;
+      _startTime = null; // Clear start time
     });
+    _controller.reverse();
+    _saveShiftState();
   }
 
-  // Time formatter
   String _formatTime(int seconds) {
     int hours = seconds ~/ 3600;
     int minutes = (seconds % 3600) ~/ 60;
@@ -70,67 +118,57 @@ class _StopwatchWidgetState extends State<StopwatchWidget> with SingleTickerProv
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
-  // Generate rotated and positioned rectangles around the circle
   List<Widget> _buildClockMarkers(double radius, double screenWidth) {
     List<Widget> markers = [];
-    double rectangleWidth = screenWidth * 0.022; // Rectangle width as 2.2% of screen width
-    double rectangleHeight = screenWidth * 0.07; // Rectangle height as 7% of screen width
-    Color lighterDarkGrey = const Color.fromARGB(255, 85, 85, 85); // Lighter dark grey for the rectangles
+    double rectangleWidth = screenWidth * 0.015;
+    double rectangleHeight = screenWidth * 0.075;
+    Color lighterDarkGrey = const Color.fromARGB(255, 85, 85, 85);
 
     for (int i = 0; i < 12; i++) {
-      double angle = (i * 30.0) * (pi / 180); // Convert degrees to radians (30 degrees for each hour marker)
+      double angle = (i * 30.0) * (pi / 180);
 
       markers.add(
         Transform(
           transform: Matrix4.identity()
-            ..translate(radius * cos(angle), radius * sin(angle)) // Adjust position
-            ..rotateZ(angle + pi / 2), // Rotate to align with the circle's radius
+            ..translate(radius * cos(angle), radius * sin(angle))
+            ..rotateZ(angle + pi / 2),
           alignment: Alignment.center,
           child: Container(
-            width: rectangleWidth,  // Small width for the rectangles
-            height: rectangleHeight, // Height of the rectangles
+            width: rectangleWidth,
+            height: rectangleHeight,
             decoration: BoxDecoration(
-              color: _isShiftStarted ? Colors.green : lighterDarkGrey, // Initially lighter dark grey, green after shift starts
-              borderRadius: BorderRadius.circular(4.0), // Rounded corners for rectangles
+              color: _isShiftStarted ? Colors.green : lighterDarkGrey,
+              borderRadius: BorderRadius.circular(4.0),
             ),
           ),
         ),
       );
     }
-
     return markers;
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get the screen dimensions
     final screenSize = MediaQuery.of(context).size;
     final double screenHeight = screenSize.height;
     final double screenWidth = screenSize.width;
+    double outerCircleDiameter = screenWidth * 0.75;
+    double innerCircleDiameter = screenWidth * 0.85;
+    double radius = outerCircleDiameter / 2.0 * 0.8;
+    double timeFontSize = screenWidth * 0.10;
+    double labelFontSize = screenWidth * 0.05;
 
-    // Circle sizes and radius based on screen size
-    double outerCircleDiameter = screenWidth * 0.75; // 75% of screen width
-    double innerCircleDiameter = screenWidth * 0.85; // Inner glowing circle
-    double radius = outerCircleDiameter / 2.0 * 0.8; // Adjust the radius for clock markers
-
-    // Adjust font sizes based on screen size
-    double timeFontSize = screenWidth * 0.12; // 12% of screen width
-    double labelFontSize = screenWidth * 0.05; // 5% of screen width
-
-    // Colors for the elements
-    Color lighterDarkGrey = const Color.fromARGB(255, 85, 85, 85); // Lighter dark grey for the rectangles
-    Color evenLighterGrey = const Color.fromARGB(255, 120, 120, 120); // Lighter grey for the inner circle background
-    Color darkGrey = const Color.fromARGB(255, 55, 55, 55); // Dark grey for the outer border
+    Color lighterDarkGrey = const Color.fromARGB(255, 85, 85, 85);
+    Color darkGrey = const Color.fromARGB(255, 55, 55, 55);
 
     return Center(
       child: GestureDetector(
-        onTap: _isShiftStarted ? _resetStopwatch : _startStopwatch, // Start/Reset on tap
+        onTap: _isShiftStarted ? _resetStopwatch : _startStopwatch,
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
-            // 3D flip effect on the Y-axis
-            double rotationValue = _controller.value * pi; // Rotation in radians
-            bool isFlipped = _controller.value > 0.5; // Flip complete after halfway
+            double rotationValue = _controller.value * pi;
+            bool isFlipped = _controller.value > 0.5;
 
             return Transform(
               transform: Matrix4.rotationY(rotationValue),
@@ -138,35 +176,28 @@ class _StopwatchWidgetState extends State<StopwatchWidget> with SingleTickerProv
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Background Circle (lighter grey)
                   Container(
                     width: innerCircleDiameter,
                     height: innerCircleDiameter,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: darkGrey.withOpacity(0.9), // Lighter grey background
+                      color: darkGrey.withOpacity(0.9),
                     ),
                   ),
-
-                  // Outer Circle Timer (Clickable, changes to green if shift started)
                   Container(
                     width: outerCircleDiameter,
                     height: outerCircleDiameter,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: _isShiftStarted ? Colors.green : lighterDarkGrey, // Turn green after shift starts
-                        width: screenWidth * 0.025, // 2.5% of screen width for border width
+                        color: _isShiftStarted ? Colors.green : lighterDarkGrey,
+                        width: screenWidth * 0.025,
                       ),
                     ),
                   ),
-
-                  // Add Clock Markers (lighter dark grey, turns green after shift starts)
                   ..._buildClockMarkers(radius, screenWidth),
 
-                  // Inner time display
                   Transform(
-                    // Counter rotate the inner content to keep it upright
                     transform: Matrix4.rotationY(isFlipped ? pi : 0),
                     alignment: Alignment.center,
                     child: Column(
@@ -174,19 +205,23 @@ class _StopwatchWidgetState extends State<StopwatchWidget> with SingleTickerProv
                       children: [
                         Text(
                           _formatTime(_seconds),
-                          style: TextStyle(
-                            fontSize: timeFontSize, // Scaled font size
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                          style: GoogleFonts.exo2(
+                            textStyle: TextStyle(
+                              fontSize: timeFontSize,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                        SizedBox(height: screenHeight * 0.02), // Space based on screen height
+                        SizedBox(height: screenHeight * 0.02),
                         Text(
-                          _isShiftStarted ? 'End Shift' : 'Start Shift', // Change text based on shift state
-                          style: TextStyle(
-                            fontSize: labelFontSize, // Scaled font size for label
-                            fontWeight: FontWeight.bold,
-                            color: _isShiftStarted ? Colors.red : Colors.green, // Start Shift in green, End Shift in red
+                          _isShiftStarted ? 'End Shift' : 'Start Shift',
+                          style: GoogleFonts.exo2(
+                            textStyle: TextStyle(
+                              fontSize: labelFontSize,
+                              fontWeight: FontWeight.bold,
+                              color: _isShiftStarted ? Colors.red : Colors.green,
+                            ),
                           ),
                         ),
                       ],
