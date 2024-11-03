@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'stopwatch_widget.dart';
 import 'timesheet_page.dart';
-import 'map_page.dart'; // Import MapPage
+import 'clients_for_today_page.dart';
 
 class EmployeeHomePage extends StatefulWidget {
   const EmployeeHomePage({super.key});
@@ -12,7 +12,7 @@ class EmployeeHomePage extends StatefulWidget {
 
 class EmployeeHomePageState extends State<EmployeeHomePage> {
   int _selectedIndex = 0;
-  final Map<DateTime, int> _shiftRecords = {}; // Record of hours worked
+  final Map<DateTime, int> _shiftRecords = {};
 
   void _onShiftEnd(DateTime endDate, int durationInSeconds) {
     setState(() {
@@ -32,15 +32,14 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
     final double screenHeight = screenSize.height;
 
     List<Widget> widgetOptions = <Widget>[
-      StopwatchWidget(onShiftEnd: _onShiftEnd), // Home tab with StopwatchWidget
-      const MapPage(), // Map tab with MapPage
-      TimesheetPage(shiftRecords: _shiftRecords), // Timesheet tab content
+      StopwatchWidget(onShiftEnd: _onShiftEnd),
+      ClientsForTodayPage(), // Replace 'Map' tab with 'Deliveries'
+      TimesheetPage(shiftRecords: _shiftRecords),
     ];
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
           Container(
             height: screenHeight,
             decoration: BoxDecoration(
@@ -71,30 +70,17 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[800],
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.5),
-              spreadRadius: 1,
-              blurRadius: 8,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-            BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Timesheet'),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.amber[800],
-          unselectedItemColor: Colors.white,
-          onTap: _onItemTapped,
-          backgroundColor: Colors.grey[800],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: 'Deliveries'), // Update icon and label
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Timesheet'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.white,
+        onTap: _onItemTapped,
+        backgroundColor: Colors.grey[800],
       ),
     );
   }

@@ -1,5 +1,3 @@
-// lib/clients_for_today_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,7 +31,8 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   ];
 
   Map<int, bool> _expandedClientMap = {}; // Track expanded state of each client
-  Map<int, String> _estimatedTimes = {};   // Store estimated times for each client
+  Map<int, String> _estimatedTimes =
+      {}; // Store estimated times for each client
 
   @override
   void initState() {
@@ -57,8 +56,10 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     }
   }
 
-  Future<String> _getTravelTimeWithTraffic(LatLng origin, LatLng destination) async {
-    final apiKey = 'YOUR_GOOGLE_MAPS_API_KEY';  // Replace with your Google Maps API key
+  Future<String> _getTravelTimeWithTraffic(
+      LatLng origin, LatLng destination) async {
+    final apiKey =
+        'YOUR_GOOGLE_MAPS_API_KEY'; // Replace with your Google Maps API key
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/directions/json'
       '?origin=${origin.latitude},${origin.longitude}'
@@ -69,7 +70,8 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     final response = await http.get(url);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final duration = data['routes'][0]['legs'][0]['duration_in_traffic']['text'];
+      final duration =
+          data['routes'][0]['legs'][0]['duration_in_traffic']['text'];
       return duration;
     } else {
       throw Exception('Failed to load travel time');
@@ -168,7 +170,9 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                               ],
                             ),
                             Icon(
-                              isExpanded ? Icons.expand_less : Icons.expand_more,
+                              isExpanded
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
                               color: Colors.white,
                               size: screenHeight * 0.03,
                             ),
@@ -178,18 +182,22 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                     ),
                     if (isExpanded)
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.04),
                         child: Column(
                           children: [
                             Container(
                               height: screenHeight * 0.25,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(screenHeight * 0.015),
-                                border: Border.all(color: Colors.white70, width: 1),
+                                borderRadius:
+                                    BorderRadius.circular(screenHeight * 0.015),
+                                border:
+                                    Border.all(color: Colors.white70, width: 1),
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(screenHeight * 0.015),
+                                borderRadius:
+                                    BorderRadius.circular(screenHeight * 0.015),
                                 child: GoogleMap(
                                   initialCameraPosition: CameraPosition(
                                     target: client.location,
@@ -216,17 +224,20 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                   style: ElevatedButton.styleFrom(
                                     padding: EdgeInsets.symmetric(
                                       vertical: screenHeight * 0.01,
-                                      horizontal: screenWidth * 0.03,
+                                      horizontal: screenWidth * 0.04,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(screenHeight * 0.015),
+                                      borderRadius: BorderRadius.circular(
+                                          screenHeight * 0.015),
                                     ),
                                     backgroundColor: Colors.orangeAccent,
                                   ),
-                                  icon: Icon(Icons.directions, size: screenHeight * 0.025),
+                                  icon: Icon(Icons.directions,
+                                      size: screenHeight * 0.025),
                                   label: Text(
                                     'Start Delivery',
-                                    style: TextStyle(fontSize: screenHeight * 0.022),
+                                    style: TextStyle(
+                                        fontSize: screenHeight * 0.022),
                                   ),
                                   onPressed: () {
                                     _startNavigation(client.location);
@@ -239,14 +250,17 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                       horizontal: screenWidth * 0.05,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(screenHeight * 0.015),
+                                      borderRadius: BorderRadius.circular(
+                                          screenHeight * 0.015),
                                     ),
                                     backgroundColor: Colors.blueAccent,
                                   ),
-                                  icon: Icon(Icons.phone, size: screenHeight * 0.025),
+                                  icon: Icon(Icons.phone,
+                                      size: screenHeight * 0.025),
                                   label: Text(
                                     'Contact',
-                                    style: TextStyle(fontSize: screenHeight * 0.022),
+                                    style: TextStyle(
+                                        fontSize: screenHeight * 0.022),
                                   ),
                                   onPressed: () {
                                     _contactClient(client.phoneNumber);
@@ -268,21 +282,22 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   }
 
   void _startNavigation(LatLng destination) async {
-    final googleMapsUrl =
-        'https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}&travelmode=driving';
+    final Uri googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}&travelmode=driving',
+    );
 
-    if (await canLaunch(googleMapsUrl)) {
-      await launch(googleMapsUrl);
+    if (await canLaunchUrl(googleMapsUrl)) {
+      await launchUrl(googleMapsUrl);
     } else {
       throw 'Could not open Google Maps.';
     }
   }
 
   void _contactClient(String phoneNumber) async {
-    final phoneUrl = 'tel:$phoneNumber';
+    final Uri phoneUrl = Uri.parse('tel:$phoneNumber');
 
-    if (await canLaunch(phoneUrl)) {
-      await launch(phoneUrl);
+    if (await canLaunchUrl(phoneUrl)) {
+      await launchUrl(phoneUrl);
     } else {
       throw 'Could not launch $phoneUrl';
     }
