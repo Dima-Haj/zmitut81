@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'client.dart';
 
 class ClientsForTodayPage extends StatefulWidget {
+  const ClientsForTodayPage({super.key});
+
   @override
   _ClientsForTodayPageState createState() => _ClientsForTodayPageState();
 }
@@ -30,8 +32,8 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     // Add more clients as needed
   ];
 
-  Map<int, bool> _expandedClientMap = {}; // Track expanded state of each client
-  Map<int, String> _estimatedTimes =
+  final Map<int, bool> _expandedClientMap = {}; // Track expanded state of each client
+  final Map<int, String> _estimatedTimes =
       {}; // Store estimated times for each client
 
   @override
