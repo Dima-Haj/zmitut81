@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/admin_dashboard_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'order_history_page.dart';
+import 'admin_dashboard_page.dart';
 
 class CustomerManagementPage extends StatefulWidget {
   const CustomerManagementPage({super.key});
@@ -42,7 +43,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
     }
   }
 
-  void _onItemTapped(int index) {
+  /*void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
@@ -51,7 +52,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const AdminDashboardPage(),
+          builder: (context) => const AdminDashboardPageContent(),
         ),
       );
     } else if (index == 0) {
@@ -61,7 +62,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
       // Handle settings or other navigation logic for the Settings button
       // Add your settings page navigation here
     }
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -235,28 +236,6 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
           ),
           child: const Icon(Icons.add),
         ),
-      ),
-
-      // Bottom Navigation Bar
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Customers',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color.fromARGB(255, 131, 107, 81),
-        onTap: _onItemTapped,
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       ),
     );
   }

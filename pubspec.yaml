@@ -37,6 +37,7 @@ dependencies:
   shared_preferences: ^2.0.9
   url_launcher: ^6.0.17
   http: ^1.2.1
+  csslib: ^0.17.2
     
     
 
