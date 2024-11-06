@@ -54,7 +54,7 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
             ),
           ),
           Positioned(
-            top: screenHeight * 0.03,
+            top: screenHeight * 0.07,
             left: 0,
             right: 0,
             child: Center(
