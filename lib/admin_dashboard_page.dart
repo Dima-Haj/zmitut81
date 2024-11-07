@@ -239,7 +239,7 @@ class DeliveryOverviewWidget extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           DeliveryStatusCard(
