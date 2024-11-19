@@ -30,14 +30,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  dio: ^4.0.0
-  flutter_polyline_points: ^2.1.0
-  google_maps_flutter: ^2.1.1
-  location: ^7.0.1
-  shared_preferences: ^2.0.9
-  url_launcher: ^6.0.17
-  http: ^1.2.1
-  csslib: ^0.17.2
+
+  google_fonts: ^6.2.1
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  fl_chart: ^0.40.0  # or the latest version
+
     
     
 
@@ -47,7 +45,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
 # Add this line for Font Awesome icons
-  google_fonts: ^6.2.1
+
   
   font_awesome_flutter: ^10.1.0
 

@@ -14,26 +14,26 @@ class AdminDashboardApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: AdminDashboard(),
+    return MaterialApp(
+      home: AdminDashboardPage(), // Load AdminDashboardPage, not AdminDashboard
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class AdminDashboard extends StatefulWidget {
-  const AdminDashboard({super.key});
+class AdminDashboardPage extends StatefulWidget {
+  const AdminDashboardPage({super.key});
 
   @override
   _AdminDashboardState createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> {
+class _AdminDashboardState extends State<AdminDashboardPage> {
   int _selectedIndex = 1; // Default index for dashboard
 
   final List<Widget> _pages = [
     const CustomerManagementPage(),
-    const AdminDashboardPageContent(),
+    AdminDashboard(),
     const DeliveryManagementPage(),
     const EmployeeManagementPage(),
   ];
@@ -83,6 +83,38 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 }
 
+class AdminDashboard extends StatelessWidget {
+  AdminDashboard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Dashboard'),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Text(
+              'Delivery Time Efficiency',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          SizedBox(
+            height: 100, // Fixed height for the graph container
+            child: DeliveryEfficiencyGraph(deliveries: sampleDeliveries),
+          ),
+          // Add more elements here if needed
+        ],
+      ),
+    );
+  }
+}
+
 class AdminDashboardPageContent extends StatelessWidget {
   const AdminDashboardPageContent({super.key});
 
@@ -90,18 +122,11 @@ class AdminDashboardPageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        Container(
+          color: const Color.fromARGB(255, 242, 242, 247),
+        ),
         SizedBox.expand(
           child: Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: const AssetImage('assets/images/image1.png'),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.65),
-                  BlendMode.darken,
-                ),
-              ),
-            ),
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.only(top: 80.0),
@@ -219,6 +244,8 @@ class AdminDashboardPageContent extends StatelessWidget {
   }
 }
 
+// The rest of the widgets (DeliveryOverviewWidget, DeliveryStatusCard, PerformanceMetricsWidget, MapWidget, etc.) remain unchanged
+
 class DeliveryOverviewWidget extends StatelessWidget {
   const DeliveryOverviewWidget({super.key});
 
@@ -326,7 +353,7 @@ class PerformanceMetricsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: const Column(
+      child: Column(
         children: <Widget>[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -335,15 +362,81 @@ class PerformanceMetricsWidget extends StatelessWidget {
               MetricCard(title: "On-time Rate", value: "90%"),
             ],
           ),
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              MetricCard(title: "Return Rate", value: "20%"),
-              MetricCard(title: "Avg Cost/Delivery", value: "\$250"),
-            ],
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 100, // Set a fixed height for the graph
+            child: DeliveryEfficiencyGraph(
+              deliveries: [
+                Delivery(
+                  id: 'D1',
+                  scheduledTime:
+                      DateTime.now().subtract(const Duration(hours: 2)),
+                  actualTime: DateTime.now()
+                      .subtract(const Duration(hours: 1, minutes: 30)),
+                  status: 'delayed',
+                ),
+                Delivery(
+                  id: 'D2',
+                  scheduledTime:
+                      DateTime.now().subtract(const Duration(hours: 3)),
+                  actualTime: DateTime.now()
+                      .subtract(const Duration(hours: 2, minutes: 45)),
+                  status: 'on time',
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Define the Settings Page
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color iconColor = const Color.fromARGB(255, 62, 55, 198);
+    final screenSize = MediaQuery.of(context).size;
+    final double screenWidth = screenSize.width;
+    final double screenHeight = screenSize.height;
+
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(130.0), // Increase the height
+        child: AppBar(
+          backgroundColor: const Color.fromARGB(255, 242, 242, 247),
+          automaticallyImplyLeading: false, // Disable default leading arrow
+          flexibleSpace: Padding(
+            padding: const EdgeInsets.only(
+                top: 60.0, left: 18.0), // Adjust padding as needed
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back,
+                      color: Color.fromARGB(255, 48, 48, 48)),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                Transform.translate(
+                  offset: const Offset(
+                      -30, 60), // Adjust Offset for desired position
+                  child: Text(
+                    'Settings',
+                    style: GoogleFonts.notoSans(
+                      fontSize: 27,
+                      fontWeight: FontWeight.w500,
+                      color: const Color.fromARGB(255, 48, 48, 48),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
