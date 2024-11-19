@@ -6,6 +6,8 @@ import 'employee_management_page.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+//import 'models/delivery.dart'; // Import the Delivery model
+//import 'widgets/delivery_efficiency_graph.dart';
 
 void main() => runApp(const AdminDashboardApp());
 
@@ -86,6 +88,23 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
 class AdminDashboard extends StatelessWidget {
   AdminDashboard({super.key});
 
+  // //final List<Delivery> sampleDeliveries = [
+  //   Delivery(
+  //     id: 'D1',
+  //     scheduledTime: DateTime.now().subtract(const Duration(hours: 2)),
+  //     actualTime:
+  //         DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
+  //     status: 'delayed',
+  //   ),
+  //   Delivery(
+  //     id: 'D2',
+  //     scheduledTime: DateTime.now().subtract(const Duration(hours: 3)),
+  //     actualTime:
+  //         DateTime.now().subtract(const Duration(hours: 2, minutes: 45)),
+  //     status: 'on time',
+  //   ),
+  // ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,24 +115,66 @@ class AdminDashboard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(10.0),
+          // Add the DeliveryOverviewWidget here directly to test it
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
-              'Delivery Time Efficiency',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+              'Delivery overview',
+              style: GoogleFonts.notoSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color.fromARGB(255, 48, 48, 48)),
             ),
           ),
-          SizedBox(
-            height: 100, // Fixed height for the graph container
-            child: DeliveryEfficiencyGraph(deliveries: sampleDeliveries),
+          const DeliveryOverviewWidget(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Performance Metrics',
+              style: GoogleFonts.notoSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color.fromARGB(255, 48, 48, 48)),
+            ),
           ),
-          // Add more elements here if needed
+          const PerformanceMetricsWidget(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Live Map',
+              style: GoogleFonts.notoSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color.fromARGB(255, 48, 48, 48)),
+            ),
+          ),
+          const MapWidget(),
+          // Add any additional content here
         ],
       ),
     );
   }
 }
+
+// body: Column(
+//   mainAxisAlignment: MainAxisAlignment.start,
+//   crossAxisAlignment: CrossAxisAlignment.stretch,
+//   children: [
+//     const Padding(
+//       padding: EdgeInsets.all(10.0),
+//       child: Text(
+//         'Delivery Time Efficiency',
+//         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+//         textAlign: TextAlign.center,
+//       ),
+//     ),
+//     SizedBox(
+//       height: 100, // Fixed height for the graph container
+//       child: DeliveryEfficiencyGraph(deliveries: sampleDeliveries),
+//     ),
+//     // Add more elements here if needed
+//   ],
+// ),
 
 class AdminDashboardPageContent extends StatelessWidget {
   const AdminDashboardPageContent({super.key});
@@ -252,42 +313,30 @@ class DeliveryOverviewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 15,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           DeliveryStatusCard(
             status: "Active",
-            icon: Icons.local_shipping,
-            count: 12,
-            iconColor: const Color.fromARGB(255, 141, 126, 106),
-            iconSize: 30.0,
+            icon: Icons.local_shipping_outlined,
+            count: 1,
+            iconColor: const Color.fromARGB(255, 36, 101, 241),
+            iconSize: 23.0,
           ),
           DeliveryStatusCard(
             status: "Pending",
             icon: Icons.access_time,
             count: 5,
-            iconColor: const Color.fromARGB(255, 141, 126, 106),
-            iconSize: 30.0,
+            iconColor: const Color.fromARGB(255, 36, 101, 241),
+            iconSize: 23.0,
           ),
           DeliveryStatusCard(
             status: "Completed",
-            icon: Icons.check_circle,
-            count: 30,
-            iconColor: const Color.fromARGB(255, 141, 126, 106),
-            iconSize: 30.0,
+            icon: Icons.check_circle_outline,
+            count: 3,
+            iconColor: const Color.fromARGB(255, 36, 101, 241),
+            iconSize: 23.0,
           ),
         ],
       ),
@@ -313,23 +362,40 @@ class DeliveryStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const CustomerManagementPage(),
-          ),
-        );
-      },
-      child: Column(
-        children: <Widget>[
-          Row(
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(4.0), // Added padding for spacing
+          child: Stack(
+            clipBehavior:
+                Clip.none, // Allows badge to extend beyond icon bounds
+
             children: [
-              Icon(
-                icon,
-                size: iconSize,
-                color: iconColor,
+              Container(
+                width: iconSize + 16, // Adjust to control square size
+                height: iconSize + 16,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(
+                      255, 255, 255, 255), // Light gray background
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(
+                      8), // Small corner radius for a subtle rounded square
+
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2), // Shadow color
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(2, 2), // Position of the shadow
+                    ),
+                  ],
+                ),
+
+                child: Icon(
+                  icon,
+                  size: iconSize,
+                  color: iconColor,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
@@ -339,9 +405,16 @@ class DeliveryStatusCard extends StatelessWidget {
               ),
             ],
           ),
-          Text(status),
-        ],
-      ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          status,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -362,30 +435,26 @@ class PerformanceMetricsWidget extends StatelessWidget {
               MetricCard(title: "On-time Rate", value: "90%"),
             ],
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 100, // Set a fixed height for the graph
-            child: DeliveryEfficiencyGraph(
-              deliveries: [
-                Delivery(
-                  id: 'D1',
-                  scheduledTime:
-                      DateTime.now().subtract(const Duration(hours: 2)),
-                  actualTime: DateTime.now()
-                      .subtract(const Duration(hours: 1, minutes: 30)),
-                  status: 'delayed',
-                ),
-                Delivery(
-                  id: 'D2',
-                  scheduledTime:
-                      DateTime.now().subtract(const Duration(hours: 3)),
-                  actualTime: DateTime.now()
-                      .subtract(const Duration(hours: 2, minutes: 45)),
-                  status: 'on time',
-                ),
-              ],
-            ),
-          ),
+          // const SizedBox(height: 10),
+          // SizedBox(
+          //   height: 100, // Set a fixed height for the graph
+          //   child: DeliveryEfficiencyGraph(
+          //     deliveries: [
+          //       Delivery(
+          //         id: 'D1',
+          //         scheduledTime: DateTime.now().subtract(const Duration(hours: 2)),
+          //         actualTime: DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
+          //         status: 'delayed',
+          //       ),
+          //       Delivery(
+          //         id: 'D2',
+          //         scheduledTime: DateTime.now().subtract(const Duration(hours: 3)),
+          //         actualTime: DateTime.now().subtract(const Duration(hours: 2, minutes: 45)),
+          //         status: 'on time',
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

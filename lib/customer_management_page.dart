@@ -32,7 +32,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
 
   String searchQuery = "";
   Map<String, bool> isSwiped = {}; // To track which items are swiped left
-  int _selectedIndex = 1; // Default selected index for dashboard (middle)
+  final int _selectedIndex = 1; // Default selected index for dashboard (middle)
 
   @override
   void initState() {
