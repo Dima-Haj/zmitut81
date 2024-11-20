@@ -1,10 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/firebase_auth_services.dart';
 import 'package:google_fonts/google_fonts.dart'; // Google fonts package
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome package for icons
-import 'create_account_page.dart'; // Make sure this path is correct
+import 'signup_step1.dart'; // Make sure this path is correct
 import 'terms_of_service.dart';
-import 'admin_dashboard_page.dart';
-import 'employee_home_page.dart'; // Import the AdminDashboard page
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'employee_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +16,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginPageState extends State<LoginPage> {
+  List<Map<String, dynamic>> employeeData = [];
   bool isHoveredEmail = false;
   bool isEmailFocused = false;
   bool isHoveredPassword = false;
@@ -23,6 +26,8 @@ class LoginPageState extends State<LoginPage> {
   final FocusNode passwordFocusNode = FocusNode();
   final TextEditingController emailController =
       TextEditingController(); // Controller to access email text
+  final TextEditingController passwordController =
+      TextEditingController(); // Added password controller
 
   @override
   void initState() {
@@ -37,40 +42,108 @@ class LoginPageState extends State<LoginPage> {
         isPasswordFocused = passwordFocusNode.hasFocus;
       });
     });
+    fetchEmployeeData(); // Fetch employee data when the widget initializes
+  }
+
+  Future<void> fetchEmployeeData() async {
+    try {
+      // Fetch top-level employees
+      QuerySnapshot employeesSnapshot =
+          await FirebaseFirestore.instance.collection('Employees').get();
+
+      for (var employeeDoc in employeesSnapshot.docs) {
+        // Get subcollection 'details' for each employee
+        QuerySnapshot detailsSnapshot =
+            await employeeDoc.reference.collection('details').get();
+
+        // Add the employee's data along with its 'details' subcollection
+        employeeData.add({
+          'id': employeeDoc.id, // Employee document ID
+          ...employeeDoc.data()
+              as Map<String, dynamic>, // Top-level employee fields
+          'details': detailsSnapshot.docs
+              .map((detailDoc) => detailDoc.data())
+              .toList(),
+        });
+      }
+
+      setState(() {}); // Refresh UI if needed
+    } catch (e) {
+      //do nothing
+    }
   }
 
   @override
   void dispose() {
     emailFocusNode.dispose();
     passwordFocusNode.dispose();
-    emailController.dispose(); // Dispose the controller
+    emailController.dispose();
+    passwordController.dispose(); // Dispose the controller
     super.dispose();
   }
 
+  final FirebaseAuthServices _auth = FirebaseAuthServices();
   // Method to handle login logic
-  void handleLogin() {
+  void handleLogin() async {
     String email = emailController.text.trim();
+    String password = passwordController.text.trim();
 
-    // Check if the email contains 'manager'
-    if (email.toLowerCase() == 'manager') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const AdminDashboardApp(),
-        ),
-      );
-    } else if (email.toLowerCase() == 'employee') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const EmployeeHomePage(),
-        ),
-      );
-    } else {
-      // If not 'manager', show a SnackBar (or handle login normally)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Incorrect login credentials')),
-      );
+    if (email.isEmpty || password.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Please enter both email and password.')),
+        );
+      }
+      return;
+    }
+
+    try {
+      User? user = await _auth.signInWithEmailAndPassword(email, password);
+      if (user != null) {
+        // Fetch additional employee data from Firestore
+        DocumentSnapshot<Map<String, dynamic>> employeeDoc =
+            await FirebaseFirestore.instance
+                .collection('Employees')
+                .doc(user.uid)
+                .get();
+
+        if (employeeDoc.exists) {
+          final employeeDetails = {
+            'id': user.uid,
+            'email': user.email ?? '',
+            ...employeeDoc.data()!, // Spread the fetched Firestore data
+          };
+
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => EmployeeHomePage(
+                  employeeDetails: employeeDetails,
+                ),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Employee record not found.')),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Incorrect email or password.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -181,6 +254,7 @@ class LoginPageState extends State<LoginPage> {
                         isFocused: isPasswordFocused,
                         isHovered: isHoveredPassword,
                         obscureText: true,
+                        controller: passwordController,
                       ),
                     ),
 
@@ -236,8 +310,7 @@ class LoginPageState extends State<LoginPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CreateAccountPage()),
+                                  builder: (context) => const SignupStep1()),
                             );
                           },
                           child: Text(
