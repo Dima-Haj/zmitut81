@@ -13,6 +13,7 @@ class SignupStep3 extends StatelessWidget {
   final String year;
   final String phone;
   final String id;
+  final String role;
 
   SignupStep3({
     super.key,
@@ -23,6 +24,7 @@ class SignupStep3 extends StatelessWidget {
     required this.year,
     required this.phone,
     required this.id,
+    required this.role,
   });
 
   final FirebaseAuthServices _auth = FirebaseAuthServices(); // Initialize here
@@ -256,19 +258,36 @@ class SignupStep3 extends StatelessWidget {
               emailController.text, passwordController.text);
 
           if (user != null) {
-            FirebaseFirestore.instance
-                .collection('Employees')
-                .doc(user.uid)
-                .set({
-              'firstName': firstName,
-              'lastName': lastName,
-              'birthDay': day,
-              'birthMonth': month,
-              'birthYear': year,
-              'phone': phone,
-              'id': id,
-              'email': emailController.text,
-            });
+            if (role == "Manager") {
+              print("role");
+              FirebaseFirestore.instance
+                  .collection('Managers')
+                  .doc(user.uid)
+                  .set({
+                'firstName': firstName,
+                'lastName': lastName,
+                'birthDay': day,
+                'birthMonth': month,
+                'birthYear': year,
+                'phone': phone,
+                'id': id,
+                'email': emailController.text,
+              });
+            } else {
+              FirebaseFirestore.instance
+                  .collection('Employees')
+                  .doc(user.uid)
+                  .set({
+                'firstName': firstName,
+                'lastName': lastName,
+                'birthDay': day,
+                'birthMonth': month,
+                'birthYear': year,
+                'phone': phone,
+                'id': id,
+                'email': emailController.text,
+              });
+            }
 
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('User added successfully')));

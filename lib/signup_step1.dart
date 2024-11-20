@@ -16,6 +16,7 @@ class _SignupStep1State extends State<SignupStep1> {
   String? selectedDay;
   String? selectedMonth;
   String? selectedYear;
+  String? selectedRole; // Add this to store the selected role
 
   final List<String> months = [
     'January',
@@ -63,7 +64,7 @@ class _SignupStep1State extends State<SignupStep1> {
             left: 0,
             right: 0,
             child: Container(
-              height: screenHeight * 0.65,
+              height: screenHeight * 0.75,
               decoration: whiteFrame(screenWidth),
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
@@ -84,11 +85,19 @@ class _SignupStep1State extends State<SignupStep1> {
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.03),
-                    buildTextField('First Name', Icons.person,
-                        _firstNameController, screenWidth),
-                    SizedBox(height: screenHeight * 0.02),
-                    buildTextField('Last Name', Icons.person_outline,
-                        _lastNameController, screenWidth),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: buildTextField('First Name', Icons.person,
+                              _firstNameController, screenWidth),
+                        ),
+                        SizedBox(width: screenWidth * 0.03),
+                        Expanded(
+                          child: buildTextField('Last Name', Icons.person_outline,
+                              _lastNameController, screenWidth),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: screenHeight * 0.02),
                     Align(
                       alignment: Alignment.centerLeft,
@@ -105,11 +114,54 @@ class _SignupStep1State extends State<SignupStep1> {
                     ),
                     SizedBox(height: screenHeight * 0.01),
                     buildDateOfBirthDropdowns(screenWidth),
+                    SizedBox(height: screenHeight * 0.01),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Select Role',
+                        style: GoogleFonts.exo2(
+                          textStyle: TextStyle(
+                            color: const Color.fromARGB(255, 141, 126, 106),
+                            fontSize: screenHeight * 0.015,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                    //SizedBox(height: screenHeight * 0.005),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<String>(
+                            value: 'Manager',
+                            groupValue: selectedRole,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedRole = value;
+                              });
+                            },
+                            title: const Text('Manager'),
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<String>(
+                            value: 'Delivery Man',
+                            groupValue: selectedRole,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedRole = value;
+                              });
+                            },
+                            title: const Text('Delivery Man'),
+                          ),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: screenHeight * 0.02),
                     nextButton(screenWidth, screenHeight),
-                    SizedBox(height: screenHeight * 0.02),
+                    SizedBox(height: screenHeight * 0.00000000001),
                     cancelButton(context, screenHeight, screenWidth),
-                    SizedBox(height: screenHeight * 0.02),
+                    SizedBox(height: screenHeight * 0.01),
                   ],
                 ),
               ),
@@ -260,7 +312,8 @@ class _SignupStep1State extends State<SignupStep1> {
               _lastNameController.text.isEmpty ||
               selectedDay == null ||
               selectedMonth == null ||
-              selectedYear == null) {
+              selectedYear == null ||
+              selectedRole == null) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Please fill in all fields.')),
             );
@@ -292,6 +345,7 @@ class _SignupStep1State extends State<SignupStep1> {
                 day: selectedDay!,
                 month: selectedMonth!,
                 year: selectedYear!,
+                role: selectedRole!, // Pass the role to the next step
               ),
             ),
           );
