@@ -3,33 +3,33 @@ import 'package:google_fonts/google_fonts.dart';
 import 'customer_management_page.dart';
 import 'delivery_management_page.dart';
 import 'employee_management_page.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-void main() => runApp(const AdminDashboardApp());
-
-class AdminDashboardApp extends StatelessWidget {
-  const AdminDashboardApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: AdminDashboard(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
 
 class AdminDashboard extends StatefulWidget {
-  const AdminDashboard({super.key});
+  final Map<String, dynamic> managerDetails;
+
+  const AdminDashboard({super.key, required this.managerDetails});
 
   @override
   _AdminDashboardState createState() => _AdminDashboardState();
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
-  int _selectedIndex = 1; // Default index for dashboard
+  int _selectedIndex = 1; // Default index for the dashboard
+
+  late String firstName;
+  late String email;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Validate managerDetails and assign default values if necessary
+    firstName = widget.managerDetails['firstName'] ?? 'Manager';
+    email = widget.managerDetails['email'] ?? 'Unknown Email';
+
+    // Log for debugging purposes
+    print("AdminDashboard initialized with: firstName=$firstName, email=$email");
+  }
 
   final List<Widget> _pages = [
     const CustomerManagementPage(),
@@ -47,6 +47,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome, $firstName',
+              style: GoogleFonts.exo2(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              email,
+              style: GoogleFonts.exo2(fontSize: 14, fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+        backgroundColor: const Color.fromARGB(255, 141, 126, 106),
+      ),
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -77,7 +93,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         selectedLabelStyle: const TextStyle(fontSize: 10),
         unselectedLabelStyle: const TextStyle(
-            fontSize: 9, color: Color.fromARGB(255, 120, 120, 120)),
+          fontSize: 9,
+          color: Color.fromARGB(255, 120, 120, 120),
+        ),
       ),
     );
   }
@@ -132,85 +150,8 @@ class AdminDashboardPageContent extends StatelessWidget {
                     ),
                   ),
                   const PerformanceMetricsWidget(),
-                  Padding(
-                    padding: const EdgeInsets.all(19.0),
-                    child: Text(
-                      'Live Map',
-                      style: GoogleFonts.exo2(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const MapWidget(),
                 ],
               ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 38.0,
-          left: 16.0,
-          child: Container(
-            color: const Color.fromARGB(0, 216, 214, 214),
-            padding: const EdgeInsets.all(8.0),
-            child: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz, color: Colors.white),
-              onSelected: (value) {
-                switch (value) {
-                  case 'Notifications':
-                    break;
-                  case 'Drivers Information':
-                    break;
-                  case 'Delivery Reports':
-                    break;
-                }
-              },
-              itemBuilder: (BuildContext context) {
-                return [
-                  PopupMenuItem<String>(
-                    value: 'Notifications',
-                    child: Container(
-                      color: Colors.transparent,
-                      child: const Text(
-                        'Notifications History',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'Drivers Information',
-                    child: Container(
-                      color: Colors.transparent,
-                      child: const Text(
-                        'Drivers Information',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'Delivery Reports',
-                    child: Container(
-                      color: Colors.transparent,
-                      child: const Text(
-                        'Delivery Reports',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'Settings',
-                    child: Container(
-                      color: Colors.transparent,
-                      child: const Text(
-                        'Settings',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                ];
-              },
             ),
           ),
         ),
@@ -245,22 +186,16 @@ class DeliveryOverviewWidget extends StatelessWidget {
             status: "Active",
             icon: Icons.local_shipping,
             count: 12,
-            iconColor: const Color.fromARGB(255, 141, 126, 106),
-            iconSize: 30.0,
           ),
           DeliveryStatusCard(
             status: "Pending",
             icon: Icons.access_time,
             count: 5,
-            iconColor: const Color.fromARGB(255, 141, 126, 106),
-            iconSize: 30.0,
           ),
           DeliveryStatusCard(
             status: "Completed",
             icon: Icons.check_circle,
             count: 30,
-            iconColor: const Color.fromARGB(255, 141, 126, 106),
-            iconSize: 30.0,
           ),
         ],
       ),
@@ -272,49 +207,26 @@ class DeliveryStatusCard extends StatelessWidget {
   final String status;
   final IconData icon;
   final int count;
-  final Color iconColor;
-  final double iconSize;
 
   const DeliveryStatusCard({
     super.key,
     required this.status,
     required this.icon,
     required this.count,
-    required this.iconColor,
-    this.iconSize = 30.0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const CustomerManagementPage(),
-          ),
-        );
-      },
-      child: Column(
-        children: <Widget>[
-          Row(
-            children: [
-              Icon(
-                icon,
-                size: iconSize,
-                color: iconColor,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                count.toString(),
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          Text(status),
-        ],
-      ),
+    return Column(
+      children: <Widget>[
+        Icon(icon, size: 30, color: const Color.fromARGB(255, 141, 126, 106)),
+        const SizedBox(height: 8),
+        Text(
+          count.toString(),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        Text(status),
+      ],
     );
   }
 }
@@ -387,82 +299,5 @@ class MetricCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-@override
-class MapWidget extends StatelessWidget {
-  const MapWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 200,
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15.0),
-            child: FlutterMap(
-              options: MapOptions(
-                initialCenter: LatLng(35.217018, 31.771959),
-                initialZoom: 13.0,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.app',
-                ),
-              ],
-            ),
-          ),
-          Align(
-            alignment: Alignment.topRight,
-            child: IconButton(
-              icon: const Icon(Icons.fullscreen, color: Colors.blueAccent),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const FullScreenMap(),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class FullScreenMap extends StatelessWidget {
-  const FullScreenMap({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Full Screen Map')),
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: LatLng(35.217018, 31.771959),
-          initialZoom: 13.0,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.app',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-Future<void> _launchURL(String url) async {
-  if (await canLaunchUrl(Uri.parse(url))) {
-    await launchUrl(Uri.parse(url));
-  } else {
-    throw 'Could not launch $url';
   }
 }

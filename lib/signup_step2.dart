@@ -9,6 +9,7 @@ class SignupStep2 extends StatefulWidget {
   final String day;
   final String month;
   final String year;
+  final String role;
 
   const SignupStep2({
     super.key,
@@ -17,6 +18,7 @@ class SignupStep2 extends StatefulWidget {
     required this.day,
     required this.month,
     required this.year,
+    required this.role,
   });
 
   @override
@@ -24,8 +26,10 @@ class SignupStep2 extends StatefulWidget {
 }
 
 class _SignupStep2State extends State<SignupStep2> {
-  final TextEditingController _firstPartPhoneController = TextEditingController();
-  final TextEditingController _secondPartPhoneController = TextEditingController();
+  final TextEditingController _firstPartPhoneController =
+      TextEditingController();
+  final TextEditingController _secondPartPhoneController =
+      TextEditingController();
   final TextEditingController _idController = TextEditingController();
 
   @override
@@ -96,7 +100,8 @@ class _SignupStep2State extends State<SignupStep2> {
                     SizedBox(height: screenHeight * 0.01),
                     buildPhoneField(screenWidth),
                     SizedBox(height: screenHeight * 0.02),
-                    buildTextField('ID (9 digits)', Icons.badge, _idController, screenWidth),
+                    buildTextField('ID (9 digits)', Icons.badge, _idController,
+                        screenWidth),
                     SizedBox(height: screenHeight * 0.03),
                     nextButton(screenWidth, screenHeight),
                     SizedBox(height: screenHeight * 0.02),
@@ -156,7 +161,9 @@ class _SignupStep2State extends State<SignupStep2> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.phone, size: 18, color: const Color.fromARGB(255, 141, 126, 106)),
+                  Icon(Icons.phone,
+                      size: 18,
+                      color: const Color.fromARGB(255, 141, 126, 106)),
                   const SizedBox(width: 5),
                   const Text(
                     '05',
@@ -275,10 +282,12 @@ class _SignupStep2State extends State<SignupStep2> {
         ),
         child: Text(
           'Next',
-          style: GoogleFonts.exo2(color: Colors.white, fontSize: screenHeight * 0.023),
+          style: GoogleFonts.exo2(
+              color: Colors.white, fontSize: screenHeight * 0.023),
         ),
         onPressed: () {
-          if (_secondPartPhoneController.text.length != 7 || _idController.text.length != 9) {
+          if (_secondPartPhoneController.text.length != 7 ||
+              _idController.text.length != 9) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Please fill in valid fields.')),
             );
@@ -294,21 +303,26 @@ class _SignupStep2State extends State<SignupStep2> {
                 day: widget.day,
                 month: widget.month,
                 year: widget.year,
-                phone: "05${_firstPartPhoneController.text}${_secondPartPhoneController.text}",
+                phone:
+                    "05${_firstPartPhoneController.text}${_secondPartPhoneController.text}",
                 id: _idController.text,
+                role: widget.role,
               ),
             ),
           );
         },
       );
 
-  Widget cancelButton(BuildContext context, double screenHeight, double screenWidth) => Column(
+  Widget cancelButton(
+          BuildContext context, double screenHeight, double screenWidth) =>
+      Column(
         children: [
           Divider(color: Colors.grey, thickness: 1),
           TextButton(
             child: Text(
               'Cancel',
-              style: GoogleFonts.exo2(color: Colors.red, fontSize: screenHeight * 0.02),
+              style: GoogleFonts.exo2(
+                  color: Colors.red, fontSize: screenHeight * 0.02),
             ),
             onPressed: () => Navigator.pushAndRemoveUntil(
               context,
