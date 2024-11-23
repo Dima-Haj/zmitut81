@@ -259,7 +259,6 @@ class SignupStep3 extends StatelessWidget {
 
           if (user != null) {
             if (role == "Manager") {
-              print("role");
               FirebaseFirestore.instance
                   .collection('Managers')
                   .doc(user.uid)
@@ -289,10 +288,13 @@ class SignupStep3 extends StatelessWidget {
               });
             }
 
+            // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('User added successfully')));
+            // ignore: use_build_context_synchronously
             Navigator.popUntil(context, (route) => route.isFirst);
           } else {
+            // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Failed to sign up')));
           }

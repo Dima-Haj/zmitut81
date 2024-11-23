@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'order_history_page.dart';
-import 'admin_dashboard_page.dart';
 
 class CustomerManagementPage extends StatefulWidget {
   const CustomerManagementPage({super.key});
@@ -31,146 +30,127 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
 
   String searchQuery = "";
   Map<String, bool> isSwiped = {}; // To track which items are swiped left
-  final int _selectedIndex = 1; // Default selected index for dashboard (middle)
 
   @override
   void initState() {
     super.initState();
-    // Initialize the swipe state for each customer
     for (var customer in customers) {
       isSwiped[customer['name']!] = false;
     }
   }
 
-  /*void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    if (index == 1) {
-      // Navigate to Dashboard Management Page
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const AdminDashboardPageContent(),
-        ),
-      );
-    } else if (index == 0) {
-      // If index 0 is tapped, stay on the customer page or perform some logic
-      // You don't need to navigate anywhere since you're already on CustomerManagementPage
-    } else if (index == 2) {
-      // Handle settings or other navigation logic for the Settings button
-      // Add your settings page navigation here
-    }
-  }*/
+@override
+Widget build(BuildContext context) {
+  final screenHeight = MediaQuery.of(context).size.height;
+  final screenWidth = MediaQuery.of(context).size.width;
 
-  @override
-  Widget build(BuildContext context) {
-    List<Map<String, String>> filteredCustomers = customers
-        .where((customer) =>
-            customer['name']!.toLowerCase().contains(searchQuery.toLowerCase()))
-        .toList();
+  final filteredCustomers = customers
+      .where((customer) =>
+          customer['name']!.toLowerCase().contains(searchQuery.toLowerCase()))
+      .toList();
 
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: const AssetImage(
-                'assets/images/image1.png'), // Your background image path
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              const Color.fromARGB(255, 42, 42, 42).withOpacity(0.6),
-              BlendMode.darken,
-            ),
+  return Scaffold(
+    body: Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: const AssetImage('assets/images/image1.png'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            const Color.fromARGB(255, 42, 42, 42).withOpacity(0.6),
+            BlendMode.darken,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const SizedBox(height: 60.0), // To move elements lower
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(height: screenHeight * 0.1),
 
-              // Search Field
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
-                child: TextField(
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search Customers...',
-                    hintStyle: GoogleFonts.exo2(
-                      fontSize: 16.0, // Adjust font size as needed
-                      color: const Color.fromARGB(
-                          255, 213, 213, 213), // Set hint text color
-                    ),
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+            // Search Field
+            TextField(
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search Customers...',
+                hintStyle: GoogleFonts.exo2(
+                  fontSize: screenHeight * 0.018,
+                  color: const Color.fromARGB(255, 213, 213, 213),
+                ),
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(screenHeight * 0.02),
                 ),
               ),
+            ),
+            SizedBox(height: screenHeight * 0.03),
 
-              // Customer list
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 60.0),
-                  itemCount: filteredCustomers.length,
-                  itemBuilder: (context, index) {
-                    final customer = filteredCustomers[index];
-                    return Container(
-                      height: 100,
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Stack(
+            // Customer List
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.only(bottom: screenHeight * 0.1),
+                itemCount: filteredCustomers.length,
+                itemBuilder: (context, index) {
+                  final customer = filteredCustomers[index];
+                  return Container(
+                    height: screenHeight * 0.13,
+                    margin: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(screenHeight * 0.02),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: screenHeight * 0.01,
+                          spreadRadius: screenHeight * 0.005,
+                        ),
+                      ],
+                      color: Colors.white,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(screenHeight * 0.01),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Background with Edit/Delete buttons
-                          Positioned.fill(
-                            child: buildSwipeActionLeft(
-                              onEdit: () {
-                                setState(() {
-                                  isSwiped[customer['name']!] = false;
-                                });
-                              },
-                              onDelete: () {
-                                setState(() {
-                                  customers.removeAt(index);
-                                  isSwiped.remove(customer['name']!);
-                                });
-                              },
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Text(
+                                  customer['name']!,
+                                  style: GoogleFonts.exo2(
+                                    fontSize: screenHeight * 0.02,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: screenHeight * 0.005),
+                                Text(
+                                  customer['phone']!,
+                                  style: GoogleFonts.exo2(
+                                    fontSize: screenHeight * 0.016,
+                                  ),
+                                ),
+                                SizedBox(height: screenHeight * 0.005),
+                                Text(
+                                  customer['email']!,
+                                  style: GoogleFonts.exo2(
+                                    fontSize: screenHeight * 0.016,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          // The actual customer box
-                          AnimatedPositioned(
-                            duration: const Duration(milliseconds: 300),
-                            left: isSwiped[customer['name']!] == true
-                                ? -130.0
-                                : 0.0,
-                            right: isSwiped[customer['name']!] == true
-                                ? 130.0
-                                : 0.0,
-                            child: GestureDetector(
-                              onHorizontalDragUpdate: (details) {
-                                if (details.primaryDelta != null &&
-                                    details.primaryDelta! < -20) {
-                                  setState(() {
-                                    isSwiped[customer['name']!] = true;
-                                  });
-                                } else if (details.primaryDelta != null &&
-                                    details.primaryDelta! > 20) {
-                                  setState(() {
-                                    isSwiped[customer['name']!] = false;
-                                  });
-                                }
-                              },
-                              child: CustomerBox(
-                                name: customer['name']!,
-                                phone: customer['phone']!,
-                                email: customer['email']!,
-                                onViewOrders: () {
-                                  // Example order history data
+                          Expanded(
+                            flex: 2,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton(
+                                onPressed: () {
                                   final orders = [
                                     {
                                       'orderID': '001',
@@ -178,21 +158,8 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                       'orderTotal': '\$50.00',
                                       'orderStatus': 'Pending',
                                     },
-                                    {
-                                      'orderID': '002',
-                                      'orderDate': '2023-10-05',
-                                      'orderTotal': '\$75.00',
-                                      'orderStatus': 'Pending',
-                                    },
-                                    {
-                                      'orderID': '003',
-                                      'orderDate': '2023-10-10',
-                                      'orderTotal': '\$100.00',
-                                      'orderStatus': 'Pending',
-                                    },
                                   ];
 
-                                  // Navigate to the OrderHistoryPage
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -203,107 +170,122 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                     ),
                                   );
                                 },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color.fromARGB(
+                                      255, 131, 107, 81),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(screenHeight * 0.02),
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: screenHeight * 0.005,
+                                    horizontal: screenWidth * 0.002,
+                                  ),
+                                  child: Text(
+                                    'Orders History',
+                                    style: GoogleFonts.exo2(
+                                      color: Colors.white,
+                                      fontSize: screenHeight * 0.015,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
-            ],
-          ),
-        ),
-      ),
-
-      // Floating action button to add a customer
-      floatingActionButton: Align(
-        alignment: Alignment.bottomCenter,
-        child: FloatingActionButton(
-          onPressed: () {
-            _showAddCustomerDialog(context);
-          },
-          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-          foregroundColor: const Color.fromARGB(255, 131, 107, 81),
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(
-              color: Color.fromARGB(255, 131, 107, 81), // Border color
-              width: 3.0, // Border width
             ),
-            borderRadius: BorderRadius.circular(30.0), // Make it circular
-          ),
-          child: const Icon(Icons.add),
+          ],
         ),
       ),
-    );
-  }
+    ),
 
-  // Background widget for swipe action with clickable buttons
-  Widget buildSwipeActionLeft(
-      {required VoidCallback onEdit, required VoidCallback onDelete}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(
-            255, 141, 126, 106), // Background color when swiping
-        borderRadius:
-            BorderRadius.circular(28.0), // Rounded corners with 28 pixel radius
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.edit,
-                color: Color.fromARGB(255, 255, 255, 255)),
-            onPressed: onEdit,
+    // Floating Action Button
+    floatingActionButton: Padding(
+      padding: EdgeInsets.only(bottom: screenHeight * 0.02),
+      child: FloatingActionButton(
+        onPressed: () {
+          _showAddCustomerDialog(context);
+        },
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        foregroundColor: const Color.fromARGB(255, 131, 107, 81),
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(
+            color: Color.fromARGB(255, 131, 107, 81),
+            width: 3.0,
           ),
-          IconButton(
-            icon:
-                const Icon(Icons.delete, color: Color.fromARGB(255, 255, 0, 0)),
-            onPressed: onDelete,
-          ),
-        ],
+          borderRadius: BorderRadius.circular(30.0),
+        ),
+        child: const Icon(Icons.add),
       ),
-    );
-  }
+    ),
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+  );
+}
+
 
   void _showAddCustomerDialog(BuildContext context) {
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
     final emailController = TextEditingController();
 
+    final screenHeight = MediaQuery.of(context).size.height;
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Add Customer'),
+          title: Text(
+            'Add Customer',
+            style: TextStyle(fontSize: screenHeight * 0.025),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  labelStyle: TextStyle(fontSize: screenHeight * 0.02),
+                ),
               ),
               TextField(
                 controller: phoneController,
-                decoration: const InputDecoration(labelText: 'Phone'),
+                decoration: InputDecoration(
+                  labelText: 'Phone',
+                  labelStyle: TextStyle(fontSize: screenHeight * 0.02),
+                ),
               ),
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  labelStyle: TextStyle(fontSize: screenHeight * 0.02),
+                ),
               ),
             ],
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(fontSize: screenHeight * 0.02),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: const Text('Add'),
+              child: Text(
+                'Add',
+                style: TextStyle(fontSize: screenHeight * 0.02),
+              ),
               onPressed: () {
                 setState(() {
                   customers.add({
@@ -324,6 +306,8 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
 
 // Widget for a single customer box
 class CustomerBox extends StatelessWidget {
+  final double screenHeight;
+  final double screenWidth;
   final String name;
   final String phone;
   final String email;
@@ -331,6 +315,8 @@ class CustomerBox extends StatelessWidget {
 
   const CustomerBox({
     super.key,
+    required this.screenHeight,
+    required this.screenWidth,
     required this.name,
     required this.phone,
     required this.email,
@@ -340,14 +326,14 @@ class CustomerBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10.0),
+      padding: EdgeInsets.all(screenHeight * 0.015),
       decoration: BoxDecoration(
         border: Border.all(
           color: const Color.fromARGB(255, 141, 126, 106),
-          width: 1.0,
+          width: screenWidth * 0.003,
         ),
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8.0),
+        borderRadius: BorderRadius.circular(screenHeight * 0.02),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -367,44 +353,42 @@ class CustomerBox extends StatelessWidget {
                 Text(
                   name,
                   style: GoogleFonts.exo2(
-                    fontSize: 18,
+                    fontSize: screenHeight * 0.025,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8.0),
-                Text(phone, style: GoogleFonts.exo2()),
-                const SizedBox(height: 4.0),
-                Text(email, style: GoogleFonts.exo2()),
+                SizedBox(height: screenHeight * 0.01),
+                Text(phone, style: GoogleFonts.exo2(fontSize: screenHeight * 0.02)),
+                SizedBox(height: screenHeight * 0.005),
+                Text(email, style: GoogleFonts.exo2(fontSize: screenHeight * 0.02)),
               ],
             ),
           ),
-
-          // Middle: View Order History Button
-          Expanded(
-            flex: 2,
-            child: Align(
-              child: Padding(
-                padding: const EdgeInsets.only(
-                    top: 12.0), // Adjust the top padding to move it lower
-                child: ElevatedButton(
-                  onPressed: onViewOrders,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 131, 107, 81),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: Text(
-                    'Orders History',
-                    style: GoogleFonts.exo2(
-                      color: Colors.white,
-                      fontSize: 11.0,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+Expanded(
+  flex: 2,
+  child: Align(
+    child: Padding(
+      padding: EdgeInsets.only(top: screenHeight * 0.01), // Adjust top padding for alignment
+      child: ElevatedButton(
+        onPressed: onViewOrders,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromARGB(255, 131, 107, 81),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(screenHeight * 0.015), // Smaller corners
           ),
+        ),
+        child: Text(
+          'Orders History',
+          style: GoogleFonts.exo2(
+            color: Colors.white,
+            fontSize: screenHeight * 0.013, // Reduce font size
+          ),
+        ),
+      ),
+    ),
+  ),
+),
+
         ],
       ),
     );

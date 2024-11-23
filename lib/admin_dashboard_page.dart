@@ -28,7 +28,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     email = widget.managerDetails['email'] ?? 'Unknown Email';
 
     // Log for debugging purposes
-    print("AdminDashboard initialized with: firstName=$firstName, email=$email");
   }
 
   final List<Widget> _pages = [
@@ -46,6 +45,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -53,11 +55,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           children: [
             Text(
               'Welcome, $firstName',
-              style: GoogleFonts.exo2(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              email,
-              style: GoogleFonts.exo2(fontSize: 14, fontStyle: FontStyle.italic),
+              style: GoogleFonts.exo2(
+                fontSize: screenHeight * 0.025,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -68,21 +69,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.person, size: 22),
+            icon: Icon(Icons.person, size: screenHeight * 0.03),
             label: 'Customers',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard, size: 22),
+            icon: Icon(Icons.dashboard, size: screenHeight * 0.03),
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping, size: 22),
+            icon: Icon(Icons.local_shipping, size: screenHeight * 0.03),
             label: 'Deliveries',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people, size: 22),
+            icon: Icon(Icons.people, size: screenHeight * 0.03),
             label: 'Employees',
           ),
         ],
@@ -91,10 +92,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-        selectedLabelStyle: const TextStyle(fontSize: 10),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 9,
-          color: Color.fromARGB(255, 120, 120, 120),
+        selectedLabelStyle: TextStyle(fontSize: screenHeight * 0.015),
+        unselectedLabelStyle: TextStyle(
+          fontSize: screenHeight * 0.013,
+          color: const Color.fromARGB(255, 120, 120, 120),
         ),
       ),
     );
@@ -106,6 +107,9 @@ class AdminDashboardPageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Stack(
       children: [
         SizedBox.expand(
@@ -122,34 +126,34 @@ class AdminDashboardPageContent extends StatelessWidget {
             ),
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.only(top: 80.0),
+              padding: EdgeInsets.only(top: screenHeight * 0.1),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(screenWidth * 0.04),
                     child: Text(
                       'Delivery Overview',
                       style: GoogleFonts.exo2(
-                        fontSize: 18,
+                        fontSize: screenHeight * 0.03,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  const DeliveryOverviewWidget(),
+                  DeliveryOverviewWidget(screenHeight: screenHeight),
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(screenWidth * 0.04),
                     child: Text(
                       'Performance Metrics',
                       style: GoogleFonts.exo2(
-                        fontSize: 18,
+                        fontSize: screenHeight * 0.03,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  const PerformanceMetricsWidget(),
+                  PerformanceMetricsWidget(screenHeight: screenHeight),
                 ],
               ),
             ),
@@ -161,16 +165,18 @@ class AdminDashboardPageContent extends StatelessWidget {
 }
 
 class DeliveryOverviewWidget extends StatelessWidget {
-  const DeliveryOverviewWidget({super.key});
+  final double screenHeight;
+
+  const DeliveryOverviewWidget({super.key, required this.screenHeight});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      padding: const EdgeInsets.all(16.0),
+      margin: EdgeInsets.symmetric(horizontal: screenHeight * 0.03),
+      padding: EdgeInsets.all(screenHeight * 0.02),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(screenHeight * 0.02),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -179,23 +185,26 @@ class DeliveryOverviewWidget extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           DeliveryStatusCard(
             status: "Active",
             icon: Icons.local_shipping,
             count: 12,
+            iconSize: screenHeight * 0.04,
           ),
           DeliveryStatusCard(
             status: "Pending",
             icon: Icons.access_time,
             count: 5,
+            iconSize: screenHeight * 0.04,
           ),
           DeliveryStatusCard(
             status: "Completed",
             icon: Icons.check_circle,
             count: 30,
+            iconSize: screenHeight * 0.04,
           ),
         ],
       ),
@@ -207,23 +216,25 @@ class DeliveryStatusCard extends StatelessWidget {
   final String status;
   final IconData icon;
   final int count;
+  final double iconSize;
 
   const DeliveryStatusCard({
     super.key,
     required this.status,
     required this.icon,
     required this.count,
+    required this.iconSize,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Icon(icon, size: 30, color: const Color.fromARGB(255, 141, 126, 106)),
-        const SizedBox(height: 8),
+        Icon(icon, size: iconSize, color: const Color.fromARGB(255, 141, 126, 106)),
+        SizedBox(height: iconSize * 0.2),
         Text(
           count.toString(),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: iconSize, fontWeight: FontWeight.bold),
         ),
         Text(status),
       ],
@@ -232,27 +243,29 @@ class DeliveryStatusCard extends StatelessWidget {
 }
 
 class PerformanceMetricsWidget extends StatelessWidget {
-  const PerformanceMetricsWidget({super.key});
+  final double screenHeight;
+
+  const PerformanceMetricsWidget({super.key, required this.screenHeight});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: const Column(
+      margin: EdgeInsets.symmetric(horizontal: screenHeight * 0.03),
+      child: Column(
         children: <Widget>[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              MetricCard(title: "Delay Rate", value: "30%"),
-              MetricCard(title: "On-time Rate", value: "90%"),
+              MetricCard(title: "Delay Rate", value: "30%", fontSize: screenHeight * 0.02),
+              MetricCard(title: "On-time Rate", value: "90%", fontSize: screenHeight * 0.02),
             ],
           ),
-          SizedBox(height: 10),
+          SizedBox(height: screenHeight * 0.02),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              MetricCard(title: "Return Rate", value: "20%"),
-              MetricCard(title: "Avg Cost/Delivery", value: "\$250"),
+              MetricCard(title: "Return Rate", value: "20%", fontSize: screenHeight * 0.02),
+              MetricCard(title: "Avg Cost/Delivery", value: "\$250", fontSize: screenHeight * 0.02),
             ],
           ),
         ],
@@ -264,18 +277,19 @@ class PerformanceMetricsWidget extends StatelessWidget {
 class MetricCard extends StatelessWidget {
   final String title;
   final String value;
+  final double fontSize;
 
-  const MetricCard({super.key, required this.title, required this.value});
+  const MetricCard({super.key, required this.title, required this.value, required this.fontSize});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16.0),
-        margin: const EdgeInsets.symmetric(horizontal: 4.0),
+        padding: EdgeInsets.all(fontSize),
+        margin: EdgeInsets.symmetric(horizontal: fontSize),
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 255, 255, 255),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(fontSize * 1.5),
           boxShadow: const [
             BoxShadow(
               color: Colors.black12,
@@ -288,12 +302,12 @@ class MetricCard extends StatelessWidget {
           children: <Widget>[
             Text(
               title,
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: fontSize),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: fontSize * 0.5),
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: fontSize * 1.2, fontWeight: FontWeight.bold),
             ),
           ],
         ),
