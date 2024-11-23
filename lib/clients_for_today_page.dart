@@ -61,7 +61,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   Future<String> _getTravelTimeWithTraffic(
       LatLng origin, LatLng destination) async {
     final apiKey =
-        'YOUR_GOOGLE_MAPS_API_KEY'; // Replace with your Google Maps API key
+        'AIzaSyD66RdQ4IcfomKkS9BIxok23AFZRqLTkAk'; // Replace with your Google Maps API key
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/directions/json'
       '?origin=${origin.latitude},${origin.longitude}'

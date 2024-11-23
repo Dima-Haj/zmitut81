@@ -61,12 +61,14 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: const AssetImage(
-                'assets/images/image1.png'), // Background image
+            image: const AssetImage('assets/images/image1.png'), // Background image
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
               Colors.black.withOpacity(0.65),
@@ -75,19 +77,19 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(15.0),
+          padding: EdgeInsets.all(screenWidth * 0.04),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const SizedBox(height: 60.0), // Space for top
+              SizedBox(height: screenHeight * 0.08), // Top spacing
 
               // Header
               Padding(
-                padding: const EdgeInsets.only(bottom: 20.0),
+                padding: EdgeInsets.only(bottom: screenHeight * 0.02),
                 child: Text(
                   'Employee Management',
                   style: GoogleFonts.exo2(
-                    fontSize: 24,
+                    fontSize: screenHeight * 0.03,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -101,11 +103,11 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                   itemBuilder: (context, index) {
                     final employee = employees[index];
                     return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      padding: const EdgeInsets.all(12.0),
+                      margin: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                      padding: EdgeInsets.all(screenHeight * 0.02),
                       decoration: BoxDecoration(
-                        color: Colors.white, // Box color
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(screenHeight * 0.02),
                         boxShadow: const [
                           BoxShadow(
                             color: Colors.black12,
@@ -118,15 +120,15 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                         title: Text(
                           employee['name'],
                           style: GoogleFonts.exo2(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                            fontSize: screenHeight * 0.025,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                                'Delivery Assigned: ${employee['deliveryAssigned']}'),
-                            Text(
-                                'Hours Worked: ${employee['hoursWorked']} hours'),
+                            Text('Delivery Assigned: ${employee['deliveryAssigned']}'),
+                            Text('Hours Worked: ${employee['hoursWorked']} hours'),
                             Text('Performance: ${employee['performance']}'),
                           ],
                         ),
@@ -134,16 +136,13 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             IconButton(
-                              icon: const Icon(Icons.edit,
-                                  color: Colors.blueAccent),
+                              icon: const Icon(Icons.edit, color: Colors.blueAccent),
                               onPressed: () {
-                                // Open an edit dialog for the employee
                                 _showEditEmployeeDialog(index, employee);
                               },
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete,
-                                  color: Colors.redAccent),
+                              icon: const Icon(Icons.delete, color: Colors.redAccent),
                               onPressed: () {
                                 _removeEmployee(index);
                               },
@@ -161,21 +160,25 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
       ),
 
       // Floating action button to add an employee
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAddEmployeeDialog();
-        },
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-        foregroundColor: const Color.fromARGB(255, 131, 107, 81),
-        shape: RoundedRectangleBorder(
-          side: const BorderSide(
-            color: Color.fromARGB(255, 131, 107, 81), // Border color
-            width: 3.0, // Border width
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: screenHeight * 0.02), // Adjust height
+        child: FloatingActionButton(
+          onPressed: () {
+            _showAddEmployeeDialog();
+          },
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          foregroundColor: const Color.fromARGB(255, 131, 107, 81),
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(
+              color: Color.fromARGB(255, 131, 107, 81), // Border color
+              width: 3.0, // Border width
+            ),
+            borderRadius: BorderRadius.circular(30.0), // Make it circular
           ),
-          borderRadius: BorderRadius.circular(30.0), // Make it circular
+          child: const Icon(Icons.add),
         ),
-        child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -236,8 +239,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
               ),
               TextField(
                 controller: deliveryAssignedController,
-                decoration:
-                    const InputDecoration(labelText: 'Delivery Assigned'),
+                decoration: const InputDecoration(labelText: 'Delivery Assigned'),
               ),
               TextField(
                 controller: hoursWorkedController,
@@ -267,7 +269,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                   int.parse(hoursWorkedController.text),
                   performanceController.text,
                 );
-                //Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
             ),
           ],

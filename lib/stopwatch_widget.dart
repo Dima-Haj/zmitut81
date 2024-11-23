@@ -123,18 +123,20 @@ class StopwatchWidgetState extends State<StopwatchWidget>
         'date': _startTime!.toIso8601String().split('T')[0],
       });
 
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Shift saved successfully.')),
       );
 
       // Refresh TimesheetPage if it exists in the widget tree
       TimesheetPageState? timesheetState =
+          // ignore: use_build_context_synchronously
           context.findAncestorStateOfType<TimesheetPageState>();
       if (timesheetState != null) {
         await timesheetState.fetchShiftRecords();
       }
     } catch (e) {
-      print('Error saving shift data: $e');
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save shift: ${e.toString()}')),
       );
