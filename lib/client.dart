@@ -1,13 +1,14 @@
 // client.dart
 
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as googleMaps;
+import 'package:latlong2/latlong.dart' as latLong;
 
 class Client {
   final String fullName;
   final String phoneNumber;
   final String email;
   final String address;
-  final LatLng location;
+  final googleMaps.LatLng location; // Prefix LatLng with googleMaps
 
   Client({
     required this.fullName,

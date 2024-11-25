@@ -35,8 +35,11 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   fl_chart: ^0.40.0  # or the latest version
-
-    
+  percent_indicator: ^4.2.2 
+  google_maps_flutter: ^2.2.0
+  location: ^5.0.0
+  url_launcher: ^6.1.10
+  shared_preferences: ^2.1.1
     
 
 
@@ -53,8 +56,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_map: ^7.0.2 
-  latlong2: ^0.9.1  # Use the latest version from pub.dev
+  # Use the latest version from pub.dev
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

@@ -5,7 +5,9 @@ import 'delivery_management_page.dart';
 import 'employee_management_page.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
+//import 'package:url_launcher/url_launcher.dart';
+import 'package:percent_indicator/percent_indicator.dart';
+
 //import 'models/delivery.dart'; // Import the Delivery model
 //import 'widgets/delivery_efficiency_graph.dart';
 
@@ -17,8 +19,30 @@ class AdminDashboardApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: AdminDashboardPage(), // Load AdminDashboardPage, not AdminDashboard
+      home: const AdminDashboardPage(),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class AdminDashboardPageContent extends StatelessWidget {
+  const AdminDashboardPageContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: 80.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const PageTitle(title: 'Dashboard'),
+          const DeliveryOverviewWidget(),
+          const PageTitle(title: 'Performance Metrics'),
+          const PerformanceMetricsWidget(),
+          const PageTitle(title: 'Live Map'),
+          const MapWidget(),
+        ],
+      ),
     );
   }
 }
@@ -31,11 +55,11 @@ class AdminDashboardPage extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboardPage> {
-  int _selectedIndex = 1; // Default index for dashboard
+  int _selectedIndex = 1;
 
   final List<Widget> _pages = [
     const CustomerManagementPage(),
-    AdminDashboard(),
+    const AdminDashboardPageContent(),
     const DeliveryManagementPage(),
     const EmployeeManagementPage(),
   ];
@@ -49,373 +73,155 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, size: 22),
-            label: 'Customers',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard, size: 22),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping, size: 22),
-            label: 'Deliveries',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people, size: 22),
-            label: 'Employees',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color.fromARGB(255, 131, 107, 81),
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-        selectedLabelStyle: const TextStyle(fontSize: 10),
-        unselectedLabelStyle: const TextStyle(
-            fontSize: 9, color: Color.fromARGB(255, 120, 120, 120)),
-      ),
-    );
-  }
-}
-
-class AdminDashboard extends StatelessWidget {
-  AdminDashboard({super.key});
-
-  // //final List<Delivery> sampleDeliveries = [
-  //   Delivery(
-  //     id: 'D1',
-  //     scheduledTime: DateTime.now().subtract(const Duration(hours: 2)),
-  //     actualTime:
-  //         DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
-  //     status: 'delayed',
-  //   ),
-  //   Delivery(
-  //     id: 'D2',
-  //     scheduledTime: DateTime.now().subtract(const Duration(hours: 3)),
-  //     actualTime:
-  //         DateTime.now().subtract(const Duration(hours: 2, minutes: 45)),
-  //     status: 'on time',
-  //   ),
-  // ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: Colors.transparent,
+      body: Stack(
         children: [
-          // Add the DeliveryOverviewWidget here directly to test it
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Delivery overview',
-              style: GoogleFonts.notoSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color.fromARGB(255, 48, 48, 48)),
-            ),
+          Container(color: Colors.white),
+          _pages[_selectedIndex],
+          Positioned(
+            top: 38.0,
+            left: 16.0,
+            child: const DashboardMenu(),
           ),
-          const DeliveryOverviewWidget(),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Performance Metrics',
-              style: GoogleFonts.notoSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color.fromARGB(255, 48, 48, 48)),
-            ),
-          ),
-          const PerformanceMetricsWidget(),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Live Map',
-              style: GoogleFonts.notoSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color.fromARGB(255, 48, 48, 48)),
-            ),
-          ),
-          const MapWidget(),
-          // Add any additional content here
         ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white, // Solid white background for the bar
+          border: Border(
+            top: BorderSide(color: Colors.grey, width: 0.5), // Thin top border
+          ),
+        ),
+        child: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+                icon: Icon(Icons.person), label: 'Customers'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard), label: 'Dashboard'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.local_shipping), label: 'Deliveries'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.people), label: 'Employees'),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: const Color.fromARGB(
+              255, 41, 118, 251), // Black for selected items
+          unselectedItemColor: Colors.black54, // Dark gray for unselected items
+          backgroundColor: Colors.white, // Explicit white background here
+          elevation: 0, // No shadow to ensure the border is visible
+          onTap: _onItemTapped,
+        ),
       ),
     );
   }
 }
 
-// body: Column(
-//   mainAxisAlignment: MainAxisAlignment.start,
-//   crossAxisAlignment: CrossAxisAlignment.stretch,
-//   children: [
-//     const Padding(
-//       padding: EdgeInsets.all(10.0),
-//       child: Text(
-//         'Delivery Time Efficiency',
-//         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-//         textAlign: TextAlign.center,
-//       ),
-//     ),
-//     SizedBox(
-//       height: 100, // Fixed height for the graph container
-//       child: DeliveryEfficiencyGraph(deliveries: sampleDeliveries),
-//     ),
-//     // Add more elements here if needed
-//   ],
-// ),
-
-class AdminDashboardPageContent extends StatelessWidget {
-  const AdminDashboardPageContent({super.key});
+class PageTitle extends StatelessWidget {
+  final String title;
+  const PageTitle({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          color: const Color.fromARGB(255, 242, 242, 247),
-        ),
-        SizedBox.expand(
-          child: Container(
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.only(top: 80.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Delivery Overview',
-                      style: GoogleFonts.exo2(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const DeliveryOverviewWidget(),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Performance Metrics',
-                      style: GoogleFonts.exo2(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const PerformanceMetricsWidget(),
-                  Padding(
-                    padding: const EdgeInsets.all(19.0),
-                    child: Text(
-                      'Live Map',
-                      style: GoogleFonts.exo2(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const MapWidget(),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 38.0,
-          left: 16.0,
-          child: Container(
-            color: const Color.fromARGB(0, 216, 214, 214),
-            padding: const EdgeInsets.all(8.0),
-            child: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz, color: Colors.white),
-              onSelected: (value) {
-                switch (value) {
-                  case 'Notifications':
-                    break;
-                  case 'Drivers Information':
-                    break;
-                  case 'Delivery Reports':
-                    break;
-                }
-              },
-              itemBuilder: (BuildContext context) {
-                return [
-                  PopupMenuItem<String>(
-                    value: 'Notifications',
-                    child: Container(
-                      color: Colors.transparent,
-                      child: const Text(
-                        'Notifications History',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'Drivers Information',
-                    child: Container(
-                      color: Colors.transparent,
-                      child: const Text(
-                        'Drivers Information',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'Delivery Reports',
-                    child: Container(
-                      color: Colors.transparent,
-                      child: const Text(
-                        'Delivery Reports',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'Settings',
-                    child: Container(
-                      color: Colors.transparent,
-                      child: const Text(
-                        'Settings',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                ];
-              },
-            ),
-          ),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Text(
+        title,
+        style: GoogleFonts.notoSans(fontSize: 18, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
-
-// The rest of the widgets (DeliveryOverviewWidget, DeliveryStatusCard, PerformanceMetricsWidget, MapWidget, etc.) remain unchanged
 
 class DeliveryOverviewWidget extends StatelessWidget {
-  const DeliveryOverviewWidget({super.key});
+  final int activeCount;
+  final int pendingCount;
+  final int completedCount;
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          DeliveryStatusCard(
-            status: "Active",
-            icon: Icons.local_shipping_outlined,
-            count: 1,
-            iconColor: const Color.fromARGB(255, 36, 101, 241),
-            iconSize: 23.0,
-          ),
-          DeliveryStatusCard(
-            status: "Pending",
-            icon: Icons.access_time,
-            count: 5,
-            iconColor: const Color.fromARGB(255, 36, 101, 241),
-            iconSize: 23.0,
-          ),
-          DeliveryStatusCard(
-            status: "Completed",
-            icon: Icons.check_circle_outline,
-            count: 3,
-            iconColor: const Color.fromARGB(255, 36, 101, 241),
-            iconSize: 23.0,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class DeliveryStatusCard extends StatelessWidget {
-  final String status;
-  final IconData icon;
-  final int count;
-  final Color iconColor;
-  final double iconSize;
-
-  const DeliveryStatusCard({
+  const DeliveryOverviewWidget({
     super.key,
-    required this.status,
-    required this.icon,
-    required this.count,
-    required this.iconColor,
-    this.iconSize = 30.0,
+    this.activeCount = 1,
+    this.pendingCount = 5,
+    this.completedCount = 3,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(4.0), // Added padding for spacing
-          child: Stack(
-            clipBehavior:
-                Clip.none, // Allows badge to extend beyond icon bounds
+    final int totalDeliveries = activeCount + pendingCount + completedCount;
+    final double completionPercentage =
+        totalDeliveries > 0 ? completedCount / totalDeliveries : 0.0;
 
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      margin: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Delivery Progress",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: CircularPercentIndicator(
+              radius: 45.0,
+              lineWidth: 6.0,
+              percent: completionPercentage,
+              center: Text(
+                '${(completionPercentage * 100).toInt()}%', // Bold percentage text
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold, // Set to bold
+                ),
+              ),
+              progressColor: const Color.fromARGB(255, 41, 118, 251),
+              backgroundColor: Colors.grey.shade300,
+              circularStrokeCap: CircularStrokeCap.round,
+              animation: true,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Container(
-                width: iconSize + 16, // Adjust to control square size
-                height: iconSize + 16,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(
-                      255, 255, 255, 255), // Light gray background
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(
-                      8), // Small corner radius for a subtle rounded square
-
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2), // Shadow color
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                      offset: const Offset(2, 2), // Position of the shadow
-                    ),
-                  ],
-                ),
-
-                child: Icon(
-                  icon,
-                  size: iconSize,
-                  color: iconColor,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                count.toString(),
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+              _buildStatusItem(Icons.local_shipping_outlined, "Active",
+                  activeCount, Colors.blue),
+              _buildDivider(),
+              _buildStatusItem(
+                  Icons.access_time, "Pending", pendingCount, Colors.orange),
+              _buildDivider(),
+              _buildStatusItem(Icons.check_circle_outline, "Completed",
+                  completedCount, Colors.green),
             ],
           ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          status,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusItem(IconData icon, String label, int count, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 28),
+        Text('$count',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(fontSize: 14)),
       ],
     );
+  }
+
+  Widget _buildDivider() {
+    return Container(width: 1, height: 40, color: Colors.grey.shade300);
   }
 }
 
@@ -426,42 +232,96 @@ class PerformanceMetricsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              MetricCard(title: "Delay Rate", value: "30%"),
-              MetricCard(title: "On-time Rate", value: "90%"),
-            ],
+      child: const Column(
+          // Placeholder for graph or metrics
           ),
-          // const SizedBox(height: 10),
-          // SizedBox(
-          //   height: 100, // Set a fixed height for the graph
-          //   child: DeliveryEfficiencyGraph(
-          //     deliveries: [
-          //       Delivery(
-          //         id: 'D1',
-          //         scheduledTime: DateTime.now().subtract(const Duration(hours: 2)),
-          //         actualTime: DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
-          //         status: 'delayed',
-          //       ),
-          //       Delivery(
-          //         id: 'D2',
-          //         scheduledTime: DateTime.now().subtract(const Duration(hours: 3)),
-          //         actualTime: DateTime.now().subtract(const Duration(hours: 2, minutes: 45)),
-          //         status: 'on time',
-          //       ),
-          //     ],
-          //   ),
-          // ),
-        ],
-      ),
     );
   }
 }
 
-// Define the Settings Page
+class MapWidget extends StatelessWidget {
+  const MapWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Default map values
+    const double initialLatitude = 35.2271;
+    const double initialLongitude = -80.8431;
+    const double initialZoom = 7.0;
+
+    // Debug logs for validation
+    print(
+        "Debug: Initial Latitude: ${initialLatitude.isFinite ? initialLatitude : 'Invalid'}");
+    print(
+        "Debug: Initial Longitude: ${initialLongitude.isFinite ? initialLongitude : 'Invalid'}");
+    print(
+        "Debug: Initial Zoom Level: ${initialZoom.isFinite ? initialZoom : 'Invalid'}");
+
+    // Validate values and provide safe defaults
+    final LatLng safeLatLng = LatLng(
+      initialLatitude.isFinite ? initialLatitude : 0.0,
+      initialLongitude.isFinite ? initialLongitude : 0.0,
+    );
+    final double safeZoom =
+        initialZoom.isFinite && initialZoom > 0 ? initialZoom : 5.0;
+
+    // Add screen size detection and adjust zoom dynamically for iPads
+    final bool isLargeScreen =
+        MediaQuery.of(context).size.width > 600; // Detect iPad
+    final double adjustedZoom = isLargeScreen
+        ? safeZoom - 2.0
+        : safeZoom; // Reduce zoom for larger screens
+    print("Debug: Adjusted Zoom Level: $adjustedZoom");
+
+    return FlutterMap(
+      options: MapOptions(
+        initialCenter: safeLatLng,
+        initialZoom: adjustedZoom,
+        minZoom: 1.0,
+        maxZoom: 18.0,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: ['a', 'b', 'c'],
+          tileBounds: LatLngBounds(
+            LatLng(-85.0, -180.0), // Southwest corner
+            LatLng(85.0, 180.0), // Northeast corner
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class DashboardMenu extends StatelessWidget {
+  const DashboardMenu({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_horiz, color: Colors.black),
+      onSelected: (value) {
+        if (value == 'Settings') {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()));
+        }
+      },
+      itemBuilder: (BuildContext context) {
+        return [
+          const PopupMenuItem(
+              value: 'Notifications', child: Text('Notifications History')),
+          const PopupMenuItem(
+              value: 'Drivers Information', child: Text('Drivers Information')),
+          const PopupMenuItem(
+              value: 'Delivery Reports', child: Text('Delivery Reports')),
+          const PopupMenuItem(value: 'Settings', child: Text('Settings')),
+        ];
+      },
+    );
+  }
+}
+
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
@@ -469,162 +329,25 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color iconColor = const Color.fromARGB(255, 62, 55, 198);
     final screenSize = MediaQuery.of(context).size;
-    final double screenWidth = screenSize.width;
-    final double screenHeight = screenSize.height;
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(130.0), // Increase the height
-        child: AppBar(
-          backgroundColor: const Color.fromARGB(255, 242, 242, 247),
-          automaticallyImplyLeading: false, // Disable default leading arrow
-          flexibleSpace: Padding(
-            padding: const EdgeInsets.only(
-                top: 60.0, left: 18.0), // Adjust padding as needed
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back,
-                      color: Color.fromARGB(255, 48, 48, 48)),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                Transform.translate(
-                  offset: const Offset(
-                      -30, 60), // Adjust Offset for desired position
-                  child: Text(
-                    'Settings',
-                    style: GoogleFonts.notoSans(
-                      fontSize: 27,
-                      fontWeight: FontWeight.w500,
-                      color: const Color.fromARGB(255, 48, 48, 48),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        backgroundColor: const Color.fromARGB(255, 242, 242, 247),
       ),
-    );
-  }
-}
-
-class MetricCard extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const MetricCard({super.key, required this.title, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16.0),
-        margin: const EdgeInsets.symmetric(horizontal: 4.0),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 255, 255, 255),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              spreadRadius: 5,
-            ),
-          ],
-        ),
+      body: Container(
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.06),
         child: Column(
-          children: <Widget>[
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ListTile(
+              leading: Icon(Icons.admin_panel_settings),
+              title: Text('User Roles & Permissions'),
+              trailing: Icon(Icons.arrow_forward_ios),
+            )
           ],
         ),
       ),
     );
-  }
-}
-
-@override
-class MapWidget extends StatelessWidget {
-  const MapWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 200,
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15.0),
-            child: FlutterMap(
-              options: MapOptions(
-                initialCenter: LatLng(35.217018, 31.771959),
-                initialZoom: 13.0,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.app',
-                ),
-              ],
-            ),
-          ),
-          Align(
-            alignment: Alignment.topRight,
-            child: IconButton(
-              icon: const Icon(Icons.fullscreen, color: Colors.blueAccent),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const FullScreenMap(),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class FullScreenMap extends StatelessWidget {
-  const FullScreenMap({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Full Screen Map')),
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: LatLng(35.217018, 31.771959),
-          initialZoom: 13.0,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.app',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-Future<void> _launchURL(String url) async {
-  if (await canLaunchUrl(Uri.parse(url))) {
-    await launchUrl(Uri.parse(url));
-  } else {
-    throw 'Could not launch $url';
   }
 }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'client.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as googleMaps;
+import 'package:latlong2/latlong.dart' as latLong;
 
 class ClientsForTodayPage extends StatefulWidget {
   const ClientsForTodayPage({super.key});
@@ -20,19 +21,20 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
       phoneNumber: '123-456-7890',
       email: 'johndoe@example.com',
       address: '123 Main St, Cityville',
-      location: LatLng(37.4219999, -122.0840575),
+      location: googleMaps.LatLng(37.4219999, -122.0840575),
     ),
     Client(
       fullName: 'Jane Smith',
       phoneNumber: '098-765-4321',
       email: 'janesmith@example.com',
       address: '456 Park Ave, Townsville',
-      location: LatLng(37.4235, -122.0817),
+      location: googleMaps.LatLng(37.4219999, -122.0840575),
     ),
     // Add more clients as needed
   ];
 
-  final Map<int, bool> _expandedClientMap = {}; // Track expanded state of each client
+  final Map<int, bool> _expandedClientMap =
+      {}; // Track expanded state of each client
   final Map<int, String> _estimatedTimes =
       {}; // Store estimated times for each client
 
@@ -49,7 +51,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     for (int i = 0; i < clients.length; i++) {
       final client = clients[i];
       final duration = await _getTravelTimeWithTraffic(
-        LatLng(userLocation.latitude!, userLocation.longitude!),
+        googleMaps.LatLng(userLocation.latitude!, userLocation.longitude!),
         client.location,
       );
       setState(() {
@@ -59,7 +61,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   }
 
   Future<String> _getTravelTimeWithTraffic(
-      LatLng origin, LatLng destination) async {
+      googleMaps.LatLng origin, googleMaps.LatLng destination) async {
     final apiKey =
         'YOUR_GOOGLE_MAPS_API_KEY'; // Replace with your Google Maps API key
     final url = Uri.parse(
@@ -200,16 +202,20 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                               child: ClipRRect(
                                 borderRadius:
                                     BorderRadius.circular(screenHeight * 0.015),
-                                child: GoogleMap(
-                                  initialCameraPosition: CameraPosition(
-                                    target: client.location,
+                                child: googleMaps.GoogleMap(
+                                  initialCameraPosition:
+                                      googleMaps.CameraPosition(
+                                    target: client
+                                        .location, // Ensure client.location is googleMaps.LatLng
                                     zoom: 14,
                                   ),
                                   markers: {
-                                    Marker(
-                                      markerId: MarkerId(client.fullName),
-                                      position: client.location,
-                                      infoWindow: InfoWindow(
+                                    googleMaps.Marker(
+                                      markerId:
+                                          googleMaps.MarkerId(client.fullName),
+                                      position: client
+                                          .location, // Ensure this is googleMaps.LatLng
+                                      infoWindow: googleMaps.InfoWindow(
                                         title: client.fullName,
                                         snippet: client.address,
                                       ),
@@ -283,7 +289,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     );
   }
 
-  void _startNavigation(LatLng destination) async {
+  void _startNavigation(googleMaps.LatLng destination) async {
     final Uri googleMapsUrl = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}&travelmode=driving',
     );
