@@ -1,10 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/admin_dashboard_page.dart';
+import 'package:flutter_application_1/firebase_auth_services.dart';
 import 'package:google_fonts/google_fonts.dart'; // Google fonts package
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome package for icons
-import 'create_account_page.dart'; // Make sure this path is correct
+import 'signup_step1.dart'; // Make sure this path is correct
 import 'terms_of_service.dart';
-import 'admin_dashboard_page.dart';
-import 'employee_home_page.dart'; // Import the AdminDashboard page
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'employee_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +17,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginPageState extends State<LoginPage> {
+  List<Map<String, dynamic>> employeeData = [];
   bool isHoveredEmail = false;
   bool isEmailFocused = false;
   bool isHoveredPassword = false;
@@ -23,56 +27,129 @@ class LoginPageState extends State<LoginPage> {
   final FocusNode passwordFocusNode = FocusNode();
   final TextEditingController emailController =
       TextEditingController(); // Controller to access email text
+  final TextEditingController passwordController =
+      TextEditingController(); // Added password controller
 
-  @override
-  void initState() {
-    super.initState();
-    emailFocusNode.addListener(() {
-      setState(() {
-        isEmailFocused = emailFocusNode.hasFocus;
-      });
+@override
+void initState() {
+  super.initState();
+
+  // Add listeners for email and password focus nodes
+  emailFocusNode.addListener(() {
+    setState(() {
+      isEmailFocused = emailFocusNode.hasFocus;
     });
-    passwordFocusNode.addListener(() {
-      setState(() {
-        isPasswordFocused = passwordFocusNode.hasFocus;
-      });
+  });
+
+  passwordFocusNode.addListener(() {
+    setState(() {
+      isPasswordFocused = passwordFocusNode.hasFocus;
     });
-  }
+  });
+}
 
-  @override
-  void dispose() {
-    emailFocusNode.dispose();
-    passwordFocusNode.dispose();
-    emailController.dispose(); // Dispose the controller
-    super.dispose();
-  }
+@override
+void dispose() {
+  // Dispose the focus nodes properly
+  emailFocusNode.dispose();
+  passwordFocusNode.dispose();
 
+  // Dispose the controllers
+  emailController.dispose();
+  passwordController.dispose();
+
+  super.dispose();
+}
+
+  final FirebaseAuthServices _auth = FirebaseAuthServices();
   // Method to handle login logic
-  void handleLogin() {
-    String email = emailController.text.trim();
+ void handleLogin() async {
+  String email = emailController.text.trim();
+  String password = passwordController.text.trim();
 
-    // Check if the email contains 'manager'
-    if (email.toLowerCase() == 'manager') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const AdminDashboardApp(),
-        ),
-      );
-    } else if (email.toLowerCase() == 'employee') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const EmployeeHomePage(),
-        ),
-      );
-    } else {
-      // If not 'manager', show a SnackBar (or handle login normally)
+  if (email.isEmpty || password.isEmpty) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Incorrect login credentials')),
+        const SnackBar(content: Text('Please enter both email and password.')),
+      );
+    }
+    return;
+  }
+
+  try {
+    // Authenticate user
+    User? user = await _auth.signInWithEmailAndPassword(email, password);
+
+    if (user == null) {
+      // Authentication failed
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Incorrect email or password.')),
+        );
+      }
+      return;
+    }
+
+    // Check if the user exists in the 'Managers' collection
+    DocumentSnapshot<Map<String, dynamic>> managerDoc =
+        await FirebaseFirestore.instance.collection('Managers').doc(user.uid).get();
+
+    if (managerDoc.exists) {
+      // Navigate to Admin Dashboard if user is a manager
+      final managerDetails = {
+        'id': user.uid,
+        'email': user.email ?? '',
+        ...managerDoc.data()!,
+      };
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => AdminDashboard(managerDetails: managerDetails),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check if the user exists in the 'Employees' collection
+    DocumentSnapshot<Map<String, dynamic>> employeeDoc =
+        await FirebaseFirestore.instance.collection('Employees').doc(user.uid).get();
+
+    if (employeeDoc.exists) {
+      // Navigate to Employee Home Page if user is an employee
+      final employeeDetails = {
+        'id': user.uid,
+        'email': user.email ?? '',
+        ...employeeDoc.data()!,
+      };
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => EmployeeHomePage(employeeDetails: employeeDetails),
+          ),
+        );
+      }
+    } else {
+      // User is not found in either collection
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User record not found.')),
+        );
+      }
+    }
+  } catch (e) {
+    // Handle errors
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: ${e.toString()}')),
       );
     }
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +258,7 @@ class LoginPageState extends State<LoginPage> {
                         isFocused: isPasswordFocused,
                         isHovered: isHoveredPassword,
                         obscureText: true,
+                        controller: passwordController,
                       ),
                     ),
 
@@ -236,8 +314,7 @@ class LoginPageState extends State<LoginPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CreateAccountPage()),
+                                  builder: (context) => const SignupStep1()),
                             );
                           },
                           child: Text(

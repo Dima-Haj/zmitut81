@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/admin_dashboard_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'order_history_page.dart';
-import 'admin_dashboard_page.dart';
 
 class CustomerManagementPage extends StatefulWidget {
   const CustomerManagementPage({super.key});
@@ -12,61 +10,44 @@ class CustomerManagementPage extends StatefulWidget {
 }
 
 class _CustomerManagementPageState extends State<CustomerManagementPage> {
-  final List<Map<String, String>> customers = [
+  final List<Map<String, dynamic>> customers = [
     {
       'name': 'John Doe',
       'phone': '+1 555-123-4567',
-      'email': 'johndoe@example.com'
+      'email': 'johndoe@example.com',
+      'products': [],
     },
     {
       'name': 'Jane Smith',
       'phone': '+1 555-987-6543',
-      'email': 'janesmith@example.com'
+      'email': 'janesmith@example.com',
+      'products': [],
     },
     {
       'name': 'Alice Johnson',
       'phone': '+1 555-111-2222',
-      'email': 'alicejohnson@example.com'
+      'email': 'alicejohnson@example.com',
+      'products': [],
     },
   ];
 
   String searchQuery = "";
   Map<String, bool> isSwiped = {}; // To track which items are swiped left
-  final int _selectedIndex = 1; // Default selected index for dashboard (middle)
 
   @override
   void initState() {
     super.initState();
-    // Initialize the swipe state for each customer
     for (var customer in customers) {
       isSwiped[customer['name']!] = false;
     }
   }
 
-  /*void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    if (index == 1) {
-      // Navigate to Dashboard Management Page
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const AdminDashboardPageContent(),
-        ),
-      );
-    } else if (index == 0) {
-      // If index 0 is tapped, stay on the customer page or perform some logic
-      // You don't need to navigate anywhere since you're already on CustomerManagementPage
-    } else if (index == 2) {
-      // Handle settings or other navigation logic for the Settings button
-      // Add your settings page navigation here
-    }
-  }*/
-
   @override
   Widget build(BuildContext context) {
-    List<Map<String, String>> filteredCustomers = customers
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    final filteredCustomers = customers
         .where((customer) =>
             customer['name']!.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
@@ -75,8 +56,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: const AssetImage(
-                'assets/images/image1.png'), // Your background image path
+            image: const AssetImage('assets/images/image1.png'),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
               const Color.fromARGB(255, 42, 42, 42).withOpacity(0.6),
@@ -85,129 +65,142 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(15.0),
+          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const SizedBox(height: 60.0), // To move elements lower
+              SizedBox(height: screenHeight * 0.1),
 
               // Search Field
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
-                child: TextField(
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search Customers...',
-                    hintStyle: GoogleFonts.exo2(
-                      fontSize: 16.0, // Adjust font size as needed
-                      color: const Color.fromARGB(
-                          255, 213, 213, 213), // Set hint text color
-                    ),
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+              TextField(
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search Customers...',
+                  hintStyle: GoogleFonts.exo2(
+                    fontSize: screenHeight * 0.018,
+                    color: const Color.fromARGB(255, 213, 213, 213),
+                  ),
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(screenHeight * 0.02),
                   ),
                 ),
               ),
+              SizedBox(height: screenHeight * 0.03),
 
-              // Customer list
+              // Customer List
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 60.0),
+                  padding: EdgeInsets.only(bottom: screenHeight * 0.1),
                   itemCount: filteredCustomers.length,
                   itemBuilder: (context, index) {
                     final customer = filteredCustomers[index];
                     return Container(
-                      height: 100,
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Stack(
-                        children: [
-                          // Background with Edit/Delete buttons
-                          Positioned.fill(
-                            child: buildSwipeActionLeft(
-                              onEdit: () {
-                                setState(() {
-                                  isSwiped[customer['name']!] = false;
-                                });
-                              },
-                              onDelete: () {
-                                setState(() {
-                                  customers.removeAt(index);
-                                  isSwiped.remove(customer['name']!);
-                                });
-                              },
-                            ),
-                          ),
-                          // The actual customer box
-                          AnimatedPositioned(
-                            duration: const Duration(milliseconds: 300),
-                            left: isSwiped[customer['name']!] == true
-                                ? -130.0
-                                : 0.0,
-                            right: isSwiped[customer['name']!] == true
-                                ? 130.0
-                                : 0.0,
-                            child: GestureDetector(
-                              onHorizontalDragUpdate: (details) {
-                                if (details.primaryDelta != null &&
-                                    details.primaryDelta! < -20) {
-                                  setState(() {
-                                    isSwiped[customer['name']!] = true;
-                                  });
-                                } else if (details.primaryDelta != null &&
-                                    details.primaryDelta! > 20) {
-                                  setState(() {
-                                    isSwiped[customer['name']!] = false;
-                                  });
-                                }
-                              },
-                              child: CustomerBox(
-                                name: customer['name']!,
-                                phone: customer['phone']!,
-                                email: customer['email']!,
-                                onViewOrders: () {
-                                  // Example order history data
-                                  final orders = [
-                                    {
-                                      'orderID': '001',
-                                      'orderDate': '2023-10-01',
-                                      'orderTotal': '\$50.00',
-                                      'orderStatus': 'Pending',
-                                    },
-                                    {
-                                      'orderID': '002',
-                                      'orderDate': '2023-10-05',
-                                      'orderTotal': '\$75.00',
-                                      'orderStatus': 'Pending',
-                                    },
-                                    {
-                                      'orderID': '003',
-                                      'orderDate': '2023-10-10',
-                                      'orderTotal': '\$100.00',
-                                      'orderStatus': 'Pending',
-                                    },
-                                  ];
-
-                                  // Navigate to the OrderHistoryPage
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => OrderHistoryPage(
-                                        customerName: customer['name']!,
-                                        orders: orders,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+                      height: screenHeight * 0.13,
+                      margin:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(screenHeight * 0.02),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: screenHeight * 0.01,
+                            spreadRadius: screenHeight * 0.005,
                           ),
                         ],
+                        color: Colors.white,
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(screenHeight * 0.01),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Text(
+                                    customer['name']!,
+                                    style: GoogleFonts.exo2(
+                                      fontSize: screenHeight * 0.02,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: screenHeight * 0.005),
+                                  Text(
+                                    customer['phone']!,
+                                    style: GoogleFonts.exo2(
+                                      fontSize: screenHeight * 0.016,
+                                    ),
+                                  ),
+                                  SizedBox(height: screenHeight * 0.005),
+                                  Text(
+                                    customer['email']!,
+                                    style: GoogleFonts.exo2(
+                                      fontSize: screenHeight * 0.016,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    final orders = [
+                                      {
+                                        'orderID': '001',
+                                        'orderDate': '2023-10-01',
+                                        'orderTotal': '\$50.00',
+                                        'orderStatus': 'Pending',
+                                      },
+                                    ];
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => OrderHistoryPage(
+                                          customerName: customer['name']!,
+                                          orders: orders,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        const Color.fromARGB(255, 131, 107, 81),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          screenHeight * 0.02),
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: screenHeight * 0.005,
+                                      horizontal: screenWidth * 0.002,
+                                    ),
+                                    child: Text(
+                                      'Orders History',
+                                      style: GoogleFonts.exo2(
+                                        color: Colors.white,
+                                        fontSize: screenHeight * 0.015,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -218,9 +211,9 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
         ),
       ),
 
-      // Floating action button to add a customer
-      floatingActionButton: Align(
-        alignment: Alignment.bottomCenter,
+      // Floating Action Button
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: screenHeight * 0.02),
         child: FloatingActionButton(
           onPressed: () {
             _showAddCustomerDialog(context);
@@ -229,94 +222,230 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
           foregroundColor: const Color.fromARGB(255, 131, 107, 81),
           shape: RoundedRectangleBorder(
             side: const BorderSide(
-              color: Color.fromARGB(255, 131, 107, 81), // Border color
-              width: 3.0, // Border width
+              color: Color.fromARGB(255, 131, 107, 81),
+              width: 3.0,
             ),
-            borderRadius: BorderRadius.circular(30.0), // Make it circular
+            borderRadius: BorderRadius.circular(30.0),
           ),
           child: const Icon(Icons.add),
         ),
       ),
-    );
-  }
-
-  // Background widget for swipe action with clickable buttons
-  Widget buildSwipeActionLeft(
-      {required VoidCallback onEdit, required VoidCallback onDelete}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(
-            255, 141, 126, 106), // Background color when swiping
-        borderRadius:
-            BorderRadius.circular(28.0), // Rounded corners with 28 pixel radius
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.edit,
-                color: Color.fromARGB(255, 255, 255, 255)),
-            onPressed: onEdit,
-          ),
-          IconButton(
-            icon:
-                const Icon(Icons.delete, color: Color.fromARGB(255, 255, 0, 0)),
-            onPressed: onDelete,
-          ),
-        ],
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
   void _showAddCustomerDialog(BuildContext context) {
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
+    final firstNameController = TextEditingController();
+    final lastNameController = TextEditingController();
     final emailController = TextEditingController();
+    final addressController = TextEditingController();
+    final phoneController = TextEditingController();
+
+    List<Map<String, dynamic>> products = []; // רשימת המוצרים
+    List<Map<String, dynamic>> productFields = [
+      {'category': null, 'product': null, 'size': null, 'quantity': null}
+    ]; // שדות המוצרים
+
+    const categories = ['תוספי מזון לבעלי חיים', 'קטגוריה אחרת'];
+    const productsByCategory = {
+      'תוספי מזון לבעלי חיים': [
+        'סידנית',
+        'מלח סידן',
+        'מלח',
+        'DCP',
+        'אוריאה',
+        'חנקן בלתי חלבוני',
+      ],
+    };
+    const sizesForSidanit = [
+      '0-1.5 מ"מ',
+      '0-0.6 מ"מ',
+      '0.6-1.4 מ"מ',
+      '1.4-2.5 מ"מ',
+      '2.5-4.75 מ"מ',
+    ];
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Customer'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(
+                'הוסף לקוח',
+                style: const TextStyle(fontSize: 18),
+                textAlign: TextAlign.right,
               ),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(labelText: 'Phone'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    // פרטי הלקוח
+                    TextField(
+                      controller: firstNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'שם פרטי',
+                      ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    TextField(
+                      controller: lastNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'שם משפחה',
+                      ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'אימייל',
+                      ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    TextField(
+                      controller: addressController,
+                      decoration: const InputDecoration(
+                        labelText: 'כתובת',
+                      ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    TextField(
+                      controller: phoneController,
+                      decoration: const InputDecoration(
+                        labelText: 'מספר טלפון',
+                      ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // דינמית למוצרים
+                    ...productFields.map((productField) {
+                      return Column(
+                        children: [
+                          DropdownButtonFormField<String>(
+                            value: productField['category'],
+                            items: categories
+                                .map((category) => DropdownMenuItem(
+                                      value: category,
+                                      child: Text(category),
+                                    ))
+                                .toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                productField['category'] = value;
+                                productField['product'] = null;
+                                productField['size'] = null;
+                              });
+                            },
+                            decoration: const InputDecoration(
+                              labelText: 'קטגוריה',
+                            ),
+                          ),
+                          if (productField['category'] != null &&
+                              productsByCategory[productField['category']] !=
+                                  null)
+                            DropdownButtonFormField<String>(
+                              value: productField['product'],
+                              items:
+                                  productsByCategory[productField['category']]!
+                                      .map((product) => DropdownMenuItem(
+                                            value: product,
+                                            child: Text(product),
+                                          ))
+                                      .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  productField['product'] = value;
+                                  productField['size'] = null;
+                                });
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'מוצר',
+                              ),
+                            ),
+                          if (productField['product'] == 'סידנית')
+                            DropdownButtonFormField<String>(
+                              value: productField['size'],
+                              items: sizesForSidanit
+                                  .map((size) => DropdownMenuItem(
+                                        value: size,
+                                        child: Text(size),
+                                      ))
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  productField['size'] = value;
+                                });
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'גודל מ"מ',
+                              ),
+                            ),
+                          TextField(
+                            decoration: const InputDecoration(
+                              labelText: 'כמות נדרשת (ק"ג או טון)',
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: (value) {
+                              setState(() {
+                                productField['quantity'] = value;
+                              });
+                            },
+                            textDirection: TextDirection.rtl,
+                          ),
+                          const Divider(height: 20),
+                        ],
+                      );
+                    }).toList(),
+
+                    // כפתור להוספת מוצר נוסף
+                    Align(
+                      alignment: Alignment.center,
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            productFields.add({
+                              'category': null,
+                              'product': null,
+                              'size': null,
+                              'quantity': null,
+                            });
+                          });
+                        },
+                        child: const Text('הוסף מוצר נוסף'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Add'),
-              onPressed: () {
-                setState(() {
-                  customers.add({
-                    'name': nameController.text,
-                    'phone': phoneController.text,
-                    'email': emailController.text,
-                  });
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('ביטול'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('הוסף לקוח'),
+                  onPressed: () {
+                    // כאן מתווספים המוצרים ללקוח
+                    setState(() {
+                      customers.add({
+                        'name':
+                            '${firstNameController.text} ${lastNameController.text}',
+                        'phone': phoneController.text,
+                        'email': emailController.text,
+                        'address': addressController.text,
+                        'products': productFields,
+                      });
+                    });
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -325,30 +454,36 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
 
 // Widget for a single customer box
 class CustomerBox extends StatelessWidget {
+  final double screenHeight;
+  final double screenWidth;
   final String name;
   final String phone;
   final String email;
+  final List<Map<String, dynamic>> productFields;
   final VoidCallback onViewOrders;
 
   const CustomerBox({
     super.key,
+    required this.screenHeight,
+    required this.screenWidth,
     required this.name,
     required this.phone,
     required this.email,
+    required this.productFields,
     required this.onViewOrders,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10.0),
+      padding: EdgeInsets.all(screenHeight * 0.015),
       decoration: BoxDecoration(
         border: Border.all(
           color: const Color.fromARGB(255, 141, 126, 106),
-          width: 1.0,
+          width: screenWidth * 0.003,
         ),
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8.0),
+        borderRadius: BorderRadius.circular(screenHeight * 0.02),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -368,38 +503,40 @@ class CustomerBox extends StatelessWidget {
                 Text(
                   name,
                   style: GoogleFonts.exo2(
-                    fontSize: 18,
+                    fontSize: screenHeight * 0.025,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8.0),
-                Text(phone, style: GoogleFonts.exo2()),
-                const SizedBox(height: 4.0),
-                Text(email, style: GoogleFonts.exo2()),
+                SizedBox(height: screenHeight * 0.01),
+                Text(phone,
+                    style: GoogleFonts.exo2(fontSize: screenHeight * 0.02)),
+                SizedBox(height: screenHeight * 0.005),
+                Text(email,
+                    style: GoogleFonts.exo2(fontSize: screenHeight * 0.02)),
               ],
             ),
           ),
-
-          // Middle: View Order History Button
           Expanded(
             flex: 2,
             child: Align(
               child: Padding(
-                padding: const EdgeInsets.only(
-                    top: 12.0), // Adjust the top padding to move it lower
+                padding: EdgeInsets.only(
+                    top: screenHeight *
+                        0.01), // Adjust top padding for alignment
                 child: ElevatedButton(
                   onPressed: onViewOrders,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 131, 107, 81),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(
+                          screenHeight * 0.015), // Smaller corners
                     ),
                   ),
                   child: Text(
                     'Orders History',
                     style: GoogleFonts.exo2(
                       color: Colors.white,
-                      fontSize: 11.0,
+                      fontSize: screenHeight * 0.013, // Reduce font size
                     ),
                   ),
                 ),

@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'client.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as googleMaps;
-import 'package:latlong2/latlong.dart' as latLong;
 
 class ClientsForTodayPage extends StatefulWidget {
   const ClientsForTodayPage({super.key});
@@ -63,7 +62,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   Future<String> _getTravelTimeWithTraffic(
       googleMaps.LatLng origin, googleMaps.LatLng destination) async {
     final apiKey =
-        'YOUR_GOOGLE_MAPS_API_KEY'; // Replace with your Google Maps API key
+        'AIzaSyD66RdQ4IcfomKkS9BIxok23AFZRqLTkAk'; // Replace with your Google Maps API key
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/directions/json'
       '?origin=${origin.latitude},${origin.longitude}'

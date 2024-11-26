@@ -3,59 +3,32 @@ import 'package:google_fonts/google_fonts.dart';
 import 'customer_management_page.dart';
 import 'delivery_management_page.dart';
 import 'employee_management_page.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-//import 'package:url_launcher/url_launcher.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 
-//import 'models/delivery.dart'; // Import the Delivery model
-//import 'widgets/delivery_efficiency_graph.dart';
+class AdminDashboard extends StatefulWidget {
+  final Map<String, dynamic> managerDetails;
 
-void main() => runApp(const AdminDashboardApp());
-
-class AdminDashboardApp extends StatelessWidget {
-  const AdminDashboardApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: const AdminDashboardPage(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
-class AdminDashboardPageContent extends StatelessWidget {
-  const AdminDashboardPageContent({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(top: 80.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const PageTitle(title: 'Dashboard'),
-          const DeliveryOverviewWidget(),
-          const PageTitle(title: 'Performance Metrics'),
-          const PerformanceMetricsWidget(),
-          const PageTitle(title: 'Live Map'),
-          const MapWidget(),
-        ],
-      ),
-    );
-  }
-}
-
-class AdminDashboardPage extends StatefulWidget {
-  const AdminDashboardPage({super.key});
+  const AdminDashboard({super.key, required this.managerDetails});
 
   @override
   _AdminDashboardState createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboardPage> {
-  int _selectedIndex = 1;
+class _AdminDashboardState extends State<AdminDashboard> {
+  int _selectedIndex = 1; // Default index for the dashboard
+
+  late String firstName;
+  late String email;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Validate managerDetails and assign default values if necessary
+    firstName = widget.managerDetails['firstName'] ?? 'Manager';
+    email = widget.managerDetails['email'] ?? 'Unknown Email';
+
+    // Log for debugging purposes
+  }
 
   final List<Widget> _pages = [
     const CustomerManagementPage(),
@@ -72,279 +45,288 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          Container(color: Colors.white),
-          _pages[_selectedIndex],
-          Positioned(
-            top: 38.0,
-            left: 16.0,
-            child: const DashboardMenu(),
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome, $firstName',
+              style: GoogleFonts.exo2(
+                fontSize: screenHeight * 0.025,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color.fromARGB(255, 141, 126, 106),
+      ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, size: screenHeight * 0.03),
+            label: 'Customers',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard, size: screenHeight * 0.03),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping, size: screenHeight * 0.03),
+            label: 'Deliveries',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people, size: screenHeight * 0.03),
+            label: 'Employees',
           ),
         ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white, // Solid white background for the bar
-          border: Border(
-            top: BorderSide(color: Colors.grey, width: 0.5), // Thin top border
-          ),
-        ),
-        child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person), label: 'Customers'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard), label: 'Dashboard'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.local_shipping), label: 'Deliveries'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.people), label: 'Employees'),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: const Color.fromARGB(
-              255, 41, 118, 251), // Black for selected items
-          unselectedItemColor: Colors.black54, // Dark gray for unselected items
-          backgroundColor: Colors.white, // Explicit white background here
-          elevation: 0, // No shadow to ensure the border is visible
-          onTap: _onItemTapped,
+        currentIndex: _selectedIndex,
+        selectedItemColor: const Color.fromARGB(255, 131, 107, 81),
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        selectedLabelStyle: TextStyle(fontSize: screenHeight * 0.015),
+        unselectedLabelStyle: TextStyle(
+          fontSize: screenHeight * 0.013,
+          color: const Color.fromARGB(255, 120, 120, 120),
         ),
       ),
     );
   }
 }
 
-class PageTitle extends StatelessWidget {
-  final String title;
-  const PageTitle({super.key, required this.title});
+class AdminDashboardPageContent extends StatelessWidget {
+  const AdminDashboardPageContent({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Text(
-        title,
-        style: GoogleFonts.notoSans(fontSize: 18, fontWeight: FontWeight.w600),
-      ),
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Stack(
+      children: [
+        SizedBox.expand(
+          child: Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const AssetImage('assets/images/image1.png'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.65),
+                  BlendMode.darken,
+                ),
+              ),
+            ),
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.only(top: screenHeight * 0.1),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.all(screenWidth * 0.04),
+                    child: Text(
+                      'Delivery Overview',
+                      style: GoogleFonts.exo2(
+                        fontSize: screenHeight * 0.03,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  DeliveryOverviewWidget(screenHeight: screenHeight),
+                  Padding(
+                    padding: EdgeInsets.all(screenWidth * 0.04),
+                    child: Text(
+                      'Performance Metrics',
+                      style: GoogleFonts.exo2(
+                        fontSize: screenHeight * 0.03,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  PerformanceMetricsWidget(screenHeight: screenHeight),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
 class DeliveryOverviewWidget extends StatelessWidget {
-  final int activeCount;
-  final int pendingCount;
-  final int completedCount;
+  final double screenHeight;
 
-  const DeliveryOverviewWidget({
+  const DeliveryOverviewWidget({super.key, required this.screenHeight});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: screenHeight * 0.03),
+      padding: EdgeInsets.all(screenHeight * 0.02),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(screenHeight * 0.02),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 15,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          DeliveryStatusCard(
+            status: "Active",
+            icon: Icons.local_shipping,
+            count: 12,
+            iconSize: screenHeight * 0.04,
+          ),
+          DeliveryStatusCard(
+            status: "Pending",
+            icon: Icons.access_time,
+            count: 5,
+            iconSize: screenHeight * 0.04,
+          ),
+          DeliveryStatusCard(
+            status: "Completed",
+            icon: Icons.check_circle,
+            count: 30,
+            iconSize: screenHeight * 0.04,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DeliveryStatusCard extends StatelessWidget {
+  final String status;
+  final IconData icon;
+  final int count;
+  final double iconSize;
+
+  const DeliveryStatusCard({
     super.key,
-    this.activeCount = 1,
-    this.pendingCount = 5,
-    this.completedCount = 3,
+    required this.status,
+    required this.icon,
+    required this.count,
+    required this.iconSize,
   });
 
   @override
   Widget build(BuildContext context) {
-    final int totalDeliveries = activeCount + pendingCount + completedCount;
-    final double completionPercentage =
-        totalDeliveries > 0 ? completedCount / totalDeliveries : 0.0;
+    return Column(
+      children: <Widget>[
+        Icon(icon,
+            size: iconSize, color: const Color.fromARGB(255, 141, 126, 106)),
+        SizedBox(height: iconSize * 0.2),
+        Text(
+          count.toString(),
+          style: TextStyle(fontSize: iconSize, fontWeight: FontWeight.bold),
+        ),
+        Text(status),
+      ],
+    );
+  }
+}
 
+class PerformanceMetricsWidget extends StatelessWidget {
+  final double screenHeight;
+
+  const PerformanceMetricsWidget({super.key, required this.screenHeight});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      margin: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
+      margin: EdgeInsets.symmetric(horizontal: screenHeight * 0.03),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Delivery Progress",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: CircularPercentIndicator(
-              radius: 45.0,
-              lineWidth: 6.0,
-              percent: completionPercentage,
-              center: Text(
-                '${(completionPercentage * 100).toInt()}%', // Bold percentage text
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold, // Set to bold
-                ),
-              ),
-              progressColor: const Color.fromARGB(255, 41, 118, 251),
-              backgroundColor: Colors.grey.shade300,
-              circularStrokeCap: CircularStrokeCap.round,
-              animation: true,
-            ),
-          ),
-          const SizedBox(height: 16),
+        children: <Widget>[
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStatusItem(Icons.local_shipping_outlined, "Active",
-                  activeCount, Colors.blue),
-              _buildDivider(),
-              _buildStatusItem(
-                  Icons.access_time, "Pending", pendingCount, Colors.orange),
-              _buildDivider(),
-              _buildStatusItem(Icons.check_circle_outline, "Completed",
-                  completedCount, Colors.green),
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              MetricCard(
+                  title: "Delay Rate",
+                  value: "30%",
+                  fontSize: screenHeight * 0.02),
+              MetricCard(
+                  title: "On-time Rate",
+                  value: "90%",
+                  fontSize: screenHeight * 0.02),
+            ],
+          ),
+          SizedBox(height: screenHeight * 0.02),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              MetricCard(
+                  title: "Return Rate",
+                  value: "20%",
+                  fontSize: screenHeight * 0.02),
+              MetricCard(
+                  title: "Avg Cost/Delivery",
+                  value: "\$250",
+                  fontSize: screenHeight * 0.02),
             ],
           ),
         ],
       ),
     );
   }
-
-  Widget _buildStatusItem(IconData icon, String label, int count, Color color) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        Text('$count',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(fontSize: 14)),
-      ],
-    );
-  }
-
-  Widget _buildDivider() {
-    return Container(width: 1, height: 40, color: Colors.grey.shade300);
-  }
 }
 
-class PerformanceMetricsWidget extends StatelessWidget {
-  const PerformanceMetricsWidget({super.key});
+class MetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final double fontSize;
+
+  const MetricCard(
+      {super.key,
+      required this.title,
+      required this.value,
+      required this.fontSize});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: const Column(
-          // Placeholder for graph or metrics
-          ),
-    );
-  }
-}
-
-class MapWidget extends StatelessWidget {
-  const MapWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Default map values
-    const double initialLatitude = 35.2271;
-    const double initialLongitude = -80.8431;
-    const double initialZoom = 7.0;
-
-    // Debug logs for validation
-    print(
-        "Debug: Initial Latitude: ${initialLatitude.isFinite ? initialLatitude : 'Invalid'}");
-    print(
-        "Debug: Initial Longitude: ${initialLongitude.isFinite ? initialLongitude : 'Invalid'}");
-    print(
-        "Debug: Initial Zoom Level: ${initialZoom.isFinite ? initialZoom : 'Invalid'}");
-
-    // Validate values and provide safe defaults
-    final LatLng safeLatLng = LatLng(
-      initialLatitude.isFinite ? initialLatitude : 0.0,
-      initialLongitude.isFinite ? initialLongitude : 0.0,
-    );
-    final double safeZoom =
-        initialZoom.isFinite && initialZoom > 0 ? initialZoom : 5.0;
-
-    // Add screen size detection and adjust zoom dynamically for iPads
-    final bool isLargeScreen =
-        MediaQuery.of(context).size.width > 600; // Detect iPad
-    final double adjustedZoom = isLargeScreen
-        ? safeZoom - 2.0
-        : safeZoom; // Reduce zoom for larger screens
-    print("Debug: Adjusted Zoom Level: $adjustedZoom");
-
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: safeLatLng,
-        initialZoom: adjustedZoom,
-        minZoom: 1.0,
-        maxZoom: 18.0,
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
-          tileBounds: LatLngBounds(
-            LatLng(-85.0, -180.0), // Southwest corner
-            LatLng(85.0, 180.0), // Northeast corner
-          ),
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.all(fontSize),
+        margin: EdgeInsets.symmetric(horizontal: fontSize),
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 255, 255, 255),
+          borderRadius: BorderRadius.circular(fontSize * 1.5),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              spreadRadius: 5,
+            ),
+          ],
         ),
-      ],
-    );
-  }
-}
-
-class DashboardMenu extends StatelessWidget {
-  const DashboardMenu({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_horiz, color: Colors.black),
-      onSelected: (value) {
-        if (value == 'Settings') {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const SettingsPage()));
-        }
-      },
-      itemBuilder: (BuildContext context) {
-        return [
-          const PopupMenuItem(
-              value: 'Notifications', child: Text('Notifications History')),
-          const PopupMenuItem(
-              value: 'Drivers Information', child: Text('Drivers Information')),
-          const PopupMenuItem(
-              value: 'Delivery Reports', child: Text('Delivery Reports')),
-          const PopupMenuItem(value: 'Settings', child: Text('Settings')),
-        ];
-      },
-    );
-  }
-}
-
-class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final Color iconColor = const Color.fromARGB(255, 62, 55, 198);
-    final screenSize = MediaQuery.of(context).size;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: const Color.fromARGB(255, 242, 242, 247),
-      ),
-      body: Container(
-        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.06),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const ListTile(
-              leading: Icon(Icons.admin_panel_settings),
-              title: Text('User Roles & Permissions'),
-              trailing: Icon(Icons.arrow_forward_ios),
-            )
+          children: <Widget>[
+            Text(
+              title,
+              style: TextStyle(fontSize: fontSize),
+            ),
+            SizedBox(height: fontSize * 0.5),
+            Text(
+              value,
+              style: TextStyle(
+                  fontSize: fontSize * 1.2, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
