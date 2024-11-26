@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/delivery.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_application_1/admin_dashboard_page.dart';
 
 class DeliveryEfficiencyGraph extends StatelessWidget {
   final List<Delivery> deliveries;
@@ -27,23 +26,35 @@ class DeliveryEfficiencyGraph extends StatelessWidget {
             spots: dataPoints,
             isCurved: true,
             barWidth: 3,
-            colors: [Colors.blue],
+            color: Colors.blue,
             belowBarData:
-                BarAreaData(show: true, colors: [Colors.blue.withOpacity(0.3)]),
+                BarAreaData(show: true, color: Colors.blue.withOpacity(0.3)),
           ),
         ],
         titlesData: FlTitlesData(
-          bottomTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 30,
-            getTitles: (value) => 'Scheduled ${value.toInt()}',
-            getTextStyles: (context, value) => const TextStyle(fontSize: 12),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  'Scheduled ${value.toInt()}',
+                  style: const TextStyle(fontSize: 12),
+                );
+              },
+            ),
           ),
-          leftTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 30,
-            getTitles: (value) => 'Actual ${value.toInt()}',
-            getTextStyles: (context, value) => const TextStyle(fontSize: 12),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  'Actual ${value.toInt()}',
+                  style: const TextStyle(fontSize: 12),
+                );
+              },
+            ),
           ),
         ),
         gridData: FlGridData(show: false),
