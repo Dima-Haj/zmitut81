@@ -37,8 +37,34 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    initializeFirebase();
+  }
+
+  void initializeFirebase() async {
+    try {
+      await Firebase.initializeApp();
+      setState(() {
+        _isInitialized = true;
+      });
+    } catch (e) {
+      debugPrint("Firebase initialization failed: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: LoginPage(),
