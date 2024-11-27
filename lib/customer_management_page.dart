@@ -397,7 +397,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                           const Divider(height: 20),
                         ],
                       );
-                    }).toList(),
+                    }),
 
                     // כפתור להוספת מוצר נוסף
                     Align(

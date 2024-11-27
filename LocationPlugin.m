@@ -90,6 +90,8 @@
             result([FlutterError errorWithCode:@"SERVICE_STATUS_DISABLED" message:@"Failed to get location. Location services disabled" details:nil]);
             return;
         }
+        
+        CLLocationManager *manager = [[CLLocationManager alloc] init];
         if ([manager authorizationStatus] == kCLAuthorizationStatusDenied) {
             // Location services are requested but user has denied
             NSString *message = @"The user explicitly denied the use of location services for this "
