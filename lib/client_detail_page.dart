@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:location/location.dart';
 import 'client.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as googleMaps;
+//import 'package:latlong2/latlong.dart' as latLong;
 
 class ClientDetailPage extends StatefulWidget {
   final Client client;

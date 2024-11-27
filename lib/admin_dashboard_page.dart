@@ -18,6 +18,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   late String firstName;
   late String email;
+  late final List<Widget> _pages = [
+    const CustomerManagementPage(),
+    AdminDashboard(
+      managerDetails: widget.managerDetails,
+    ),
+    const DeliveryManagementPage(),
+    const EmployeeManagementPage(),
+  ];
 
   @override
   void initState() {
@@ -30,19 +38,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     // Log for debugging purposes
   }
 
-  final List<Widget> _pages = [
-    const CustomerManagementPage(),
-    const AdminDashboardPageContent(),
-    const DeliveryManagementPage(),
-    const EmployeeManagementPage(),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
+// I TRIED TO CHANGE THE BAR BACKGROUND TO
+//WHITE BUT ITS NOT RESPONDING SHELEEE!
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -102,8 +105,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 }
 
-class AdminDashboardPageContent extends StatelessWidget {
-  const AdminDashboardPageContent({super.key});
+class PageTitle extends StatelessWidget {
+  final String title;
+  const PageTitle({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -166,11 +170,17 @@ class AdminDashboardPageContent extends StatelessWidget {
 
 class DeliveryOverviewWidget extends StatelessWidget {
   final double screenHeight;
-
-  const DeliveryOverviewWidget({super.key, required this.screenHeight});
+  int activeCount = 5;
+  int pendingCount = 8;
+  int completedCount = 7;
+  DeliveryOverviewWidget({super.key, required this.screenHeight});
 
   @override
   Widget build(BuildContext context) {
+    final int totalDeliveries = activeCount + pendingCount + completedCount;
+    final double completionPercentage =
+        totalDeliveries > 0 ? completedCount / totalDeliveries : 0.0;
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: screenHeight * 0.03),
       padding: EdgeInsets.all(screenHeight * 0.02),
@@ -179,9 +189,9 @@ class DeliveryOverviewWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(screenHeight * 0.02),
         boxShadow: const [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 15,
-            spreadRadius: 5,
+            color: Colors.black,
+            blurRadius: 10,
+            spreadRadius: 2,
           ),
         ],
       ),
@@ -240,6 +250,21 @@ class DeliveryStatusCard extends StatelessWidget {
         Text(status),
       ],
     );
+  }
+
+  Widget _buildStatusItem(IconData icon, String label, int count, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 28),
+        Text('$count',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(fontSize: 14)),
+      ],
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(width: 1, height: 40, color: Colors.grey.shade300);
   }
 }
 
