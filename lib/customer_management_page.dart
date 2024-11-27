@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'order_history_page.dart';
+import 'add_customer_page.dart';
 
 class CustomerManagementPage extends StatefulWidget {
   const CustomerManagementPage({super.key});
@@ -32,15 +33,6 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
   ];
 
   String searchQuery = "";
-  Map<String, bool> isSwiped = {}; // To track which items are swiped left
-
-  @override
-  void initState() {
-    super.initState();
-    for (var customer in customers) {
-      isSwiped[customer['name']!] = false;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +208,18 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
         padding: EdgeInsets.only(bottom: screenHeight * 0.02),
         child: FloatingActionButton(
           onPressed: () {
-            _showAddCustomerDialog(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddCustomerPage(
+                  onAddCustomer: (newCustomer) {
+                    setState(() {
+                      customers.add(newCustomer);
+                    });
+                  },
+                ),
+              ),
+            );
           },
           backgroundColor: const Color.fromARGB(255, 255, 255, 255),
           foregroundColor: const Color.fromARGB(255, 131, 107, 81),
@@ -231,320 +234,6 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-
-  void _showAddCustomerDialog(BuildContext context) {
-    final firstNameController = TextEditingController();
-    final lastNameController = TextEditingController();
-    final emailController = TextEditingController();
-    final addressController = TextEditingController();
-    final phoneController = TextEditingController();
-
-    List<Map<String, dynamic>> products = []; // רשימת המוצרים
-    List<Map<String, dynamic>> productFields = [
-      {'category': null, 'product': null, 'size': null, 'quantity': null}
-    ]; // שדות המוצרים
-
-    const categories = ['תוספי מזון לבעלי חיים', 'קטגוריה אחרת'];
-    const productsByCategory = {
-      'תוספי מזון לבעלי חיים': [
-        'סידנית',
-        'מלח סידן',
-        'מלח',
-        'DCP',
-        'אוריאה',
-        'חנקן בלתי חלבוני',
-      ],
-    };
-    const sizesForSidanit = [
-      '0-1.5 מ"מ',
-      '0-0.6 מ"מ',
-      '0.6-1.4 מ"מ',
-      '1.4-2.5 מ"מ',
-      '2.5-4.75 מ"מ',
-    ];
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(
-                'הוסף לקוח',
-                style: const TextStyle(fontSize: 18),
-                textAlign: TextAlign.right,
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    // פרטי הלקוח
-                    TextField(
-                      controller: firstNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'שם פרטי',
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                    TextField(
-                      controller: lastNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'שם משפחה',
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                    TextField(
-                      controller: emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'אימייל',
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                    TextField(
-                      controller: addressController,
-                      decoration: const InputDecoration(
-                        labelText: 'כתובת',
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                    TextField(
-                      controller: phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'מספר טלפון',
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // דינמית למוצרים
-                    ...productFields.map((productField) {
-                      return Column(
-                        children: [
-                          DropdownButtonFormField<String>(
-                            value: productField['category'],
-                            items: categories
-                                .map((category) => DropdownMenuItem(
-                                      value: category,
-                                      child: Text(category),
-                                    ))
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                productField['category'] = value;
-                                productField['product'] = null;
-                                productField['size'] = null;
-                              });
-                            },
-                            decoration: const InputDecoration(
-                              labelText: 'קטגוריה',
-                            ),
-                          ),
-                          if (productField['category'] != null &&
-                              productsByCategory[productField['category']] !=
-                                  null)
-                            DropdownButtonFormField<String>(
-                              value: productField['product'],
-                              items:
-                                  productsByCategory[productField['category']]!
-                                      .map((product) => DropdownMenuItem(
-                                            value: product,
-                                            child: Text(product),
-                                          ))
-                                      .toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  productField['product'] = value;
-                                  productField['size'] = null;
-                                });
-                              },
-                              decoration: const InputDecoration(
-                                labelText: 'מוצר',
-                              ),
-                            ),
-                          if (productField['product'] == 'סידנית')
-                            DropdownButtonFormField<String>(
-                              value: productField['size'],
-                              items: sizesForSidanit
-                                  .map((size) => DropdownMenuItem(
-                                        value: size,
-                                        child: Text(size),
-                                      ))
-                                  .toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  productField['size'] = value;
-                                });
-                              },
-                              decoration: const InputDecoration(
-                                labelText: 'גודל מ"מ',
-                              ),
-                            ),
-                          TextField(
-                            decoration: const InputDecoration(
-                              labelText: 'כמות נדרשת (ק"ג או טון)',
-                            ),
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) {
-                              setState(() {
-                                productField['quantity'] = value;
-                              });
-                            },
-                            textDirection: TextDirection.rtl,
-                          ),
-                          const Divider(height: 20),
-                        ],
-                      );
-                    }).toList(),
-
-                    // כפתור להוספת מוצר נוסף
-                    Align(
-                      alignment: Alignment.center,
-                      child: TextButton(
-                        onPressed: () {
-                          setState(() {
-                            productFields.add({
-                              'category': null,
-                              'product': null,
-                              'size': null,
-                              'quantity': null,
-                            });
-                          });
-                        },
-                        child: const Text('הוסף מוצר נוסף'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('ביטול'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-                TextButton(
-                  child: const Text('הוסף לקוח'),
-                  onPressed: () {
-                    // כאן מתווספים המוצרים ללקוח
-                    setState(() {
-                      customers.add({
-                        'name':
-                            '${firstNameController.text} ${lastNameController.text}',
-                        'phone': phoneController.text,
-                        'email': emailController.text,
-                        'address': addressController.text,
-                        'products': productFields,
-                      });
-                    });
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-// Widget for a single customer box
-class CustomerBox extends StatelessWidget {
-  final double screenHeight;
-  final double screenWidth;
-  final String name;
-  final String phone;
-  final String email;
-  final List<Map<String, dynamic>> productFields;
-  final VoidCallback onViewOrders;
-
-  const CustomerBox({
-    super.key,
-    required this.screenHeight,
-    required this.screenWidth,
-    required this.name,
-    required this.phone,
-    required this.email,
-    required this.productFields,
-    required this.onViewOrders,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(screenHeight * 0.015),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: const Color.fromARGB(255, 141, 126, 106),
-          width: screenWidth * 0.003,
-        ),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(screenHeight * 0.02),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8.0,
-            spreadRadius: 5.0,
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  name,
-                  style: GoogleFonts.exo2(
-                    fontSize: screenHeight * 0.025,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.01),
-                Text(phone,
-                    style: GoogleFonts.exo2(fontSize: screenHeight * 0.02)),
-                SizedBox(height: screenHeight * 0.005),
-                Text(email,
-                    style: GoogleFonts.exo2(fontSize: screenHeight * 0.02)),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              child: Padding(
-                padding: EdgeInsets.only(
-                    top: screenHeight *
-                        0.01), // Adjust top padding for alignment
-                child: ElevatedButton(
-                  onPressed: onViewOrders,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 131, 107, 81),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          screenHeight * 0.015), // Smaller corners
-                    ),
-                  ),
-                  child: Text(
-                    'Orders History',
-                    style: GoogleFonts.exo2(
-                      color: Colors.white,
-                      fontSize: screenHeight * 0.013, // Reduce font size
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
