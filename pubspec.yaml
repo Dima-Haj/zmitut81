@@ -42,6 +42,9 @@ dependencies:
   cloud_firestore: ^5.3.0
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  fl_chart: ^0.69.2
+  percent_indicator: ^4.2.2
+  google_fonts: ^4.0.4
     
 
 
@@ -50,7 +53,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
 # Add this line for Font Awesome icons
-  google_fonts: ^6.2.1
+
   
   font_awesome_flutter: ^10.1.0
   firebase_storage: ^12.3.6

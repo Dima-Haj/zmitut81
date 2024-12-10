@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'client.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as googleMaps;
+//import 'package:latlong2/latlong.dart' as latLong;
 
 class ClientDetailPage extends StatefulWidget {
   final Client client;
@@ -13,8 +14,9 @@ class ClientDetailPage extends StatefulWidget {
 }
 
 class _ClientDetailPageState extends State<ClientDetailPage> {
-  late GoogleMapController _mapController;
-  LatLng? _driverLocation;
+  late googleMaps.GoogleMapController
+      _mapController; // Prefix for Google Maps Controller
+  googleMaps.LatLng? _driverLocation; // Prefix for LatLng from Google Maps
 
   @override
   void initState() {
@@ -38,7 +40,8 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
 
     LocationData locationData = await location.getLocation();
     setState(() {
-      _driverLocation = LatLng(locationData.latitude!, locationData.longitude!);
+      _driverLocation =
+          googleMaps.LatLng(locationData.latitude!, locationData.longitude!);
     });
   }
 
@@ -62,24 +65,30 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
           Expanded(
             child: _driverLocation == null
                 ? const Center(child: CircularProgressIndicator())
-                : GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: widget.client.location,
+                : googleMaps.GoogleMap(
+                    initialCameraPosition: googleMaps.CameraPosition(
+                      target: googleMaps.LatLng(
+                        widget.client.location.latitude,
+                        widget.client.location.longitude,
+                      ),
                       zoom: 15,
                     ),
                     markers: {
-                      Marker(
-                        markerId: MarkerId("clientLocation"),
-                        position: widget.client.location,
-                        infoWindow: InfoWindow(
+                      googleMaps.Marker(
+                        markerId: googleMaps.MarkerId("clientLocation"),
+                        position: googleMaps.LatLng(
+                          widget.client.location.latitude,
+                          widget.client.location.longitude,
+                        ),
+                        infoWindow: googleMaps.InfoWindow(
                           title: widget.client.fullName,
                           snippet: widget.client.address,
                         ),
                       ),
-                      Marker(
-                        markerId: MarkerId("driverLocation"),
+                      googleMaps.Marker(
+                        markerId: googleMaps.MarkerId("driverLocation"),
                         position: _driverLocation!,
-                        infoWindow: const InfoWindow(
+                        infoWindow: const googleMaps.InfoWindow(
                           title: "Your Location",
                         ),
                       ),
@@ -104,7 +113,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
     );
   }
 
-  void _startNavigation(LatLng destination) {
+  void _startNavigation(googleMaps.LatLng destination) {
     // Add navigation functionality with Google Maps API or a third-party service
   }
 }
