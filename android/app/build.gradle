@@ -16,7 +16,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
@@ -43,6 +43,7 @@ flutter {
     source = "../.."
 }
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:33.5.1')
-    implementation 'com.google.firebase:firebase-analytics'
+    implementation platform('com.google.firebase:firebase-bom:33.5.1') // Latest BOM version
+    implementation 'com.google.firebase:firebase-analytics' // Analytics (already included)
 }
+apply plugin: 'com.google.gms.google-services'

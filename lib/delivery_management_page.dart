@@ -1,35 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-
-// class MapWidget extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return FlutterMap(
-//         options: MapOptions(
-//           initialCenter:
-//               LatLng(35.2271, -80.8431), // Initial map center coordinates
-//           initialZoom: 13.0,
-//         ),
-//         children: [
-//           TileLayer(
-//             urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-//             subdomains: ['a', 'b', 'c'],
-//           ),
-//         ]);
-//   }
-//
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class DeliveryManagementPage extends StatefulWidget {
-  const DeliveryManagementPage({super.key});
+  final Map<String, dynamic>? managerDetails; // Optional manager details
+
+  const DeliveryManagementPage({super.key, this.managerDetails});
 
   @override
   _DeliveryManagementPageState createState() => _DeliveryManagementPageState();
 }
 
 class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
-  final List<Map<String, dynamic>> deliveries = [
+  List<Map<String, dynamic>> deliveries = [
     {
       'id': 'D001',
       'status': 'Active',
@@ -54,23 +37,48 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
   ];
 
   final List<String> validStatuses = ['Pending', 'Active', 'Completed'];
+  late GoogleMapController mapController;
 
   void _updateStatus(int index, String newStatus) {
+    if (index < 0 || index >= deliveries.length) {
+      return;
+    }
+    if (newStatus.isEmpty) {
+      return;
+    }
+
     setState(() {
-      deliveries[index]['status'] = newStatus;
+      deliveries = List.from(deliveries)
+        ..[index] = {...deliveries[index], 'status': newStatus};
     });
   }
 
-  Color _getMarkerColor(String status) {
+  Set<Marker> _buildMarkers() {
+    return deliveries.map((delivery) {
+      return Marker(
+        markerId: MarkerId(delivery['id']),
+        position: LatLng(delivery['latitude'], delivery['longitude']),
+        infoWindow: InfoWindow(
+          title: 'Delivery ${delivery['id']}',
+          snippet: 'Assigned to: ${delivery['assignedTo']}',
+        ),
+        icon: BitmapDescriptor.defaultMarkerWithHue(
+          _getMarkerHue(delivery['status']),
+        ),
+      );
+    }).toSet();
+  }
+
+  double _getMarkerHue(String status) {
     switch (status) {
       case 'Active':
-        return Colors.blue;
+        return BitmapDescriptor.hueBlue;
       case 'Pending':
-        return Colors.orange;
+        return BitmapDescriptor.hueOrange;
       case 'Completed':
-        return Colors.green;
+        return BitmapDescriptor.hueGreen;
       default:
-        return Colors.grey;
+        return BitmapDescriptor.hueRed;
     }
   }
 
@@ -84,6 +92,7 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
           children: <Widget>[
             const SizedBox(height: 60.0),
 
+            // Search Field
             TextField(
               decoration: InputDecoration(
                 filled: true,
@@ -104,43 +113,26 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
 
             const SizedBox(height: 15.0),
 
-            // Map with markers
+            // Google Map with markers
             Container(
               height: 250,
               margin: const EdgeInsets.only(bottom: 15.0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15.0),
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: LatLng(35.2271, -80.8431),
-                    initialZoom: 7.0,
+                child: GoogleMap(
+                  onMapCreated: (GoogleMapController controller) {
+                    mapController = controller;
+                  },
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(35.2271, -80.8431),
+                    zoom: 7.0,
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      subdomains: ['a', 'b', 'c'],
-                    ),
-                    MarkerLayer(
-                      markers: deliveries.map((delivery) {
-                        return Marker(
-                          width: 80.0,
-                          height: 80.0,
-                          point: LatLng(
-                              delivery['latitude'], delivery['longitude']),
-                          child: Icon(
-                            Icons.location_on,
-                            color: _getMarkerColor(delivery['status']),
-                            size: 40.0,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                  markers: _buildMarkers(),
                 ),
               ),
             ),
 
+            // Delivery List
             Expanded(
               child: ListView.builder(
                 itemCount: deliveries.length,

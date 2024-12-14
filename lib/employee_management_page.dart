@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class EmployeeManagementPage extends StatefulWidget {
-  const EmployeeManagementPage({super.key});
+  final Map<String, dynamic>? managerDetails; // Optional manager details
+
+  const EmployeeManagementPage({super.key, this.managerDetails});
 
   @override
   _EmployeeManagementPageState createState() => _EmployeeManagementPageState();
@@ -31,32 +33,38 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
   ];
 
   void _addEmployee(String name) {
-    setState(() {
-      employees.add({
-        'name': name,
-        'deliveryAssigned': 'None',
-        'hoursWorked': 0,
-        'performance': 'Not Evaluated',
+    if (mounted) {
+      setState(() {
+        employees.add({
+          'name': name,
+          'deliveryAssigned': 'None',
+          'hoursWorked': 0,
+          'performance': 'Not Evaluated',
+        });
       });
-    });
+    }
   }
 
-  void _editEmployee(int index, String name, String deliveryAssigned,
-      int hoursWorked, String performance) {
-    setState(() {
-      employees[index] = {
-        'name': name,
-        'deliveryAssigned': deliveryAssigned,
-        'hoursWorked': hoursWorked,
-        'performance': performance,
-      };
-    });
+  void _editEmployee(
+      int index, String name, String deliveryAssigned, int hoursWorked, String performance) {
+    if (mounted) {
+      setState(() {
+        employees[index] = {
+          'name': name,
+          'deliveryAssigned': deliveryAssigned,
+          'hoursWorked': hoursWorked,
+          'performance': performance,
+        };
+      });
+    }
   }
 
   void _removeEmployee(int index) {
-    setState(() {
-      employees.removeAt(index);
-    });
+    if (mounted) {
+      setState(() {
+        employees.removeAt(index);
+      });
+    }
   }
 
   @override
@@ -68,7 +76,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: const AssetImage('assets/images/image1.png'), // Background image
+            image: const AssetImage('assets/images/image1.png'),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
               Colors.black.withOpacity(0.65),
@@ -81,7 +89,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              SizedBox(height: screenHeight * 0.08), // Top spacing
+              SizedBox(height: screenHeight * 0.08),
 
               // Header
               Padding(
@@ -161,7 +169,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
 
       // Floating action button to add an employee
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: screenHeight * 0.02), // Adjust height
+        padding: EdgeInsets.only(bottom: screenHeight * 0.02),
         child: FloatingActionButton(
           onPressed: () {
             _showAddEmployeeDialog();
@@ -170,10 +178,10 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
           foregroundColor: const Color.fromARGB(255, 131, 107, 81),
           shape: RoundedRectangleBorder(
             side: const BorderSide(
-              color: Color.fromARGB(255, 131, 107, 81), // Border color
-              width: 3.0, // Border width
+              color: Color.fromARGB(255, 131, 107, 81),
+              width: 3.0,
             ),
-            borderRadius: BorderRadius.circular(30.0), // Make it circular
+            borderRadius: BorderRadius.circular(30.0),
           ),
           child: const Icon(Icons.add),
         ),
@@ -182,7 +190,6 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
     );
   }
 
-  // Dialog to add employee
   void _showAddEmployeeDialog() {
     final nameController = TextEditingController();
 
@@ -215,7 +222,6 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
     );
   }
 
-  // Dialog to edit employee
   void _showEditEmployeeDialog(int index, Map<String, dynamic> employee) {
     final nameController = TextEditingController(text: employee['name']);
     final deliveryAssignedController =

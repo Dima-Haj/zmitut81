@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'Login_page.dart';
+
 class TimesheetPage extends StatefulWidget {
   final Map<String, dynamic> employeeDetails;
 
@@ -12,10 +14,12 @@ class TimesheetPage extends StatefulWidget {
 }
 
 class TimesheetPageState extends State<TimesheetPage> {
-  Map<DateTime, int> shiftRecords = {}; // To store calculated shift durations
+  Map<DateTime, int> shiftRecords = {}; // Store shift durations
+  Map<String, Map<DateTime, int>> monthlyShiftRecords = {}; // Grouped by month
+  String selectedMonthKey = ''; // Current selected month
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isLoading = true; // To show loading state
-  bool _noRecords = false; // Flag to indicate no shift records
+  bool _isLoading = true; // Show loading state
+  bool _noRecords = false; // No records flag
 
   @override
   void initState() {
@@ -23,17 +27,17 @@ class TimesheetPageState extends State<TimesheetPage> {
     fetchShiftRecords();
   }
 
-  /// Fetches shift records from Firestore.
+  /// Fetches shift records from Firestore and groups them by month.
   Future<void> fetchShiftRecords() async {
     setState(() {
-      _isLoading = true; // Start loading
-      _noRecords = false; // Reset no records flag
+      _isLoading = true;
+      _noRecords = false;
     });
 
     try {
       final user = _auth.currentUser;
       if (user == null) {
-          return;
+        return;
       }
 
       final workShiftsCollection = await FirebaseFirestore.instance
@@ -46,12 +50,12 @@ class TimesheetPageState extends State<TimesheetPage> {
       if (workShiftsCollection.docs.isEmpty) {
         setState(() {
           shiftRecords = {};
-          _noRecords = true; // No records available
+          _noRecords = true;
         });
         return;
       }
 
-      final tempShiftRecords = <DateTime, int>{};
+      final tempShiftRecords = <String, Map<DateTime, int>>{};
 
       for (var doc in workShiftsCollection.docs) {
         Map<String, dynamic> data = doc.data();
@@ -61,25 +65,40 @@ class TimesheetPageState extends State<TimesheetPage> {
             DateTime endTime = DateTime.parse(data['end']);
             Duration shiftDuration = endTime.difference(startTime);
 
-            tempShiftRecords[startTime] = shiftDuration.inSeconds;
+            final monthKey =
+                '${startTime.year}-${startTime.month.toString().padLeft(2, '0')}';
+            if (!tempShiftRecords.containsKey(monthKey)) {
+              tempShiftRecords[monthKey] = {};
+            }
+            tempShiftRecords[monthKey]![startTime] = shiftDuration.inSeconds;
           } catch (e) {
-            //empty
+            // Handle parsing errors silently
           }
-        } else {
-          //empty
         }
       }
 
+      final currentMonthKey =
+          '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
+
       setState(() {
-        shiftRecords = tempShiftRecords;
+        monthlyShiftRecords = tempShiftRecords;
+        selectedMonthKey = monthlyShiftRecords.containsKey(currentMonthKey)
+            ? currentMonthKey
+            : tempShiftRecords.keys.first;
       });
     } catch (e) {
-      //empty
+      // Handle fetch errors
     } finally {
       setState(() {
-        _isLoading = false; // Stop loading
+        _isLoading = false;
       });
     }
+  }
+
+  /// Formats the month key for display (e.g., "2024-05" to "05/2024").
+  String _formatMonthKey(String monthKey) {
+    final parts = monthKey.split('-');
+    return '${parts[1]}/${parts[0]}'; // MM/YYYY
   }
 
   /// Formats the duration for display.
@@ -94,6 +113,8 @@ class TimesheetPageState extends State<TimesheetPage> {
     final screenSize = MediaQuery.of(context).size;
     final double screenHeight = screenSize.height;
     final double screenWidth = screenSize.width;
+
+    final selectedShiftRecords = monthlyShiftRecords[selectedMonthKey] ?? {};
 
     return Stack(
       children: [
@@ -114,19 +135,40 @@ class TimesheetPageState extends State<TimesheetPage> {
 
         // Logo Positioned at the top center
         Positioned(
-          top: screenHeight * 0.03,
+          top: screenHeight * 0.07,
           left: 0,
           right: 0,
-          child: Center(
-            child: Image.asset(
-              'assets/images/logo_zmitut.png',
-              height: screenHeight * 0.06,
-              fit: BoxFit.contain,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.rotationY(3.14159), // Rotate 180 degrees
+                  child: const Icon(Icons.logout, color: Colors.white),
+                ),
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
+                },
+              ),
+              Expanded(
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/logo_zmitut.png',
+                    height: screenHeight * 0.06,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              SizedBox(width: screenWidth * 0.1), // Placeholder for spacing
+            ],
           ),
         ),
 
-        // Foreground content (shift records and employee details)
+        // Foreground content
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -146,14 +188,37 @@ class TimesheetPageState extends State<TimesheetPage> {
               ),
               const SizedBox(height: 20),
 
+              // Month Selector Dropdown
+              if (monthlyShiftRecords.isNotEmpty)
+                DropdownButton<String>(
+                  value: selectedMonthKey,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedMonthKey = value!;
+                    });
+                  },
+                  dropdownColor: Colors.black,
+                  items: monthlyShiftRecords.keys.map((monthKey) {
+                    return DropdownMenuItem(
+                      value: monthKey,
+                      child: Text(
+                        _formatMonthKey(monthKey),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    );
+                  }).toList(),
+                ),
+
+              const SizedBox(height: 20),
+
               // Display shift records or loading indicator
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : _noRecords
+                    : selectedShiftRecords.isEmpty
                         ? Center(
                             child: Text(
-                              'No shift records found.',
+                              'No shift records found for this month.',
                               style: TextStyle(
                                 fontSize: screenWidth * 0.05,
                                 color: Colors.white,
@@ -161,10 +226,11 @@ class TimesheetPageState extends State<TimesheetPage> {
                             ),
                           )
                         : ListView.builder(
-                            itemCount: shiftRecords.length,
+                            itemCount: selectedShiftRecords.length,
                             itemBuilder: (context, index) {
-                              DateTime date = shiftRecords.keys.elementAt(index);
-                              int duration = shiftRecords[date]!;
+                              DateTime date =
+                                  selectedShiftRecords.keys.elementAt(index);
+                              int duration = selectedShiftRecords[date]!;
                               return ListTile(
                                 title: Text(
                                   '${date.day}/${date.month}/${date.year}',
@@ -179,12 +245,12 @@ class TimesheetPageState extends State<TimesheetPage> {
                           ),
               ),
 
-              // Total hours worked
+              // Total hours worked for the selected month
               const Divider(color: Colors.grey),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Text(
-                  'Total Hours: ${_formatDuration(shiftRecords.values.fold(0, (sum, item) => sum + item))}',
+                  'Total Hours: ${_formatDuration(selectedShiftRecords.values.fold(0, (sum1, item) => sum1 + item))}',
                   style: TextStyle(
                     fontSize: screenWidth * 0.05,
                     fontWeight: FontWeight.w600,

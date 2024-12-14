@@ -1,30 +1,39 @@
 import 'package:flutter/material.dart';
-import 'stopwatch_widget.dart';
-import 'timesheet_page.dart';
-import 'clients_for_today_page.dart';
-import 'login_page.dart';
+import 'customer_management_page.dart';
+import 'delivery_management_page.dart';
+import 'employee_management_page.dart';
+import 'admin_dashboard_page.dart'; // Replace with the actual DashboardPage file path
+import 'login_page.dart'; // Replace with the actual LoginPage file path
 
-class EmployeeHomePage extends StatefulWidget {
-  final Map<String, dynamic> employeeDetails;
+class AdminHomePage extends StatefulWidget {
+  final Map<String, dynamic> managerDetails;
 
-  const EmployeeHomePage({super.key, required this.employeeDetails});
+  const AdminHomePage({super.key, required this.managerDetails});
 
   @override
-  EmployeeHomePageState createState() => EmployeeHomePageState();
+  _AdminHomePageState createState() => _AdminHomePageState();
 }
 
-class EmployeeHomePageState extends State<EmployeeHomePage> {
+class _AdminHomePageState extends State<AdminHomePage> {
   int _selectedIndex = 0;
-  final Map<DateTime, int> _shiftRecords = {};
-  final GlobalKey<TimesheetPageState> _timesheetKey = GlobalKey();
 
-  void _onShiftEnd(DateTime endDate, int durationInSeconds) {
-    setState(() {
-      _shiftRecords[endDate] = durationInSeconds;
-    });
+  late final List<Widget> _pages;
+  late String firstName;
+  late String email;
 
-    // Update TimesheetPage when shift ends
-    _timesheetKey.currentState?.fetchShiftRecords();
+  @override
+  void initState() {
+    super.initState();
+
+    firstName = widget.managerDetails['firstName'] ?? 'Manager';
+    email = widget.managerDetails['email'] ?? 'Unknown Email';
+
+    _pages = [
+      const CustomerManagementPage(),
+      AdminDashboardPage(managerDetails: widget.managerDetails), // Pass managerDetails here
+      const DeliveryManagementPage(),
+      const EmployeeManagementPage(),
+    ];
   }
 
   void _onItemTapped(int index) {
@@ -35,21 +44,8 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final double screenHeight = screenSize.height;
-    final double screenWidth = screenSize.width;
-
-    List<Widget> widgetOptions = <Widget>[
-      StopwatchWidget(
-        onShiftEnd: _onShiftEnd,
-        employeeId: widget.employeeDetails['id'], // Pass the employeeId here
-      ),
-      ClientsForTodayPage(),
-      TimesheetPage(
-        key: _timesheetKey,
-        employeeDetails: widget.employeeDetails,
-      ),
-    ];
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       body: Stack(
@@ -80,17 +76,12 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: Transform(
-                          alignment: Alignment.center,
-                          transform: Matrix4.rotationY(
-                              3.14159), // Rotate 180 degrees along the Y-axis
-                          child: const Icon(Icons.logout, color: Colors.white),
-                        ),
+                        icon: const Icon(Icons.logout, color: Colors.white),
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => LoginPage()),
+                                builder: (context) => const LoginPage()),
                           );
                         },
                       ),
@@ -101,12 +92,13 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
                           fit: BoxFit.contain,
                         ),
                       ),
-                      SizedBox(width: screenWidth * 0.1), // Placeholder for spacing symmetry
+                      SizedBox(
+                          width: screenWidth * 0.1), // Placeholder for symmetry
                     ],
                   ),
                   SizedBox(height: screenHeight * 0.02),
                   Text(
-                    'Hello, ${widget.employeeDetails['firstName']}!',
+                    'Hello, $firstName!',
                     style: TextStyle(
                       fontSize: screenHeight * 0.03,
                       color: Colors.white,
@@ -119,22 +111,34 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
           ),
           // Main Content
           Center(
-            child: widgetOptions.elementAt(_selectedIndex),
+            child: _pages.elementAt(_selectedIndex),
           ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.local_shipping), label: 'Deliveries'),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Timesheet'),
+            icon: Icon(Icons.person),
+            label: 'Customers',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping),
+            label: 'Deliveries',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Employees',
+          ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.amber[800],
-        unselectedItemColor: Colors.white,
+        unselectedItemColor: const Color.fromARGB(255, 30, 14, 14),
         onTap: _onItemTapped,
-        backgroundColor: Colors.grey[800],
+        backgroundColor: const Color.fromARGB(255, 202, 83, 83),
       ),
     );
   }

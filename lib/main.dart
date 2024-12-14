@@ -1,4 +1,3 @@
-// main.dart
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -29,49 +28,18 @@ void main() async {
   }
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    initializeFirebase();
-  }
-
-  void initializeFirebase() async {
-    try {
-      await Firebase.initializeApp();
-      setState(() {
-        _isInitialized = true;
-      });
-    } catch (e) {
-      debugPrint("Firebase initialization failed: $e");
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const MaterialApp(
-        home: Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: LoginPage(),
-        routes: {
-          "SignUp": (context) => SignupStep1(),
-          "login": (context) => LoginPage()
-        } // Set LoginPage as the home widget
-        );
+      debugShowCheckedModeBanner: false,
+      home: const LoginPage(),
+      routes: {
+        "SignUp": (context) => const SignupStep1(),
+        "login": (context) => const LoginPage(),
+      }, // Set LoginPage as the home widget
+    );
   }
 }
