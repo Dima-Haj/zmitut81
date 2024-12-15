@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'order_history_page.dart';
+import 'add_customer_page.dart';
 
 class CustomerManagementPage extends StatefulWidget {
   const CustomerManagementPage({super.key});
@@ -32,15 +33,6 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
   ];
 
   String searchQuery = "";
-  Map<String, bool> isSwiped = {}; // To track which items are swiped left
-
-  @override
-  void initState() {
-    super.initState();
-    for (var customer in customers) {
-      isSwiped[customer['name']!] = false;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +209,18 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
         child: FloatingActionButton(
           heroTag: 'customerManagementButton', // Add a unique tag here
           onPressed: () {
-            _showAddCustomerDialog(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddCustomerPage(
+                  onAddCustomer: (newCustomer) {
+                    setState(() {
+                      customers.add(newCustomer);
+                    });
+                  },
+                ),
+              ),
+            );
           },
           backgroundColor: const Color.fromARGB(255, 255, 255, 255),
           foregroundColor: const Color.fromARGB(255, 131, 107, 81),
@@ -234,6 +237,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
+
 
   void _showAddCustomerDialog(BuildContext context) {
     final firstNameController = TextEditingController();
