@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/flutter_map.dart' hide Marker;
 import 'package:latlong2/latlong.dart' as latlng;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class DeliveryManagementPage extends StatefulWidget {
-  const DeliveryManagementPage({Key? key}) : super(key: key);
+  final Map<String, dynamic>? managerDetails; // Optional manager details
+
+  const DeliveryManagementPage({super.key, this.managerDetails});
 
   @override
   State<DeliveryManagementPage> createState() => _DeliveryManagementPageState();
 }
 
 class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
-  final List<Map<String, dynamic>> deliveries = [
+  List<Map<String, dynamic>> deliveries = [
     {
       'id': 'D001',
       'status': 'Active',
@@ -36,23 +39,48 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
   ];
 
   final List<String> validStatuses = ['Pending', 'Active', 'Completed'];
+  late GoogleMapController mapController;
 
   void _updateStatus(int index, String newStatus) {
+    if (index < 0 || index >= deliveries.length) {
+      return;
+    }
+    if (newStatus.isEmpty) {
+      return;
+    }
+
     setState(() {
-      deliveries[index]['status'] = newStatus;
+      deliveries = List.from(deliveries)
+        ..[index] = {...deliveries[index], 'status': newStatus};
     });
   }
 
-  Color _getMarkerColor(String status) {
+  Set<Marker> _buildMarkers() {
+    return deliveries.map((delivery) {
+      return Marker(
+        markerId: MarkerId(delivery['id']),
+        position: LatLng(delivery['latitude'], delivery['longitude']),
+        infoWindow: InfoWindow(
+          title: 'Delivery ${delivery['id']}',
+          snippet: 'Assigned to: ${delivery['assignedTo']}',
+        ),
+        icon: BitmapDescriptor.defaultMarkerWithHue(
+          _getMarkerHue(delivery['status']),
+        ),
+      );
+    }).toSet();
+  }
+
+  double _getMarkerHue(String status) {
     switch (status) {
       case 'Active':
-        return Colors.blue;
+        return BitmapDescriptor.hueBlue;
       case 'Pending':
-        return Colors.orange;
+        return BitmapDescriptor.hueOrange;
       case 'Completed':
-        return Colors.green;
+        return BitmapDescriptor.hueGreen;
       default:
-        return Colors.grey;
+        return BitmapDescriptor.hueRed;
     }
   }
 
@@ -120,7 +148,11 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
                       ),
                       // Custom marker overlay
                       ...deliveries.map((delivery) {
-                        final color = _getMarkerColor(delivery['status']);
+                        final hue = _getMarkerHue(delivery['status']);
+                        final Color color =
+                            HSLColor.fromAHSL(1.0, hue, 1.0, 0.5)
+                                .toColor(); // Convert hue to color
+
                         return Positioned(
                           left: 100.0, // Calculate appropriate position here
                           top: 100.0, // Calculate appropriate position here

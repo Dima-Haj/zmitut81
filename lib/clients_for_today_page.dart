@@ -4,7 +4,9 @@ import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'client.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as googleMaps;
+import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
+import 'api_key_provider.dart';
+import 'login_page.dart'; // Import the utility file
 
 class ClientsForTodayPage extends StatefulWidget {
   const ClientsForTodayPage({super.key});
@@ -14,20 +16,22 @@ class ClientsForTodayPage extends StatefulWidget {
 }
 
 class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
+  String userLocationMessage = "Fetching your location...";
   final List<Client> clients = [
     Client(
-      fullName: 'John Doe',
+      fullName: 'Haifa Client',
       phoneNumber: '123-456-7890',
-      email: 'johndoe@example.com',
-      address: '123 Main St, Cityville',
-      location: googleMaps.LatLng(37.4219999, -122.0840575),
+      email: 'haifa@example.com',
+      address: 'HaNamal St 23, Haifa, Israel', // Example address
+      location: google_maps.LatLng(
+          32.819121, 34.995682), // Coordinates for HaNamal Street
     ),
     Client(
       fullName: 'Jane Smith',
       phoneNumber: '098-765-4321',
       email: 'janesmith@example.com',
       address: '456 Park Ave, Townsville',
-      location: googleMaps.LatLng(37.4219999, -122.0840575),
+      location: google_maps.LatLng(37.4219999, -122.0840575),
     ),
     // Add more clients as needed
   ];
@@ -45,24 +49,73 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
 
   Future<void> _fetchEstimatedTimes() async {
     final location = Location();
-    final userLocation = await location.getLocation();
 
-    for (int i = 0; i < clients.length; i++) {
-      final client = clients[i];
-      final duration = await _getTravelTimeWithTraffic(
-        googleMaps.LatLng(userLocation.latitude!, userLocation.longitude!),
-        client.location,
-      );
-      setState(() {
-        _estimatedTimes[i] = duration;
-      });
+    // Check and request location permissions
+    PermissionStatus permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        if (mounted) {
+          setState(() {
+            userLocationMessage =
+                "Location permission denied. Can't fetch estimated times.";
+          });
+        }
+        return;
+      }
+    }
+
+    try {
+      // Get user's current location
+      final userLocation = await location.getLocation();
+      // Fetch travel times concurrently for all clients
+      final futures = clients.asMap().entries.map((entry) async {
+        final index = entry.key;
+        final client = entry.value;
+
+        try {
+          final duration = await _getTravelTimeWithTraffic(
+            google_maps.LatLng(userLocation.latitude!, userLocation.longitude!),
+            client.location,
+          );
+
+          // Update estimated time for this client
+          if (mounted) {
+            setState(() {
+              _estimatedTimes[index] = duration;
+            });
+          }
+        } catch (e) {
+          // Handle errors for individual client calculations
+          if (mounted) {
+            setState(() {
+              _estimatedTimes[index] = "Error fetching ETA";
+            });
+          }
+        }
+      }).toList();
+
+      // Wait for all futures to complete
+      await Future.wait(futures);
+    } catch (e) {
+      // Handle general location fetching errors
+      if (mounted) {
+        setState(() {
+          userLocationMessage =
+              "Failed to fetch user location: ${e.toString()}";
+        });
+      }
     }
   }
 
   Future<String> _getTravelTimeWithTraffic(
-      googleMaps.LatLng origin, googleMaps.LatLng destination) async {
-    final apiKey =
-        'AIzaSyD66RdQ4IcfomKkS9BIxok23AFZRqLTkAk'; // Replace with your Google Maps API key
+      google_maps.LatLng origin, google_maps.LatLng destination) async {
+    final apiKey = await ApiKeyProvider
+        .getApiKey(); // Ensure this uses your platform-specific API key
+
+    if (!_isValidLatLng(origin) || !_isValidLatLng(destination)) {
+      return 'Invalid origin or destination.';
+    }
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/directions/json'
       '?origin=${origin.latitude},${origin.longitude}'
@@ -70,15 +123,33 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
       '&mode=driving&departure_time=now&key=$apiKey',
     );
 
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final duration =
-          data['routes'][0]['legs'][0]['duration_in_traffic']['text'];
-      return duration;
-    } else {
-      throw Exception('Failed to load travel time');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['routes'] == null || data['routes'].isEmpty) {
+          return 'No routes found.';
+        }
+
+        final duration =
+            data['routes'][0]['legs'][0]['duration_in_traffic']['text'];
+        return duration;
+      } else {
+        return 'Error: ${response.statusCode} - ${response.reasonPhrase}';
+      }
+    } catch (e) {
+      return 'Exception: $e';
     }
+  }
+
+  bool _isValidLatLng(google_maps.LatLng latLng) {
+    // Latitude ranges from -90 to 90, and longitude ranges from -180 to 180.
+    return latLng.latitude >= -90 &&
+        latLng.latitude <= 90 &&
+        latLng.longitude >= -180 &&
+        latLng.longitude <= 180;
   }
 
   @override
@@ -106,15 +177,36 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
           ),
           // Logo at the top
           Positioned(
-            top: screenHeight * 0.03,
+            top: screenHeight * 0.07,
             left: 0,
             right: 0,
-            child: Center(
-              child: Image.asset(
-                'assets/images/logo_zmitut.png',
-                height: screenHeight * 0.06,
-                fit: BoxFit.contain,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.rotationY(3.14159), // Rotate 180 degrees
+                    child: const Icon(Icons.logout, color: Colors.white),
+                  ),
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginPage()),
+                    );
+                  },
+                ),
+                Expanded(
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/logo_zmitut.png',
+                      height: screenHeight * 0.06,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                SizedBox(width: screenWidth * 0.1), // Placeholder for spacing
+              ],
             ),
           ),
           // List of clients with expandable maps
@@ -201,20 +293,20 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                               child: ClipRRect(
                                 borderRadius:
                                     BorderRadius.circular(screenHeight * 0.015),
-                                child: googleMaps.GoogleMap(
+                                child: google_maps.GoogleMap(
                                   initialCameraPosition:
-                                      googleMaps.CameraPosition(
+                                      google_maps.CameraPosition(
                                     target: client
                                         .location, // Ensure client.location is googleMaps.LatLng
                                     zoom: 14,
                                   ),
                                   markers: {
-                                    googleMaps.Marker(
+                                    google_maps.Marker(
                                       markerId:
-                                          googleMaps.MarkerId(client.fullName),
+                                          google_maps.MarkerId(client.fullName),
                                       position: client
                                           .location, // Ensure this is googleMaps.LatLng
-                                      infoWindow: googleMaps.InfoWindow(
+                                      infoWindow: google_maps.InfoWindow(
                                         title: client.fullName,
                                         snippet: client.address,
                                       ),
@@ -288,7 +380,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     );
   }
 
-  void _startNavigation(googleMaps.LatLng destination) async {
+  void _startNavigation(google_maps.LatLng destination) async {
     final Uri googleMapsUrl = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}&travelmode=driving',
     );

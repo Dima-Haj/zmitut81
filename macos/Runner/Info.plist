@@ -28,5 +28,8 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>GMSApiKey</key>
+	<string>AIzaSyD66RdQ4IcfomKkS9BIxok23AFZRqLTkAk</string>
+
 </dict>
 </plist>

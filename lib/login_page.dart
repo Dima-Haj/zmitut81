@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/admin_dashboard_page.dart';
 import 'package:flutter_application_1/firebase_auth_services.dart';
 import 'package:google_fonts/google_fonts.dart'; // Google fonts package
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome package for icons
+import 'admin_home_page.dart';
 import 'signup_step1.dart'; // Make sure this path is correct
 import 'terms_of_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -30,40 +30,42 @@ class LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController =
       TextEditingController(); // Added password controller
 
-@override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  // Add listeners for email and password focus nodes
-  emailFocusNode.addListener(() {
-    setState(() {
-      isEmailFocused = emailFocusNode.hasFocus;
+    // Add listeners for email and password focus nodes
+    emailFocusNode.addListener(() {
+      setState(() {
+        isEmailFocused = emailFocusNode.hasFocus;
+      });
     });
-  });
 
-  passwordFocusNode.addListener(() {
-    setState(() {
-      isPasswordFocused = passwordFocusNode.hasFocus;
+    passwordFocusNode.addListener(() {
+      setState(() {
+        isPasswordFocused = passwordFocusNode.hasFocus;
+      });
     });
-  });
-}
+  }
 
-@override
-void dispose() {
-  // Dispose the focus nodes properly
-  emailFocusNode.dispose();
-  passwordFocusNode.dispose();
+  @override
+  void dispose() {
+    // Dispose the focus nodes properly
+    emailFocusNode.dispose();
+    passwordFocusNode.dispose();
 
-  // Dispose the controllers
-  emailController.dispose();
-  passwordController.dispose();
+    // Dispose the controllers
+    emailController.dispose();
+    passwordController.dispose();
 
-  super.dispose();
-}
+    super.dispose();
+  }
 
   final FirebaseAuthServices _auth = FirebaseAuthServices();
-  // Method to handle login logic
- void handleLogin() async {
+  bool isLoading = false;
+
+// Method to handle login logic
+void handleLogin() async {
   String email = emailController.text.trim();
   String password = passwordController.text.trim();
 
@@ -76,79 +78,77 @@ void dispose() {
     return;
   }
 
+  if (mounted) {
+    setState(() {
+      isLoading = true;
+    });
+  }
+
   try {
-    // Authenticate user
     User? user = await _auth.signInWithEmailAndPassword(email, password);
 
     if (user == null) {
-      // Authentication failed
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Incorrect email or password.')),
-        );
-      }
-      return;
+      throw Exception("Authentication failed.");
     }
 
-    // Check if the user exists in the 'Managers' collection
+    // Check if the user is a Manager
     DocumentSnapshot<Map<String, dynamic>> managerDoc =
-        await FirebaseFirestore.instance.collection('Managers').doc(user.uid).get();
+        await FirebaseFirestore.instance
+            .collection('Managers')
+            .doc(user.uid)
+            .get();
 
     if (managerDoc.exists) {
-      // Navigate to Admin Dashboard if user is a manager
-      final managerDetails = {
-        'id': user.uid,
-        'email': user.email ?? '',
-        ...managerDoc.data()!,
-      };
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => AdminDashboard(managerDetails: managerDetails),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => AdminHomePage(
+            managerDetails: {
+              'id': user.uid,
+              'email': user.email ?? '',
+              ...managerDoc.data()!, // Spread operator to include additional fields
+            },
           ),
-        );
-      }
+        ),
+      );
       return;
     }
 
-    // Check if the user exists in the 'Employees' collection
+    // Check if the user is an Employee
     DocumentSnapshot<Map<String, dynamic>> employeeDoc =
-        await FirebaseFirestore.instance.collection('Employees').doc(user.uid).get();
+        await FirebaseFirestore.instance
+            .collection('Employees')
+            .doc(user.uid)
+            .get();
 
     if (employeeDoc.exists) {
-      // Navigate to Employee Home Page if user is an employee
-      final employeeDetails = {
-        'id': user.uid,
-        'email': user.email ?? '',
-        ...employeeDoc.data()!,
-      };
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => EmployeeHomePage(employeeDetails: employeeDetails),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => EmployeeHomePage(
+            employeeDetails: {
+              'id': user.uid,
+              'email': user.email ?? '',
+              ...employeeDoc.data()!, // Spread operator to include additional fields
+            },
           ),
-        );
-      }
+        ),
+      );
     } else {
-      // User is not found in either collection
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User record not found.')),
-        );
-      }
+      throw Exception("User record not found.");
     }
   } catch (e) {
-    // Handle errors
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: ${e.toString()}')),
       );
     }
+  } finally {
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 }
-
 
 
   @override

@@ -6,16 +6,16 @@ import 'employee_management_page.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-class AdminDashboard extends StatefulWidget {
+class AdminDashboardPage extends StatefulWidget {
   final Map<String, dynamic> managerDetails;
 
-  const AdminDashboard({super.key, required this.managerDetails});
+  const AdminDashboardPage({super.key, required this.managerDetails});
 
   @override
   _AdminDashboardState createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> {
+class _AdminDashboardState extends State<AdminDashboardPage> {
   int _selectedIndex = 1; // Default index for the dashboard
 
   late String firstName;
@@ -373,43 +373,40 @@ class DeliveryStatusCard extends StatelessWidget {
 class MetricCard extends StatelessWidget {
   final String title;
   final String value;
-  final double fontSize;
 
   const MetricCard({
     super.key,
     required this.title,
     required this.value,
-    required this.fontSize,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: EdgeInsets.all(fontSize),
-        margin: EdgeInsets.symmetric(horizontal: fontSize),
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 255, 255, 255),
-          borderRadius: BorderRadius.circular(fontSize * 1.5),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: const [
             BoxShadow(
               color: Colors.black12,
-              blurRadius: 10,
-              spreadRadius: 5,
+              blurRadius: 8,
+              spreadRadius: 4,
             ),
           ],
         ),
         child: Column(
-          children: <Widget>[
+          children: [
             Text(
               title,
-              style: TextStyle(fontSize: fontSize),
+              style: const TextStyle(fontSize: 16),
             ),
-            SizedBox(height: fontSize * 0.5),
+            const SizedBox(height: 8),
             Text(
               value,
-              style: TextStyle(
-                  fontSize: fontSize * 1.2, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),
