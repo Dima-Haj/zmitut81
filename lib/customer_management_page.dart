@@ -215,6 +215,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: screenHeight * 0.02),
         child: FloatingActionButton(
+          heroTag: 'customerManagementButton', // Add a unique tag here
           onPressed: () {
             _showAddCustomerDialog(context);
           },

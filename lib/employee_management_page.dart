@@ -68,10 +68,11 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: const AssetImage('assets/images/image1.png'), // Background image
+            image: const AssetImage(
+                'assets/images/image1.png'), // Background image
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.65),
+              const Color.fromARGB(255, 42, 42, 42).withOpacity(0.6),
               BlendMode.darken,
             ),
           ),
@@ -103,11 +104,13 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                   itemBuilder: (context, index) {
                     final employee = employees[index];
                     return Container(
-                      margin: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                      margin:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
                       padding: EdgeInsets.all(screenHeight * 0.02),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(screenHeight * 0.02),
+                        borderRadius:
+                            BorderRadius.circular(screenHeight * 0.02),
                         boxShadow: const [
                           BoxShadow(
                             color: Colors.black12,
@@ -127,8 +130,10 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Delivery Assigned: ${employee['deliveryAssigned']}'),
-                            Text('Hours Worked: ${employee['hoursWorked']} hours'),
+                            Text(
+                                'Delivery Assigned: ${employee['deliveryAssigned']}'),
+                            Text(
+                                'Hours Worked: ${employee['hoursWorked']} hours'),
                             Text('Performance: ${employee['performance']}'),
                           ],
                         ),
@@ -136,13 +141,15 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                              icon: const Icon(Icons.edit,
+                                  color: Colors.blueAccent),
                               onPressed: () {
                                 _showEditEmployeeDialog(index, employee);
                               },
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.redAccent),
+                              icon: const Icon(Icons.delete,
+                                  color: Colors.redAccent),
                               onPressed: () {
                                 _removeEmployee(index);
                               },
@@ -239,7 +246,8 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
               ),
               TextField(
                 controller: deliveryAssignedController,
-                decoration: const InputDecoration(labelText: 'Delivery Assigned'),
+                decoration:
+                    const InputDecoration(labelText: 'Delivery Assigned'),
               ),
               TextField(
                 controller: hoursWorkedController,
