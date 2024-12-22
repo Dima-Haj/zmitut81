@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_map/flutter_map.dart' hide Marker;
+import 'package:latlong2/latlong.dart' as latlng;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class DeliveryManagementPage extends StatefulWidget {
@@ -8,7 +10,7 @@ class DeliveryManagementPage extends StatefulWidget {
   const DeliveryManagementPage({super.key, this.managerDetails});
 
   @override
-  _DeliveryManagementPageState createState() => _DeliveryManagementPageState();
+  State<DeliveryManagementPage> createState() => _DeliveryManagementPageState();
 }
 
 class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
@@ -85,109 +87,143 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const SizedBox(height: 60.0),
-
-            // Search Field
-            TextField(
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.8),
-                hintText: 'Search Deliveries...',
-                hintStyle: GoogleFonts.exo2(
-                  fontSize: 16.0,
-                  color: const Color.fromARGB(255, 105, 105, 105),
-                ),
-                prefixIcon: const Icon(Icons.search, color: Colors.black54),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
+      body: Stack(
+        children: [
+          // Background Image
+          Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const AssetImage('assets/images/image1.png'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  const Color.fromARGB(255, 42, 42, 42).withOpacity(0.6),
+                  BlendMode.darken,
                 ),
               ),
-              style: GoogleFonts.exo2(color: Colors.black),
             ),
-
-            const SizedBox(height: 15.0),
-
-            // Google Map with markers
-            Container(
-              height: 250,
-              margin: const EdgeInsets.only(bottom: 15.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15.0),
-                child: GoogleMap(
-                  onMapCreated: (GoogleMapController controller) {
-                    mapController = controller;
-                  },
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(35.2271, -80.8431),
-                    zoom: 7.0,
+          ),
+          // Foreground Content
+          Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const SizedBox(height: 60.0),
+                TextField(
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.8),
+                    hintText: 'Search Deliveries...',
+                    hintStyle: GoogleFonts.exo2(
+                      fontSize: 16.0,
+                      color: const Color.fromARGB(255, 105, 105, 105),
+                    ),
+                    prefixIcon: const Icon(Icons.search, color: Colors.black54),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
-                  markers: _buildMarkers(),
+                  style: GoogleFonts.exo2(color: Colors.black),
                 ),
-              ),
-            ),
+                const SizedBox(height: 15.0),
+                // Map with manual markers
+                Container(
+                  height: 250,
+                  margin: const EdgeInsets.only(bottom: 15.0),
+                  child: Stack(
+                    children: [
+                      FlutterMap(
+                        options: MapOptions(
+                          initialCenter: latlng.LatLng(35.2271, -80.8431),
+                          initialZoom: 7.0,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            subdomains: ['a', 'b', 'c'],
+                          ),
+                        ],
+                      ),
+                      // Custom marker overlay
+                      ...deliveries.map((delivery) {
+                        final hue = _getMarkerHue(delivery['status']);
+                        final Color color =
+                            HSLColor.fromAHSL(1.0, hue, 1.0, 0.5)
+                                .toColor(); // Convert hue to color
 
-            // Delivery List
-            Expanded(
-              child: ListView.builder(
-                itemCount: deliveries.length,
-                itemBuilder: (context, index) {
-                  final delivery = deliveries[index];
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    padding: const EdgeInsets.all(12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          spreadRadius: 4,
+                        return Positioned(
+                          left: 100.0, // Calculate appropriate position here
+                          top: 100.0, // Calculate appropriate position here
+                          child: Icon(
+                            Icons.location_on,
+                            color: color,
+                            size: 30.0,
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: deliveries.length,
+                    itemBuilder: (context, index) {
+                      final delivery = deliveries[index];
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        padding: const EdgeInsets.all(12.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 8,
+                              spreadRadius: 4,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        'Delivery ${delivery['id']}',
-                        style: GoogleFonts.exo2(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text('Assigned to: ${delivery['assignedTo']}'),
-                      trailing: DropdownButton<String>(
-                        value: delivery['status'],
-                        icon: const Icon(Icons.arrow_downward),
-                        elevation: 16,
-                        style: GoogleFonts.exo2(color: Colors.black87),
-                        underline: Container(
-                          height: 2,
-                          color: Colors.black54,
+                        child: ListTile(
+                          title: Text(
+                            'Delivery ${delivery['id']}',
+                            style: GoogleFonts.exo2(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          subtitle:
+                              Text('Assigned to: ${delivery['assignedTo']}'),
+                          trailing: DropdownButton<String>(
+                            value: delivery['status'],
+                            icon: const Icon(Icons.arrow_downward),
+                            elevation: 16,
+                            style: GoogleFonts.exo2(color: Colors.black87),
+                            underline: Container(
+                              height: 2,
+                              color: Colors.black54,
+                            ),
+                            onChanged: (String? newStatus) {
+                              if (newStatus != null) {
+                                _updateStatus(index, newStatus);
+                              }
+                            },
+                            items: validStatuses
+                                .map<DropdownMenuItem<String>>((String status) {
+                              return DropdownMenuItem<String>(
+                                value: status,
+                                child: Text(status),
+                              );
+                            }).toList(),
+                          ),
                         ),
-                        onChanged: (String? newStatus) {
-                          if (newStatus != null) {
-                            _updateStatus(index, newStatus);
-                          }
-                        },
-                        items: validStatuses
-                            .map<DropdownMenuItem<String>>((String status) {
-                          return DropdownMenuItem<String>(
-                            value: status,
-                            child: Text(status),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
