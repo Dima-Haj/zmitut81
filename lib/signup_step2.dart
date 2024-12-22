@@ -73,7 +73,7 @@ class _SignupStep2State extends State<SignupStep2> {
                     SizedBox(height: screenHeight * 0.05),
                     Center(
                       child: Text(
-                        'Create Account',
+                        'צור חשבון',
                         style: GoogleFonts.exo2(
                           textStyle: TextStyle(
                             color: const Color.fromARGB(255, 141, 126, 106),
@@ -85,9 +85,9 @@ class _SignupStep2State extends State<SignupStep2> {
                     ),
                     SizedBox(height: screenHeight * 0.02),
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.centerRight,
                       child: Text(
-                        'Phone Number',
+                        'מספר טלפון',
                         style: GoogleFonts.exo2(
                           textStyle: TextStyle(
                             color: const Color.fromARGB(255, 141, 126, 106),
@@ -100,8 +100,16 @@ class _SignupStep2State extends State<SignupStep2> {
                     SizedBox(height: screenHeight * 0.01),
                     buildPhoneField(screenWidth),
                     SizedBox(height: screenHeight * 0.02),
-                    buildTextField('ID (9 digits)', Icons.badge, _idController,
-                        screenWidth),
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set Right-to-Left alignment
+                      child: buildTextField(
+                        'ת.ז (9 ספרות)', // Hebrew for "ID (9 digits)"
+                        Icons.badge,
+                        _idController,
+                        screenWidth,
+                      ),
+                    ),
                     SizedBox(height: screenHeight * 0.03),
                     nextButton(screenWidth, screenHeight),
                     SizedBox(height: screenHeight * 0.02),
@@ -281,7 +289,7 @@ class _SignupStep2State extends State<SignupStep2> {
           ),
         ),
         child: Text(
-          'Next',
+          'הבא',
           style: GoogleFonts.exo2(
               color: Colors.white, fontSize: screenHeight * 0.023),
         ),
@@ -289,7 +297,12 @@ class _SignupStep2State extends State<SignupStep2> {
           if (_secondPartPhoneController.text.length != 7 ||
               _idController.text.length != 9) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please fill in valid fields.')),
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text('אנא מלא שדות חוקיים.'),
+                ),
+              ),
             );
             return;
           }
@@ -320,7 +333,7 @@ class _SignupStep2State extends State<SignupStep2> {
           Divider(color: Colors.grey, thickness: 1),
           TextButton(
             child: Text(
-              'Cancel',
+              'ביטול',
               style: GoogleFonts.exo2(
                   color: Colors.red, fontSize: screenHeight * 0.02),
             ),

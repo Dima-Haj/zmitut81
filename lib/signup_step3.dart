@@ -77,7 +77,7 @@ class SignupStep3 extends StatelessWidget {
                     SizedBox(height: screenHeight * 0.05),
                     Center(
                       child: Text(
-                        'Create Account',
+                        'צור חשבון',
                         style: GoogleFonts.exo2(
                           textStyle: TextStyle(
                             color: const Color.fromARGB(255, 141, 126, 106),
@@ -88,18 +88,52 @@ class SignupStep3 extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.03),
-                    buildTextField(
-                        'Email', Icons.email, emailController, screenWidth),
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set text direction to RTL
+                      child: buildTextField(
+                        'אימייל', // Hebrew for "Email"
+                        Icons.email,
+                        emailController,
+                        screenWidth,
+                      ),
+                    ),
                     SizedBox(height: screenHeight * 0.02),
-                    buildTextField('Confirm Email', Icons.email_outlined,
-                        confirmEmailController, screenWidth),
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set text direction to RTL
+                      child: buildTextField(
+                        'אישור אימייל', // Hebrew for "Confirm Email"
+                        Icons.email_outlined,
+                        confirmEmailController,
+                        screenWidth,
+                      ),
+                    ),
                     SizedBox(height: screenHeight * 0.02),
-                    buildTextFieldWithPasswordInfo(context, 'Password',
-                        Icons.lock, passwordController, screenWidth, true),
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set text direction to RTL
+                      child: buildTextFieldWithPasswordInfo(
+                        context,
+                        'סיסמה', // Hebrew for "Password"
+                        Icons.lock,
+                        passwordController,
+                        screenWidth,
+                        true,
+                      ),
+                    ),
                     SizedBox(height: screenHeight * 0.02),
-                    buildTextField('Confirm Password', Icons.lock_outline,
-                        confirmPasswordController, screenWidth,
-                        obscureText: true),
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set text direction to RTL
+                      child: buildTextField(
+                        'אישור סיסמה', // Hebrew for "Confirm Password"
+                        Icons.lock_outline,
+                        confirmPasswordController,
+                        screenWidth,
+                        obscureText: true,
+                      ),
+                    ),
                     SizedBox(height: screenHeight * 0.03),
                     signUpButton(
                         context,
@@ -201,11 +235,16 @@ class SignupStep3 extends StatelessWidget {
   ]) =>
       Stack(
         children: [
-          buildTextField(hintText, icon, controller, screenWidth,
-              obscureText: obscureText),
+          buildTextField(
+            hintText,
+            icon,
+            controller,
+            screenWidth,
+            obscureText: obscureText,
+          ),
           Positioned(
-            right: 10,
-            top: 5,
+            left: 10, // Position on the left side
+            top: 5, // Maintain the vertical position
             child: IconButton(
               icon: Icon(Icons.info_outline, size: 20, color: Colors.red),
               onPressed: () => showPasswordInfo(context),
@@ -238,19 +277,42 @@ class SignupStep3 extends StatelessWidget {
               passwordController.text.isEmpty ||
               confirmPasswordController.text.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('All fields must be filled')));
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text(
+                      'יש למלא את כל השדות'), // Hebrew for "All fields must be filled"
+                ),
+              ),
+            );
+
             return;
           }
 
           if (emailController.text != confirmEmailController.text) {
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Emails do not match')));
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text(
+                      'האימיילים אינם תואמים'), // Hebrew for "Emails do not match"
+                ),
+              ),
+            );
             return;
           }
 
           if (passwordController.text != confirmPasswordController.text) {
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Passwords do not match')));
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text(
+                      'הסיסמאות אינן תואמות'), // Hebrew for "Passwords do not match"
+                ),
+              ),
+            );
+
             return;
           }
 
@@ -258,7 +320,7 @@ class SignupStep3 extends StatelessWidget {
               emailController.text, passwordController.text);
 
           if (user != null) {
-            if (role == "Manager") {
+            if (role == "מנהל") {
               FirebaseFirestore.instance
                   .collection('Managers')
                   .doc(user.uid)
@@ -290,17 +352,31 @@ class SignupStep3 extends StatelessWidget {
 
             // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User added successfully')));
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text(
+                      'המשתמש נוסף בהצלחה'), // Hebrew for "User added successfully"
+                ),
+              ),
+            );
             // ignore: use_build_context_synchronously
             Navigator.popUntil(context, (route) => route.isFirst);
           } else {
             // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Failed to sign up')));
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text(
+                      'ההרשמה נכשלה'), // Hebrew for "Failed to sign up"
+                ),
+              ),
+            );
           }
         },
         child: Text(
-          'SIGN UP',
+          'הירשם',
           style: GoogleFonts.exo2(
             color: Colors.white,
             fontSize: screenHeight * 0.023,
@@ -317,7 +393,7 @@ class SignupStep3 extends StatelessWidget {
           Divider(color: Colors.grey, thickness: 1),
           TextButton(
             child: Text(
-              'Cancel',
+              'ביטול',
               style: GoogleFonts.exo2(
                   color: Colors.red, fontSize: screenHeight * 0.02),
             ),
@@ -333,16 +409,19 @@ class SignupStep3 extends StatelessWidget {
   void showPasswordInfo(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Password Strength'),
-        content: const Text(
-            'Passwords should be at least 8 characters long and include numbers, symbols, and upper/lower case letters.'),
-        actions: [
-          TextButton(
-            child: const Text('Got it'),
-            onPressed: () => Navigator.pop(context),
-          )
-        ],
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl, // Ensure RTL alignment
+        child: AlertDialog(
+          title: const Text('חוזק סיסמה'), // Hebrew for "Password Strength"
+          content: const Text(
+              'על הסיסמאות להיות באורך של לפחות 8 תווים ולכלול מספרים, סימנים, ואותיות גדולות/קטנות.'), // Hebrew translation
+          actions: [
+            TextButton(
+              child: const Text('הבנתי'), // Hebrew for "Got it"
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -838,7 +838,7 @@ class LoginPageState extends State<LoginPage> {
                     // "Sign in to continue" Text
                     Center(
                       child: Text(
-                        'Sign in to continue',
+                        'התחבר כדי להמשיך',
                         style: GoogleFonts.exo2(
                           textStyle: TextStyle(
                             color: const Color.fromARGB(255, 141, 126, 106),
@@ -851,44 +851,54 @@ class LoginPageState extends State<LoginPage> {
                     SizedBox(height: screenHeight * 0.03),
 
                     // Email Field
-                    MouseRegion(
-                      onEnter: (_) => setState(() => isHoveredEmail = true),
-                      onExit: (_) => setState(() => isHoveredEmail = false),
-                      child: buildTextField(
-                        'Email',
-                        Icons.email,
-                        screenWidth,
-                        focusNode: emailFocusNode,
-                        isFocused: isEmailFocused,
-                        isHovered: isHoveredEmail,
-                        controller:
-                            emailController, // Use controller to access text
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set text direction to RTL
+                      child: MouseRegion(
+                        onEnter: (_) => setState(() => isHoveredEmail = true),
+                        onExit: (_) => setState(() => isHoveredEmail = false),
+                        child: buildTextField(
+                          'אימייל', // Hebrew for "Email"
+                          Icons.email,
+                          screenWidth,
+                          focusNode: emailFocusNode,
+                          isFocused: isEmailFocused,
+                          isHovered: isHoveredEmail,
+                          controller:
+                              emailController, // Use controller to access text
+                        ),
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.02),
 
-                    // Password Field
-                    MouseRegion(
-                      onEnter: (_) => setState(() => isHoveredPassword = true),
-                      onExit: (_) => setState(() => isHoveredPassword = false),
-                      child: buildTextField(
-                        'Password',
-                        Icons.lock,
-                        screenWidth,
-                        focusNode: passwordFocusNode,
-                        isFocused: isPasswordFocused,
-                        isHovered: isHoveredPassword,
-                        obscureText: true,
-                        controller: passwordController,
+// Password Field
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set text direction to RTL
+                      child: MouseRegion(
+                        onEnter: (_) =>
+                            setState(() => isHoveredPassword = true),
+                        onExit: (_) =>
+                            setState(() => isHoveredPassword = false),
+                        child: buildTextField(
+                          'סיסמה', // Hebrew for "Password"
+                          Icons.lock,
+                          screenWidth,
+                          focusNode: passwordFocusNode,
+                          isFocused: isPasswordFocused,
+                          isHovered: isHoveredPassword,
+                          obscureText: true,
+                          controller: passwordController,
+                        ),
                       ),
                     ),
 
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {},
                         child: Text(
-                          'Forgot password?',
+                          '?שכחת סיסמה',
                           style: GoogleFonts.exo2(
                             color: const Color.fromARGB(255, 141, 126, 106),
                           ),
@@ -911,7 +921,7 @@ class LoginPageState extends State<LoginPage> {
                       ),
                       onPressed: handleLogin, // Call handleLogin on press
                       child: Text(
-                        'SIGN IN',
+                        'התחבר',
                         style: GoogleFonts.exo2(
                           color: Colors.white,
                           fontSize: screenHeight * 0.023,
@@ -926,10 +936,6 @@ class LoginPageState extends State<LoginPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          "Don't have an account? ",
-                          style: GoogleFonts.exo2(color: Colors.black),
-                        ),
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -939,14 +945,19 @@ class LoginPageState extends State<LoginPage> {
                             );
                           },
                           child: Text(
-                            'Sign Up'.toUpperCase(),
+                            'הרשמה',
                             style: GoogleFonts.exo2(
                               color: const Color.fromARGB(255, 141, 126, 106),
                             ),
                           ),
                         ),
+                        Text(
+                          ' ?אין לך חשבון',
+                          style: GoogleFonts.exo2(color: Colors.black),
+                        ),
                       ],
                     ),
+
                     SizedBox(height: screenHeight * 0.04),
 
                     // Social Media Buttons
