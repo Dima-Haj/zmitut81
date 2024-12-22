@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_map/flutter_map.dart' hide Marker;
-import 'package:latlong2/latlong.dart' as latlng;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class DeliveryManagementPage extends StatefulWidget {
@@ -131,41 +129,21 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
                 Container(
                   height: 250,
                   margin: const EdgeInsets.only(bottom: 15.0),
-                  child: Stack(
-                    children: [
-                      FlutterMap(
-                        options: MapOptions(
-                          initialCenter: latlng.LatLng(35.2271, -80.8431),
-                          initialZoom: 7.0,
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            subdomains: ['a', 'b', 'c'],
-                          ),
-                        ],
-                      ),
-                      // Custom marker overlay
-                      ...deliveries.map((delivery) {
-                        final hue = _getMarkerHue(delivery['status']);
-                        final Color color =
-                            HSLColor.fromAHSL(1.0, hue, 1.0, 0.5)
-                                .toColor(); // Convert hue to color
-
-                        return Positioned(
-                          left: 100.0, // Calculate appropriate position here
-                          top: 100.0, // Calculate appropriate position here
-                          child: Icon(
-                            Icons.location_on,
-                            color: color,
-                            size: 30.0,
-                          ),
-                        );
-                      }).toList(),
-                    ],
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(
+                          35.2271, -80.8431), // Initial center of the map
+                      zoom: 7.0, // Initial zoom level
+                    ),
+                    markers:
+                        _buildMarkers(), // Use your existing _buildMarkers method
+                    onMapCreated: (GoogleMapController controller) {
+                      mapController =
+                          controller; // Assign map controller for future use
+                    },
                   ),
                 ),
+
                 Expanded(
                   child: ListView.builder(
                     itemCount: deliveries.length,

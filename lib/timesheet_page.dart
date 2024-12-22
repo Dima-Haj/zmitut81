@@ -89,9 +89,11 @@ class TimesheetPageState extends State<TimesheetPage> {
     } catch (e) {
       // Handle fetch errors
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
