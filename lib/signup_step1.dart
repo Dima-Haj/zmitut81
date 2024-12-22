@@ -19,18 +19,18 @@ class _SignupStep1State extends State<SignupStep1> {
   String? selectedRole; // Add this to store the selected role
 
   final List<String> months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
+    'ינואר', // January
+    'פברואר', // February
+    'מרץ', // March
+    'אפריל', // April
+    'מאי', // May
+    'יוני', // June
+    'יולי', // July
+    'אוגוסט', // August
+    'ספטמבר', // September
+    'אוקטובר', // October
+    'נובמבר', // November
+    'דצמבר', // December
   ];
 
   @override
@@ -74,7 +74,7 @@ class _SignupStep1State extends State<SignupStep1> {
                     SizedBox(height: screenHeight * 0.05),
                     Center(
                       child: Text(
-                        'Create Account',
+                        'צור חשבון',
                         style: GoogleFonts.exo2(
                           textStyle: TextStyle(
                             color: const Color.fromARGB(255, 141, 126, 106),
@@ -85,24 +85,37 @@ class _SignupStep1State extends State<SignupStep1> {
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.03),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: buildTextField('First Name', Icons.person,
-                              _firstNameController, screenWidth),
-                        ),
-                        SizedBox(width: screenWidth * 0.03),
-                        Expanded(
-                          child: buildTextField('Last Name', Icons.person_outline,
-                              _lastNameController, screenWidth),
-                        ),
-                      ],
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set text direction to RTL
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: buildTextField(
+                              'שם פרטי', // Hebrew for "First Name"
+                              Icons.person,
+                              _firstNameController,
+                              screenWidth,
+                            ),
+                          ),
+                          SizedBox(width: screenWidth * 0.03),
+                          Expanded(
+                            child: buildTextField(
+                              'שם משפחה', // Hebrew for "Last Name"
+                              Icons.person_outline,
+                              _lastNameController,
+                              screenWidth,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+
                     SizedBox(height: screenHeight * 0.02),
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.centerRight,
                       child: Text(
-                        'Date of Birth',
+                        'תאריך לידה',
                         style: GoogleFonts.exo2(
                           textStyle: TextStyle(
                             color: const Color.fromARGB(255, 141, 126, 106),
@@ -116,9 +129,9 @@ class _SignupStep1State extends State<SignupStep1> {
                     buildDateOfBirthDropdowns(screenWidth),
                     SizedBox(height: screenHeight * 0.01),
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.centerRight,
                       child: Text(
-                        'Select Role',
+                        'בחר תפקיד',
                         style: GoogleFonts.exo2(
                           textStyle: TextStyle(
                             color: const Color.fromARGB(255, 141, 126, 106),
@@ -129,34 +142,39 @@ class _SignupStep1State extends State<SignupStep1> {
                       ),
                     ),
                     //SizedBox(height: screenHeight * 0.005),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: RadioListTile<String>(
-                            value: 'Manager',
-                            groupValue: selectedRole,
-                            onChanged: (value) {
-                              setState(() {
-                                selectedRole = value;
-                              });
-                            },
-                            title: const Text('Manager'),
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Set text direction to RTL
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              value: 'מנהל', // Hebrew for "Manager"
+                              groupValue: selectedRole,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedRole = value;
+                                });
+                              },
+                              title: const Text('מנהל'),
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: RadioListTile<String>(
-                            value: 'Delivery Man',
-                            groupValue: selectedRole,
-                            onChanged: (value) {
-                              setState(() {
-                                selectedRole = value;
-                              });
-                            },
-                            title: const Text('Delivery Man'),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              value: 'שליח', // Hebrew for "Delivery Person"
+                              groupValue: selectedRole,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedRole = value;
+                                });
+                              },
+                              title: const Text('שליח'),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+
                     SizedBox(height: screenHeight * 0.02),
                     nextButton(screenWidth, screenHeight),
                     SizedBox(height: screenHeight * 0.00000000001),
@@ -228,16 +246,36 @@ class _SignupStep1State extends State<SignupStep1> {
         ),
       );
 
-  Widget buildDateOfBirthDropdowns(double screenWidth) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          dropdownField('Day', 1, 31, selectedDay,
-              (val) => setState(() => selectedDay = val), screenWidth),
-          dropdownFieldFromList('Month', months, selectedMonth,
-              (val) => setState(() => selectedMonth = val), screenWidth),
-          dropdownField('Year', 1980, DateTime.now().year, selectedYear,
-              (val) => setState(() => selectedYear = val), screenWidth),
-        ],
+  Widget buildDateOfBirthDropdowns(double screenWidth) => Directionality(
+        textDirection: TextDirection.rtl, // Set text direction to RTL
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            dropdownField(
+              'יום', // Hebrew for "Day"
+              1,
+              31,
+              selectedDay,
+              (val) => setState(() => selectedDay = val),
+              screenWidth,
+            ),
+            dropdownFieldFromList(
+              'חודש', // Hebrew for "Month"
+              months,
+              selectedMonth,
+              (val) => setState(() => selectedMonth = val),
+              screenWidth,
+            ),
+            dropdownField(
+              'שנה', // Hebrew for "Year"
+              1980,
+              DateTime.now().year,
+              selectedYear,
+              (val) => setState(() => selectedYear = val),
+              screenWidth,
+            ),
+          ],
+        ),
       );
 
   Widget dropdownField(String label, int start, int end, String? currentValue,
@@ -303,7 +341,7 @@ class _SignupStep1State extends State<SignupStep1> {
           ),
         ),
         child: Text(
-          'Next',
+          'הבא',
           style: GoogleFonts.exo2(
               color: Colors.white, fontSize: screenHeight * 0.023),
         ),
@@ -315,23 +353,39 @@ class _SignupStep1State extends State<SignupStep1> {
               selectedYear == null ||
               selectedRole == null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please fill in all fields.')),
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text('אנא מלא את כל השדות.'),
+                ),
+              ),
             );
             return;
           }
+
           if (_firstNameController.text.contains(RegExp(r'[0-9]')) ||
               _lastNameController.text.contains(RegExp(r'[0-9]'))) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Name must contain only letters.')),
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text('השם חייב להכיל אותיות בלבד.'),
+                ),
+              ),
             );
             return;
           }
+
           DateTime dob = DateTime(int.parse(selectedYear!),
               months.indexOf(selectedMonth!) + 1, int.parse(selectedDay!));
           if (DateTime.now().difference(dob).inDays ~/ 365 < 17) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('You must be at least 17 years old.')),
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text('עליך להיות בגיל 17 לפחות.'),
+                ),
+              ),
             );
             return;
           }
@@ -358,7 +412,7 @@ class _SignupStep1State extends State<SignupStep1> {
         children: [
           TextButton(
             child: Text(
-              'Cancel',
+              'ביטול',
               style: GoogleFonts.exo2(
                   color: Colors.red, fontSize: screenHeight * 0.02),
             ),
