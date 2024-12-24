@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'customer_management_page.dart';
-import 'delivery_management_page.dart';
-import 'employee_management_page.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -16,11 +13,8 @@ class AdminDashboardPage extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboardPage> {
-  int _selectedIndex = 1; // Default index for the dashboard
-
   late String firstName;
   late String email;
-  late final List<Widget> _pages;
 
   @override
   void initState() {
@@ -29,19 +23,6 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
     // Validate managerDetails and assign default values if necessary
     firstName = widget.managerDetails['firstName'] ?? 'Manager';
     email = widget.managerDetails['email'] ?? 'Unknown Email';
-
-    _pages = [
-      const CustomerManagementPage(),
-      const DashboardPage(), // Use a proper placeholder or actual page
-      const DeliveryManagementPage(),
-      const EmployeeManagementPage(),
-    ];
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
   }
 
   @override
@@ -78,44 +59,11 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
                 backgroundColor: const Color.fromARGB(255, 141, 126, 106),
               ),
               Expanded(
-                child: IndexedStack(
-                  index: _selectedIndex,
-                  children: _pages,
-                ),
+                child: DashboardPage(),
               ),
             ],
           ),
         ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, size: screenHeight * 0.03),
-            label: 'Customers',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard, size: screenHeight * 0.03),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping, size: screenHeight * 0.03),
-            label: 'Deliveries',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people, size: screenHeight * 0.03),
-            label: 'Employees',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color.fromARGB(255, 131, 107, 81),
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-        selectedLabelStyle: TextStyle(fontSize: screenHeight * 0.015),
-        unselectedLabelStyle: TextStyle(
-          fontSize: screenHeight * 0.013,
-          color: const Color.fromARGB(255, 120, 120, 120),
-        ),
       ),
     );
   }
