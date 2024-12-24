@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_map/flutter_map.dart' hide Marker;
-import 'package:latlong2/latlong.dart' as latlng;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class DeliveryManagementPage extends StatefulWidget {
@@ -58,14 +56,15 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
   Set<Marker> _buildMarkers() {
     return deliveries.map((delivery) {
       return Marker(
-        markerId: MarkerId(delivery['id']),
-        position: LatLng(delivery['latitude'], delivery['longitude']),
+        markerId: MarkerId(delivery['id']), // Required parameter
+        position: LatLng(
+            delivery['latitude'], delivery['longitude']), // Correct position
         infoWindow: InfoWindow(
           title: 'Delivery ${delivery['id']}',
           snippet: 'Assigned to: ${delivery['assignedTo']}',
         ),
         icon: BitmapDescriptor.defaultMarkerWithHue(
-          _getMarkerHue(delivery['status']),
+          _getMarkerHue(delivery['status']), // Status-based marker hue
         ),
       );
     }).toSet();
@@ -81,6 +80,19 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
         return BitmapDescriptor.hueGreen;
       default:
         return BitmapDescriptor.hueRed;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Active':
+        return Colors.blue;
+      case 'Pending':
+        return Colors.orange;
+      case 'Completed':
+        return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -131,41 +143,22 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
                 Container(
                   height: 250,
                   margin: const EdgeInsets.only(bottom: 15.0),
-                  child: Stack(
-                    children: [
-                      FlutterMap(
-                        options: MapOptions(
-                          initialCenter: latlng.LatLng(35.2271, -80.8431),
-                          initialZoom: 7.0,
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            subdomains: ['a', 'b', 'c'],
-                          ),
-                        ],
-                      ),
-                      // Custom marker overlay
-                      ...deliveries.map((delivery) {
-                        final hue = _getMarkerHue(delivery['status']);
-                        final Color color =
-                            HSLColor.fromAHSL(1.0, hue, 1.0, 0.5)
-                                .toColor(); // Convert hue to color
-
-                        return Positioned(
-                          left: 100.0, // Calculate appropriate position here
-                          top: 100.0, // Calculate appropriate position here
-                          child: Icon(
-                            Icons.location_on,
-                            color: color,
-                            size: 30.0,
-                          ),
-                        );
-                      }).toList(),
-                    ],
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(35.2271, -80.8431), // Initial center
+                      zoom: 7.0, // Zoom level
+                    ),
+                    onMapCreated: (GoogleMapController controller) {
+                      if (mounted) {
+                        setState(() {
+                          mapController = controller;
+                        });
+                      }
+                    },
+                    markers: _buildMarkers(), // Add markers to the map
                   ),
                 ),
+
                 Expanded(
                   child: ListView.builder(
                     itemCount: deliveries.length,
@@ -193,27 +186,25 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
                           ),
                           subtitle:
                               Text('Assigned to: ${delivery['assignedTo']}'),
-                          trailing: DropdownButton<String>(
-                            value: delivery['status'],
-                            icon: const Icon(Icons.arrow_downward),
-                            elevation: 16,
-                            style: GoogleFonts.exo2(color: Colors.black87),
-                            underline: Container(
-                              height: 2,
-                              color: Colors.black54,
+                          trailing: Container(
+                            width: 110,
+                            height: 33,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 6, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(delivery[
+                                  'status']), // Dynamic color based on status
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            onChanged: (String? newStatus) {
-                              if (newStatus != null) {
-                                _updateStatus(index, newStatus);
-                              }
-                            },
-                            items: validStatuses
-                                .map<DropdownMenuItem<String>>((String status) {
-                              return DropdownMenuItem<String>(
-                                value: status,
-                                child: Text(status),
-                              );
-                            }).toList(),
+                            alignment: Alignment.center,
+                            child: Text(
+                              delivery['status'],
+                              style: GoogleFonts.exo2(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
                       );
