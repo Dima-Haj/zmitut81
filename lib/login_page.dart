@@ -1,6 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/custom_text_field.dart';
+import 'package:flutter_application_1/date_of_birth_dropdowns.dart';
+import 'package:flutter_application_1/dropdown_helpers.dart';
 import 'package:flutter_application_1/firebase_auth_services.dart';
+import 'package:flutter_application_1/phone_field.dart';
 import 'package:google_fonts/google_fonts.dart'; // Google fonts package
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome package for icons
 import 'package:google_sign_in/google_sign_in.dart';
@@ -149,7 +153,10 @@ class LoginPageState extends State<LoginPage> {
     required String email,
     required String displayName,
   }) {
-    final TextEditingController phoneController = TextEditingController();
+    final TextEditingController firstPartPhoneController =
+        TextEditingController();
+    final TextEditingController secondPartPhoneController =
+        TextEditingController();
 
     showDialog(
       context: context,
@@ -180,38 +187,55 @@ class LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
-              content: TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                textDirection: TextDirection.rtl,
-                decoration: const InputDecoration(
-                  labelText: 'מספר טלפון',
-                  border: OutlineInputBorder(),
-                ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PhoneField(
+                    firstPartController: firstPartPhoneController,
+                    secondPartController: secondPartPhoneController,
+                  ),
+                ],
               ),
               actions: [
                 ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: phoneController,
-                  builder: (context, value, child) {
-                    bool isValidPhone = value.text.length ==
-                        10; // Check if phone number has 10 digits
+                  valueListenable: firstPartPhoneController,
+                  builder: (context, firstPartValue, child) {
+                    final isFirstPartValid = firstPartValue.text.length == 1;
 
-                    return ElevatedButton(
-                      onPressed: isValidPhone
-                          ? () {
-                              Navigator.pop(context);
-                              // Move to the next dialog to collect role
-                              _showRoleDialog(context, userId, email,
-                                  displayName, phoneController.text);
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isValidPhone
-                            ? Colors.green
-                            : Colors.grey, // Dynamic button color
-                      ),
-                      child:
-                          const Text('הבא', textDirection: TextDirection.rtl),
+                    return ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: secondPartPhoneController,
+                      builder: (context, secondPartValue, child) {
+                        final isSecondPartValid =
+                            secondPartValue.text.length == 7;
+
+                        final bool isValidPhone =
+                            isFirstPartValid && isSecondPartValid;
+
+                        return ElevatedButton(
+                          onPressed: isValidPhone
+                              ? () {
+                                  final fullPhoneNumber =
+                                      "05${firstPartPhoneController.text}${secondPartPhoneController.text}";
+                                  Navigator.pop(context);
+                                  // Move to the next dialog to collect role
+                                  _showRoleDialog(
+                                    context,
+                                    userId,
+                                    email,
+                                    displayName,
+                                    fullPhoneNumber,
+                                  );
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isValidPhone
+                                ? Colors.green
+                                : Colors.grey, // Dynamic button color
+                          ),
+                          child: const Text('הבא',
+                              textDirection: TextDirection.rtl),
+                        );
+                      },
                     );
                   },
                 ),
@@ -259,12 +283,13 @@ class LoginPageState extends State<LoginPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Role Dropdown
                   Directionality(
                     textDirection: TextDirection.rtl,
-                    child: DropdownButton<String>(
-                      value: selectedRole,
-                      hint: const Text("בחר תפקיד"),
-                      isExpanded: true,
+                    child: dropdownFieldFromList(
+                      label: 'בחר תפקיד',
+                      items: ['מנהל', 'שליח'],
+                      currentValue: selectedRole,
                       onChanged: (value) {
                         setDialogState(() {
                           selectedRole = value;
@@ -273,22 +298,7 @@ class LoginPageState extends State<LoginPage> {
                           truckSize = null; // Reset truck size
                         });
                       },
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'מנהל',
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Text('מנהל'),
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 'שליח',
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Text('שליח'),
-                          ),
-                        ),
-                      ],
+                      screenWidth: MediaQuery.of(context).size.width,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -301,16 +311,11 @@ class LoginPageState extends State<LoginPage> {
                       textDirection: TextDirection.rtl,
                     ),
                     Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Ensures dropdown content is RTL
-                      child: DropdownButton<String>(
-                        value: truckType,
-                        hint: const Text("בחר סוג משאית"),
-                        isExpanded: true,
-                        icon: const Icon(Icons
-                            .arrow_drop_down), // Ensure arrow is RTL-friendly
-                        alignment: Alignment
-                            .centerRight, // Aligns the dropdown text to the right
+                      textDirection: TextDirection.rtl,
+                      child: dropdownFieldFromList(
+                        label: 'בחר סוג משאית',
+                        items: truckOptions,
+                        currentValue: truckType,
                         onChanged: (value) {
                           setDialogState(() {
                             truckType = value!;
@@ -318,18 +323,7 @@ class LoginPageState extends State<LoginPage> {
                                 null; // Reset truck size when type changes
                           });
                         },
-                        items: truckOptions
-                            .map(
-                              (type) => DropdownMenuItem(
-                                value: type,
-                                child: Align(
-                                  alignment: Alignment
-                                      .centerRight, // Align dropdown items to the right
-                                  child: Text(type),
-                                ),
-                              ),
-                            )
-                            .toList(),
+                        screenWidth: MediaQuery.of(context).size.width,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -340,33 +334,17 @@ class LoginPageState extends State<LoginPage> {
                         textDirection: TextDirection.rtl,
                       ),
                       Directionality(
-                        textDirection: TextDirection
-                            .rtl, // Ensures dropdown content is RTL
-                        child: DropdownButton<String>(
-                          value: truckSize,
-                          hint: const Text("בחר גודל"),
-                          isExpanded: true,
-                          icon: const Icon(Icons
-                              .arrow_drop_down), // Ensure arrow is RTL-friendly
-                          alignment: Alignment
-                              .centerRight, // Aligns the dropdown text to the right
+                        textDirection: TextDirection.rtl,
+                        child: dropdownFieldFromList(
+                          label: 'בחר גודל',
+                          items: sizeOptions,
+                          currentValue: truckSize,
                           onChanged: (value) {
                             setDialogState(() {
                               truckSize = value!;
                             });
                           },
-                          items: sizeOptions
-                              .map(
-                                (size) => DropdownMenuItem(
-                                  value: size,
-                                  child: Align(
-                                    alignment: Alignment
-                                        .centerRight, // Align dropdown items to the right
-                                    child: Text(size),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                          screenWidth: MediaQuery.of(context).size.width,
                         ),
                       ),
                     ],
@@ -377,11 +355,9 @@ class LoginPageState extends State<LoginPage> {
                 ElevatedButton(
                   onPressed: selectedRole != null &&
                           (selectedRole == 'מנהל' ||
-                              (truckType !=
-                                      null && // Truck type required for drivers
+                              (truckType != null &&
                                   (truckType == 'פלטה' || truckType == 'תפזורת'
-                                      ? truckSize !=
-                                          null // Truck size required for certain types
+                                      ? truckSize != null
                                       : true)))
                       ? () {
                           Navigator.pop(context);
@@ -431,21 +407,6 @@ class LoginPageState extends State<LoginPage> {
     String? selectedYear;
     bool isButtonEnabled = false;
 
-    final List<String> months = [
-      'ינואר',
-      'פברואר',
-      'מרץ',
-      'אפריל',
-      'מאי',
-      'יוני',
-      'יולי',
-      'אוגוסט',
-      'ספטמבר',
-      'אוקטובר',
-      'נובמבר',
-      'דצמבר',
-    ];
-
     showDialog(
       context: context,
       builder: (context) {
@@ -462,7 +423,6 @@ class LoginPageState extends State<LoginPage> {
             }
 
             // Get screen width
-            final screenWidth = MediaQuery.of(context).size.width;
 
             return AlertDialog(
               title: Row(
@@ -487,16 +447,15 @@ class LoginPageState extends State<LoginPage> {
                     // Personal ID Input
                     Directionality(
                       textDirection: TextDirection.rtl,
-                      child: TextField(
-                        controller: personalIdController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.right,
-                        maxLength: 9,
-                        onChanged: (_) => validateFields(),
-                        decoration: const InputDecoration(
-                          labelText: 'תעודת זהות (9 ספרות)',
-                          border: OutlineInputBorder(),
-                        ),
+                      child: CustomTextField(
+                        hintText:
+                            'תעודת זהות (9 ספרות)', // Hint text for the text field
+                        icon: Icons.badge, // Icon to display
+                        controller:
+                            personalIdController, // Controller for the input
+                        screenWidth: MediaQuery.of(context)
+                            .size
+                            .width, // Provide screen width
                       ),
                     ),
                     const SizedBox(height: 8), // Spacing
@@ -517,60 +476,33 @@ class LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 2), // Spacing
 
                     // Date of Birth Dropdowns
-                    Row(
-                      children: [
-                        // Day Dropdown
-                        Expanded(
-                          flex: 2, // Adjust flex ratio
-                          child: _buildDropdown(
-                            label: 'יום',
-                            start: 1,
-                            end: 31,
-                            currentValue: selectedDay,
-                            onChanged: (value) {
-                              setDialogState(() {
-                                selectedDay = value;
-                                validateFields();
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 6), // Small spacing
-
-                        // Month Dropdown
-                        Expanded(
-                          flex: 3, // Adjust flex ratio
-                          child: _buildDropdownFromList(
-                            label: 'חודש',
-                            items: months,
-                            currentValue: selectedMonth,
-                            onChanged: (value) {
-                              setDialogState(() {
-                                selectedMonth = value;
-                                validateFields();
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 6), // Small spacing
-
-                        // Year Dropdown
-                        Expanded(
-                          flex: 2, // Adjust flex ratio
-                          child: _buildDropdown(
-                            label: 'שנה',
-                            start: 1900,
-                            end: DateTime.now().year,
-                            currentValue: selectedYear,
-                            onChanged: (value) {
-                              setDialogState(() {
-                                selectedYear = value;
-                                validateFields();
-                              });
-                            },
-                          ),
-                        ),
-                      ],
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Ensure Right-to-Left alignment
+                      child: DateOfBirthDropdowns(
+                        selectedDay: selectedDay,
+                        selectedMonth: selectedMonth,
+                        selectedYear: selectedYear,
+                        onDayChanged: (value) {
+                          setDialogState(() {
+                            selectedDay = value;
+                            validateFields(); // Call validation after selection
+                          });
+                        },
+                        onMonthChanged: (value) {
+                          setDialogState(() {
+                            selectedMonth = value;
+                            validateFields();
+                          });
+                        },
+                        onYearChanged: (value) {
+                          setDialogState(() {
+                            selectedYear = value;
+                            validateFields();
+                          });
+                        },
+                        screenWidth: MediaQuery.of(context).size.width,
+                      ),
                     ),
                   ],
                 ),
@@ -630,55 +562,6 @@ class LoginPageState extends State<LoginPage> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildDropdown({
-    required String label,
-    required int start,
-    required int end,
-    required String? currentValue,
-    required void Function(String?) onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: currentValue,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      ),
-      items: List.generate(
-        end - start + 1,
-        (index) => DropdownMenuItem(
-          value: (start + index).toString(),
-          child: Text((start + index).toString(),
-              textDirection: TextDirection.rtl),
-        ),
-      ),
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildDropdownFromList({
-    required String label,
-    required List<String> items,
-    required String? currentValue,
-    required void Function(String?) onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: currentValue,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      ),
-      items: items.map((item) {
-        return DropdownMenuItem(
-          value: item,
-          child: Text(item, textDirection: TextDirection.rtl),
-        );
-      }).toList(),
-      onChanged: onChanged,
     );
   }
 

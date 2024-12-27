@@ -256,7 +256,7 @@ class StopwatchWidgetState extends State<StopwatchWidget>
                         ),
                         SizedBox(height: screenHeight * 0.02),
                         Text(
-                          _isShiftStarted ? 'End Shift' : 'Start Shift',
+                          _isShiftStarted ? 'סיום משמרת' : 'התחלת משמרת',
                           style: GoogleFonts.exo2(
                             textStyle: TextStyle(
                               fontSize: labelFontSize,

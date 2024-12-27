@@ -101,12 +101,14 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
                           fit: BoxFit.contain,
                         ),
                       ),
-                      SizedBox(width: screenWidth * 0.1), // Placeholder for spacing symmetry
+                      SizedBox(
+                          width: screenWidth *
+                              0.1), // Placeholder for spacing symmetry
                     ],
                   ),
                   SizedBox(height: screenHeight * 0.02),
                   Text(
-                    'Hello, ${widget.employeeDetails['firstName']}!',
+                    '!שלום, ${widget.employeeDetails['firstName']}',
                     style: TextStyle(
                       fontSize: screenHeight * 0.03,
                       color: Colors.white,
@@ -125,10 +127,10 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.watch_later), label: 'משמרת שלי'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.local_shipping), label: 'Deliveries'),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Timesheet'),
+              icon: Icon(Icons.local_shipping), label: 'המשלוחים שלי'),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'דוח שעות חודשי'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.amber[800],
