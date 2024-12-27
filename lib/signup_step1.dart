@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_step2.dart'; // Import the next step
 import 'login_page.dart'; // Import the login page
+import 'custom_text_field.dart';
 
 class SignupStep1 extends StatefulWidget {
   const SignupStep1({super.key});
@@ -16,7 +17,9 @@ class _SignupStep1State extends State<SignupStep1> {
   String? selectedDay;
   String? selectedMonth;
   String? selectedYear;
-  String? selectedRole; // Add this to store the selected role
+  String? selectedRole;
+  String? selectedTruckType; // Nullable type for the truck type
+  String? selectedSize; // Nullable type for the truck size
 
   final List<String> months = [
     'ינואר', // January
@@ -91,20 +94,21 @@ class _SignupStep1State extends State<SignupStep1> {
                       child: Row(
                         children: [
                           Expanded(
-                            child: buildTextField(
-                              'שם פרטי', // Hebrew for "First Name"
-                              Icons.person,
-                              _firstNameController,
-                              screenWidth,
+                            child: CustomTextField(
+                              hintText: 'שם פרטי', // Hebrew for "First Name"
+                              icon: Icons.person,
+                              controller: _firstNameController,
+                              screenWidth: MediaQuery.of(context).size.width,
                             ),
                           ),
-                          SizedBox(width: screenWidth * 0.03),
+                          SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.03),
                           Expanded(
-                            child: buildTextField(
-                              'שם משפחה', // Hebrew for "Last Name"
-                              Icons.person_outline,
-                              _lastNameController,
-                              screenWidth,
+                            child: CustomTextField(
+                              hintText: 'שם משפחה', // Hebrew for "Last Name"
+                              icon: Icons.person_outline,
+                              controller: _lastNameController,
+                              screenWidth: MediaQuery.of(context).size.width,
                             ),
                           ),
                         ],
@@ -145,32 +149,130 @@ class _SignupStep1State extends State<SignupStep1> {
                     Directionality(
                       textDirection:
                           TextDirection.rtl, // Set text direction to RTL
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: RadioListTile<String>(
-                              value: 'מנהל', // Hebrew for "Manager"
-                              groupValue: selectedRole,
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedRole = value;
-                                });
-                              },
-                              title: const Text('מנהל'),
-                            ),
+                          // Role Selection
+                          Row(
+                            children: [
+                              Expanded(
+                                child: RadioListTile<String>(
+                                  value: 'מנהל', // Hebrew for "Manager"
+                                  groupValue: selectedRole,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedRole = value;
+                                      selectedTruckType =
+                                          null; // Reset the truck type
+                                      selectedSize = null; // Reset the size
+                                    });
+                                  },
+                                  title: const Text('מנהל'),
+                                ),
+                              ),
+                              Expanded(
+                                child: RadioListTile<String>(
+                                  value: 'שליח', // Hebrew for "Delivery Person"
+                                  groupValue: selectedRole,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedRole = value;
+                                      selectedTruckType =
+                                          null; // Reset the truck type
+                                      selectedSize = null; // Reset the size
+                                    });
+                                  },
+                                  title: const Text('שליח'),
+                                ),
+                              ),
+                            ],
                           ),
-                          Expanded(
-                            child: RadioListTile<String>(
-                              value: 'שליח', // Hebrew for "Delivery Person"
-                              groupValue: selectedRole,
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedRole = value;
-                                });
-                              },
-                              title: const Text('שליח'),
+
+                          // Truck Type Selection
+                          if (selectedRole ==
+                              'שליח') // Show only if "Delivery Person" is selected
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Text(
+                                              'בחר סוג משאית',
+                                              style: GoogleFonts.exo2(
+                                                textStyle: TextStyle(
+                                                  color: const Color.fromARGB(
+                                                      255, 141, 126, 106),
+                                                  fontSize:
+                                                      screenHeight * 0.015,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          dropdownFieldFromList(
+                                            'סוג',
+                                            ['פלטה', 'צובר', 'תפזורת'],
+                                            selectedTruckType,
+                                            (value) {
+                                              setState(() {
+                                                selectedTruckType = value;
+                                                selectedSize =
+                                                    null; // Reset size when truck type changes
+                                              });
+                                            },
+                                            MediaQuery.of(context).size.width,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (selectedTruckType == 'פלטה' ||
+                                        selectedTruckType == 'תפזורת')
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: Text(
+                                                'בחר גודל',
+                                                style: GoogleFonts.exo2(
+                                                  textStyle: TextStyle(
+                                                    color: const Color.fromARGB(
+                                                        255, 141, 126, 106),
+                                                    fontSize:
+                                                        screenHeight * 0.015,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            dropdownFieldFromList(
+                                              'בחר גודל',
+                                              ['גדול', 'קטן'],
+                                              selectedSize,
+                                              (value) {
+                                                setState(() {
+                                                  selectedSize = value;
+                                                });
+                                              },
+                                              MediaQuery.of(context).size.width,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -215,34 +317,6 @@ class _SignupStep1State extends State<SignupStep1> {
               BlendMode.darken,
             ),
           ),
-        ),
-      );
-
-  Widget buildTextField(String hintText, IconData icon,
-          TextEditingController controller, double screenWidth) =>
-      Container(
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(screenWidth * 0.05),
-          border: Border.all(
-              color: const Color.fromARGB(255, 141, 126, 106), width: 1.0),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: const Color.fromARGB(255, 141, 126, 106)),
-            SizedBox(width: screenWidth * 0.03),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                style: GoogleFonts.exo2(
-                    textStyle:
-                        const TextStyle(color: Colors.black, fontSize: 16)),
-                decoration: InputDecoration(
-                    hintText: hintText, border: InputBorder.none),
-              ),
-            ),
-          ],
         ),
       );
 
@@ -363,6 +437,31 @@ class _SignupStep1State extends State<SignupStep1> {
             return;
           }
 
+          if (selectedRole == 'שליח' && selectedTruckType == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text('אנא בחר סוג משאית.'),
+                ),
+              ),
+            );
+            return;
+          }
+
+          if ((selectedTruckType == 'פלטה' || selectedTruckType == 'תפזורת') &&
+              selectedSize == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text('אנא בחר גודל למשאית.'),
+                ),
+              ),
+            );
+            return;
+          }
+
           if (_firstNameController.text.contains(RegExp(r'[0-9]')) ||
               _lastNameController.text.contains(RegExp(r'[0-9]'))) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -400,6 +499,9 @@ class _SignupStep1State extends State<SignupStep1> {
                 month: selectedMonth!,
                 year: selectedYear!,
                 role: selectedRole!, // Pass the role to the next step
+                truckType:
+                    selectedTruckType ?? 'defaultTruckType', // Default value
+                truckSize: selectedSize ?? 'defaultSize', // Default value
               ),
             ),
           );

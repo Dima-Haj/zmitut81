@@ -10,6 +10,8 @@ class SignupStep2 extends StatefulWidget {
   final String month;
   final String year;
   final String role;
+  final String truckType;
+  final String truckSize;
 
   const SignupStep2({
     super.key,
@@ -19,6 +21,8 @@ class SignupStep2 extends StatefulWidget {
     required this.month,
     required this.year,
     required this.role,
+    required this.truckType,
+    required this.truckSize,
   });
 
   @override
@@ -320,6 +324,8 @@ class _SignupStep2State extends State<SignupStep2> {
                     "05${_firstPartPhoneController.text}${_secondPartPhoneController.text}",
                 id: _idController.text,
                 role: widget.role,
+                truckType: widget.truckType,
+                truckSize: widget.truckSize,
               ),
             ),
           );
