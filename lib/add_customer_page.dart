@@ -131,7 +131,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
   ];
   static const productsByCategory = {
     'טיפול במים': [
-      'בזלת',
+      ' בזלת',
       'מלח ריכוך',
       'סיליקה',
       'קלציום קרבונט',
@@ -153,25 +153,16 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     'גינון ונוי': [
       'מצע לגני משחקים',
       'ברק',
-      'אדום',
-      'ירקרק',
-      'צהוב',
-      'ערד',
       'קררה',
       'סומסומון',
       'מיקרו',
-      'פתיתי זכוכית',
     ],
     'בנייה': [
       {
         'מוזאיקה - טראצו': [
-          'אדום',
           'בזלת',
           'ברק',
-          'ירקרק',
-          'ערד',
           'פרלוט',
-          'צהוב',
           'קררה',
         ],
       },
@@ -194,92 +185,129 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       context: context,
       builder: (context) {
         return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            contentPadding: const EdgeInsets.all(16),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const Text(
-                  'בחר קטגוריה',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                  textDirection: TextDirection.rtl,
-                ),
-              ],
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16), // Rounded corners
             ),
-            content: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.6,
-              child: Directionality(
-                textDirection: TextDirection.rtl, // Ensure RTL layout
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 8.0,
-                    mainAxisSpacing: 8.0,
-                    childAspectRatio: 1.0,
-                  ),
-                  itemCount: availableCategories.length,
-                  itemBuilder: (context, index) {
-                    final category = availableCategories[index];
-                    return GestureDetector(
-                      onTap: () {
-                        if (mounted) {
-                          setState(() {
-                            selectedCategory = category;
-                          });
-                        }
-                      },
-                      child: Container(
-                        alignment: Alignment.center,
-                        padding: EdgeInsets.all(
-                            MediaQuery.of(context).size.width * 0.04),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24.0),
-                          border: Border.all(
-                            color: selectedCategory == category
-                                ? Colors.blue
-                                : Colors.grey[700]!,
-                            width: 2,
-                          ),
-                        ),
-                        child: Text(
-                          category,
-                          textAlign: TextAlign.center,
-                          textDirection:
-                              TextDirection.rtl, // Text RTL alignment
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: MediaQuery.of(context).size.width * 0.04,
-                            fontWeight: FontWeight.normal,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 194, 177,
+                    156), // Change this to your desired background color
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.red),
+                          onPressed: () => Navigator.pop(context),
                         ),
                       ),
-                    );
-                  },
-                ),
+                      Center(
+                        child: const Text(
+                          'בחר קטגוריה',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.black, // Title text color
+                          ),
+                          textDirection: TextDirection.rtl,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.6,
+                    child: Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 8.0,
+                          mainAxisSpacing: 8.0,
+                          childAspectRatio: 1.0,
+                        ),
+                        itemCount: availableCategories.length,
+                        itemBuilder: (context, index) {
+                          final category = availableCategories[index];
+                          return GestureDetector(
+                            onTap: () {
+                              if (mounted) {
+                                setState(() {
+                                  selectedCategory = category;
+                                });
+                              }
+                            },
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: EdgeInsets.all(
+                                  MediaQuery.of(context).size.width * 0.04),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(28.0),
+                                border: Border.all(
+                                  color: selectedCategory == category
+                                      ? Colors.blue
+                                      : const Color.fromARGB(
+                                          255, 134, 118, 98)!,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color.fromARGB(255, 67, 67, 67)
+                                        .withOpacity(0.5), // Shadow color
+                                    spreadRadius: 1, // Spread of the shadow
+                                    blurRadius: 3, // Blur effect
+                                    offset: const Offset(
+                                        0, 3), // Position of the shadow
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                category,
+                                textAlign: TextAlign.center,
+                                textDirection: TextDirection.rtl,
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.04,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: selectedCategory == null
+                          ? null
+                          : () {
+                              Navigator.pop(context);
+                              _showProductDialog(selectedCategory!);
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                      ),
+                      child: const Text('המשך'),
+                    ),
+                  ),
+                ],
               ),
             ),
-            actions: [
-              ElevatedButton(
-                onPressed: selectedCategory == null
-                    ? null
-                    : () {
-                        Navigator.pop(context);
-                        _showProductDialog(selectedCategory!);
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                ),
-                child: const Text('המשך'),
-              ),
-            ],
           );
         });
       },
@@ -297,132 +325,167 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              contentPadding: const EdgeInsets.all(16),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.red),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    'בחר מוצר',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                    textDirection: TextDirection.rtl,
-                  ),
-                ],
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16), // Rounded corners
               ),
-              content: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.6,
-                child: Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 8.0,
-                      mainAxisSpacing: 8.0,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: productList.length,
-                    itemBuilder: (context, index) {
-                      final item = productList[index];
-                      return GestureDetector(
-                        onTap: () {
-                          if (mounted) {
-                            setDialogState(() {
-                              selectedProduct = item is Map
-                                  ? item.keys.first
-                                  : item.toString();
-                              hasSubProducts = item is Map;
-                              selectedSubProduct = null;
-                            });
-                          }
-                        },
-                        child: Container(
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: selectedProduct ==
-                                    (item is Map
-                                        ? item.keys.first
-                                        : item.toString())
-                                ? Colors.blue
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(24.0),
-                            border: Border.all(
-                              color: Colors.grey[700]!,
-                              width: 2,
-                            ),
-                          ),
-                          child: Text(
-                            item is Map ? item.keys.first : item.toString(),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: selectedProduct ==
-                                      (item is Map
-                                          ? item.keys.first
-                                          : item.toString())
-                                  ? Colors.white
-                                  : Colors.black,
-                              fontSize: 16,
-                            ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(
+                      255, 194, 177, 156), // Background color
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              actions: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton(
-                      onPressed: selectedProduct == null
-                          ? null
-                          : () {
-                              if (hasSubProducts) {
-                                Navigator.pop(context);
-                                final subCategoryName = selectedProduct!;
-                                final subProducts = productList.firstWhere(
-                                    (item) =>
-                                        item is Map &&
-                                        item.keys.first ==
-                                            subCategoryName)[subCategoryName];
-                                _showSubCategoryDialog(
-                                    subCategoryName, subProducts, category);
-                              } else {
-                                Navigator.pop(context);
-                                _showWeightAndPackagingDialog(
-                                  category,
-                                  selectedProduct!,
-                                  '',
-                                  [],
-                                );
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                      ),
-                      child: const Text('המשך'), // Unified text for both cases
+                        Center(
+                          child: const Text(
+                            'בחר מוצר',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Colors.black, // Title text color
+                            ),
+                            textDirection: TextDirection.rtl,
+                          ),
+                        ),
+                      ],
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // Reopen the parent product dialog
-                        _showCategoryDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[400],
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.6,
+                      child: Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 8.0,
+                            mainAxisSpacing: 8.0,
+                            childAspectRatio: 1.0,
+                          ),
+                          itemCount: productList.length,
+                          itemBuilder: (context, index) {
+                            final item = productList[index];
+                            return GestureDetector(
+                              onTap: () {
+                                if (mounted) {
+                                  setDialogState(() {
+                                    selectedProduct = item is Map
+                                        ? item.keys.first
+                                        : item.toString();
+                                    hasSubProducts = item is Map;
+                                    selectedSubProduct = null;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(28.0),
+                                  border: Border.all(
+                                    color: selectedProduct ==
+                                            (item is Map
+                                                ? item.keys.first
+                                                : item.toString())
+                                        ? Colors
+                                            .blue // Only border changes color
+                                        : const Color.fromARGB(
+                                            255, 134, 118, 98),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          const Color.fromARGB(255, 67, 67, 67)
+                                              .withOpacity(0.5), // Shadow color
+                                      spreadRadius: 1, // Spread of the shadow
+                                      blurRadius: 3, // Blur effect
+                                      offset: const Offset(
+                                          0, 3), // Position of the shadow
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  item is Map
+                                      ? item.keys.first
+                                      : item.toString(),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.black, // Text remains black
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      child: const Text('חזרה'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Continue button moved to the left
+                        ElevatedButton(
+                          onPressed: selectedProduct == null
+                              ? null
+                              : () {
+                                  if (hasSubProducts) {
+                                    Navigator.pop(context);
+                                    final subCategoryName = selectedProduct!;
+                                    final subProducts = productList.firstWhere(
+                                            (item) =>
+                                                item is Map &&
+                                                item.keys.first ==
+                                                    subCategoryName)[
+                                        subCategoryName];
+                                    _showSubCategoryDialog(
+                                        subCategoryName, subProducts, category);
+                                  } else {
+                                    Navigator.pop(context);
+                                    _showWeightAndPackagingDialog(
+                                      category,
+                                      selectedProduct!,
+                                      '',
+                                      [],
+                                    );
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                          ),
+                          child: const Text('המשך'),
+                        ),
+                        // Back button moved to the right
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showCategoryDialog();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[400],
+                          ),
+                          child: const Text('חזרה'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             );
           },
         );
@@ -431,136 +494,294 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
   }
 
   void _showWeightAndPackagingDialog(String category, String product,
-      String subProductname, List<dynamic> subProduct) {
+      String subProductName, List<dynamic> subProduct) {
     final TextEditingController weightController = TextEditingController();
-    bool isPackaged = false;
+    final TextEditingController otherPackagingController =
+        TextEditingController();
+    String? selectedPackaging = 'Bags'; // Default to "Bags"
+    bool showOtherPackaging = false;
+    String? selectedSize; // To store the selected size
+
+    // Define sizes for each product or sub-product
+    final Map<String, List<String>> productSizes = {
+      'בזלת': ['פוליה: 16-19', 'עדס: 9-16', 'אחר: 2.5-9', 'סומסומון: 1.4-2.5'],
+      'ברק': ['פוליה: 16-25', 'עדס: 9-16', 'אחר: 2.5-9', 'סומסומון: 1.4-2.5'],
+      'פרלטו': [
+        '32-45',
+        '22-32',
+        '6-19',
+      ],
+      'קררה': [
+        '30-40',
+        '22-30',
+        '18-22',
+        '12-18',
+        '9-12',
+        '4-9',
+      ],
+      'מלאן - גיר בניה': [
+        '0.3-0.6',
+        '0-0.3',
+      ],
+      'סומסומון': [
+        '1.4-2.3',
+      ],
+      'מיקרו': [
+        '0.6-1.4',
+      ],
+      'פיקסל': [
+        '0.3-0.6',
+      ],
+      'מצע לגני משחקים': [
+        'גרגילון 1: 0.7-2.0',
+        'גרגילון 2: 6.3-2.0',
+        'גרגילון 3: 0.3-1.4',
+        'גרגילון 4: 0.3-2.0',
+      ],
+      'סידנית': [
+        '2.5-4.75',
+        '1.4-2.5',
+        '0.6-1.4',
+        '0-0.6',
+        '0-1.5',
+      ],
+      'מלח': [
+        'Fine Grade 0-0.8',
+        'Coarse Grade 0.8-2',
+        'Granular Grade 1-4',
+      ],
+      'דלומיט': [
+        '3-6',
+        '1.4-2.5',
+        '0.6-1.4',
+        '0-1.4',
+        '0-0.6',
+      ],
+      'קלציום קרבונט': [
+        '2.5-4.75',
+        '1.4-2.5',
+        '0.6-1.4',
+        '0.3-1.4',
+        '0-0.6',
+      ],
+      'סיליקה': [
+        '3-6',
+        '2-3',
+        '0.6-1',
+      ],
+      'מלח ריכוך': [
+        'Fine Grade 0-0.8',
+        'Coarse Grade 0.8-2',
+        'Granular Grade 1-4',
+      ],
+      ' בזלת': [
+        '2.5-4.75',
+        '1.4-2.5',
+        '0.6-1.4',
+        '0.3-0.6',
+      ],
+
+      // Add more product and sub-product sizes as needed
+    };
+
+    // Determine which name to use for sizes
+    final String sizeKey = subProductName.isNotEmpty ? subProductName : product;
+
+    // Get sizes for the selected product or sub-product
+    final List<String> sizes = productSizes[sizeKey] ?? [];
 
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.red),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const Text(
-                    'פרטי מוצר',
-                    textDirection: TextDirection.rtl,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Directionality(
-                    textDirection: TextDirection
-                        .rtl, // Ensures label and text align to the right
-                    child: Row(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 194, 177, 156),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Column(
                       children: [
-                        // Weight Input Field
-                        Expanded(
-                          child: TextField(
-                            controller: weightController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'משקל', // Label text in Hebrew
-                              alignLabelWithHint:
-                                  true, // Keeps label aligned correctly
-                              labelStyle: const TextStyle(
-                                fontSize: 16,
-                              ),
-                            ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
                           ),
                         ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.02,
-                        ),
-
-                        // Spacing between TextField and Dropdown
-                        // Dropdown for Weight Type
-                        DropdownButton<String>(
-                          value:
-                              selectedWeightType, // The currently selected value
-                          items: weightTypes
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedWeightType =
-                                  newValue!; // Update the selected value
-                            });
-                          },
+                        Center(
+                          child: const Text(
+                            'פרטי מוצר',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Colors.black,
+                            ),
+                            textDirection: TextDirection.rtl,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Switch(
-                        value: isPackaged,
-                        onChanged: (value) {
-                          setDialogState(() {
-                            isPackaged = value;
-                          });
-                        },
+                    const SizedBox(height: 16),
+                    // Size Selection
+                    if (sizes.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: DropdownButton<String>(
+                              value: selectedSize,
+                              hint: const Text('(mm) בחר גודל'),
+                              items: sizes.map((size) {
+                                return DropdownMenuItem<String>(
+                                  value: size,
+                                  child: Text(size),
+                                );
+                              }).toList(),
+                              onChanged: (String? newSize) {
+                                setDialogState(() {
+                                  selectedSize = newSize;
+                                });
+                              },
+                            ),
+                          )
+                        ],
                       ),
-                      const Spacer(),
-                      const Text(
-                        'האם המוצר בשקיות?',
-                        textDirection: TextDirection.rtl,
-                        style: TextStyle(fontSize: 16),
+                    const SizedBox(height: 16),
+                    Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: weightController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'משקל',
+                                alignLabelWithHint: true,
+                                labelStyle: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          DropdownButton<String>(
+                            value: selectedWeightType,
+                            items: ['ק"ג', 'טון'].map((value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setDialogState(() {
+                                selectedWeightType = newValue!;
+                              });
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<String>(
+                            value: 'Bags',
+                            groupValue: selectedPackaging,
+                            title: const Text('שקיות'),
+                            onChanged: (value) {
+                              setDialogState(() {
+                                selectedPackaging = value!;
+                                showOtherPackaging = false;
+                              });
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<String>(
+                            value: 'Other',
+                            groupValue: selectedPackaging,
+                            title: const Text('אחר'),
+                            onChanged: (value) {
+                              setDialogState(() {
+                                selectedPackaging = value!;
+                                showOtherPackaging = true;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (showOtherPackaging)
+                      TextField(
+                        controller: otherPackagingController,
+                        decoration: const InputDecoration(
+                          labelText: 'פרטי אריזה',
+                          hintText: 'הכנס פרטי אריזה מותאמים אישית',
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            if (weightController.text.isNotEmpty &&
+                                selectedSize != null) {
+                              Navigator.pop(context);
+                              _saveProductDetails(
+                                category,
+                                product,
+                                subProductName,
+                                weightController.text,
+                                selectedWeightType,
+                                selectedPackaging == 'Bags',
+                                showOtherPackaging
+                                    ? otherPackagingController.text
+                                    : 'Bags',
+                                selectedSize!, // Pass the selected size
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                          ),
+                          child: const Text('שמור פרטים'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            if (subProductName == '') {
+                              _showProductDialog(category);
+                            } else {
+                              _showSubCategoryDialog(
+                                product,
+                                subProduct,
+                                category,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[400],
+                          ),
+                          child: const Text('חזרה'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    if (weightController.text.isNotEmpty) {
-                      Navigator.pop(context);
-                      _saveProductDetails(
-                          category,
-                          product,
-                          subProductname,
-                          weightController.text,
-                          selectedWeightType,
-                          isPackaged);
-                    }
-                  },
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: const Text('שמור פרטים'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    if (subProductname == '') {
-                      _showProductDialog(category);
-                    } else {
-                      _showSubCategoryDialog(product, subProduct, category);
-                    }
-                    // Logic to go back can be handled if needed
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                  child: const Text('חזרה'),
-                ),
-              ],
             );
           },
         );
@@ -568,8 +789,15 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     );
   }
 
-  void _saveProductDetails(String category, String product, String subProduct,
-      String weight, String weightType, bool isPackaged) {
+  void _saveProductDetails(
+      String category,
+      String product,
+      String subProduct,
+      String weight,
+      String weightType,
+      bool isPackaged,
+      String packagingDetails,
+      String size) {
     setState(() {
       if (selectedCategoryIndex != null && selectedProductIndex != null) {
         // Update the existing product
@@ -580,6 +808,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
           'weight': double.tryParse(weight) ?? 0.0,
           'weightType': weightType,
           'isPackaged': isPackaged,
+          'packagingDetails': isPackaged ? 'Bags' : packagingDetails,
+          'size': size, // Save the selected size
         };
 
         // Reset the selection
@@ -596,6 +826,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
               'weight': double.tryParse(weight) ?? 0.0,
               'weightType': weightType,
               'isPackaged': isPackaged,
+              'packagingDetails': isPackaged ? 'Bags' : packagingDetails,
+              'size': size, // Save the selected size
             }
           ],
         });
@@ -650,110 +882,143 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              contentPadding: const EdgeInsets.all(16),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.red),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Text(
-                    'בחר תת-מוצר',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                    textDirection: TextDirection.rtl,
-                  ),
-                ],
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16), // Rounded corners
               ),
-              content: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.6,
-                child: Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 8.0,
-                      mainAxisSpacing: 8.0,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: subProducts.length,
-                    itemBuilder: (context, index) {
-                      final subProduct = subProducts[index];
-                      return GestureDetector(
-                        onTap: () {
-                          if (mounted) {
-                            setDialogState(() {
-                              selectedSubProduct = subProduct.toString();
-                            });
-                          }
-                        },
-                        child: Container(
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: selectedSubProduct == subProduct
-                                ? Colors.blue
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(24.0),
-                            border: Border.all(
-                              color: Colors.grey[700]!,
-                              width: 2,
-                            ),
-                          ),
-                          child: Text(
-                            subProduct,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: selectedSubProduct == subProduct
-                                  ? Colors.white
-                                  : Colors.black,
-                              fontSize: 16,
-                            ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(
+                      255, 194, 177, 156), // Background color
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              actions: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton(
-                      onPressed: selectedSubProduct == null
-                          ? null
-                          : () {
-                              Navigator.pop(context);
-                              // Navigate to the weight and packaging dialog
-                              _showWeightAndPackagingDialog(
-                                  parentCategory,
-                                  subCategoryName,
-                                  selectedSubProduct!,
-                                  subProducts);
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                      ),
-                      child: const Text('המשך'),
+                        Center(
+                          child: const Text(
+                            'בחר תת-מוצר',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Colors.black, // Title text color
+                            ),
+                            textDirection: TextDirection.rtl,
+                          ),
+                        ),
+                      ],
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // Reopen the parent product dialog
-                        _showProductDialog(parentCategory);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[400],
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.6,
+                      child: Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 8.0,
+                            mainAxisSpacing: 8.0,
+                            childAspectRatio: 1.0,
+                          ),
+                          itemCount: subProducts.length,
+                          itemBuilder: (context, index) {
+                            final subProduct = subProducts[index];
+                            return GestureDetector(
+                              onTap: () {
+                                if (mounted) {
+                                  setDialogState(() {
+                                    selectedSubProduct = subProduct.toString();
+                                  });
+                                }
+                              },
+                              child: Container(
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24.0),
+                                  border: Border.all(
+                                    color: selectedSubProduct == subProduct
+                                        ? Colors.blue // Border changes to blue
+                                        : const Color.fromARGB(
+                                            255, 134, 118, 98),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          const Color.fromARGB(255, 67, 67, 67)
+                                              .withOpacity(0.5), // Shadow color
+                                      spreadRadius: 1, // Spread of the shadow
+                                      blurRadius: 3, // Blur effect
+                                      offset: const Offset(
+                                          0, 3), // Position of the shadow
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  subProduct,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.black, // Text remains black
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      child: const Text('חזרה'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Continue button moved to the left
+                        ElevatedButton(
+                          onPressed: selectedSubProduct == null
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                  _showWeightAndPackagingDialog(
+                                      parentCategory,
+                                      subCategoryName,
+                                      selectedSubProduct!,
+                                      subProducts);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                          ),
+                          child: const Text('המשך'),
+                        ),
+                        // Back button moved to the right
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showProductDialog(parentCategory);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[400],
+                          ),
+                          child: const Text('חזרה'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             );
           },
         );
