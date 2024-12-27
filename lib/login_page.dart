@@ -4,6 +4,7 @@ import 'package:flutter_application_1/custom_text_field.dart';
 import 'package:flutter_application_1/date_of_birth_dropdowns.dart';
 import 'package:flutter_application_1/dropdown_helpers.dart';
 import 'package:flutter_application_1/firebase_auth_services.dart';
+import 'package:flutter_application_1/forgot_password_page.dart';
 import 'package:flutter_application_1/phone_field.dart';
 import 'package:google_fonts/google_fonts.dart'; // Google fonts package
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome package for icons
@@ -779,7 +780,13 @@ class LoginPageState extends State<LoginPage> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ForgotPasswordPage()),
+                          );
+                        },
                         child: Text(
                           '?שכחת סיסמה',
                           style: GoogleFonts.exo2(
@@ -788,6 +795,7 @@ class LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
+
                     SizedBox(height: screenHeight * 0.01),
 
                     // Login Button
@@ -849,23 +857,7 @@ class LoginPageState extends State<LoginPage> {
                       children: [
                         Expanded(
                           child: buildSocialButton(
-                            FontAwesomeIcons.facebookF,
-                            screenWidth,
-                            screenHeight,
-                            const Color.fromARGB(255, 141, 126, 106),
-                          ),
-                        ),
-                        Expanded(
-                          child: buildSocialButton(
                             FontAwesomeIcons.google,
-                            screenWidth,
-                            screenHeight,
-                            const Color.fromARGB(255, 141, 126, 106),
-                          ),
-                        ),
-                        Expanded(
-                          child: buildSocialButton(
-                            Icons.phone,
                             screenWidth,
                             screenHeight,
                             const Color.fromARGB(255, 141, 126, 106),
