@@ -107,7 +107,7 @@ class TimesheetPageState extends State<TimesheetPage> {
   String _formatDuration(int durationInSeconds) {
     int hours = durationInSeconds ~/ 3600;
     int minutes = (durationInSeconds % 3600) ~/ 60;
-    return '${hours.toString().padLeft(2, '0')}h ${minutes.toString().padLeft(2, '0')}m';
+    return '${hours.toString().padLeft(2, '0')} ש ${minutes.toString().padLeft(2, '0')} ד';
   }
 
   @override
@@ -180,7 +180,7 @@ class TimesheetPageState extends State<TimesheetPage> {
 
               Center(
                 child: Text(
-                  'Monthly Timesheet',
+                  'דו"ח שעות חודשי',
                   style: TextStyle(
                     fontSize: screenWidth * 0.07,
                     fontWeight: FontWeight.bold,
@@ -192,23 +192,33 @@ class TimesheetPageState extends State<TimesheetPage> {
 
               // Month Selector Dropdown
               if (monthlyShiftRecords.isNotEmpty)
-                DropdownButton<String>(
-                  value: selectedMonthKey,
-                  onChanged: (value) {
-                    setState(() {
-                      selectedMonthKey = value!;
-                    });
-                  },
-                  dropdownColor: Colors.black,
-                  items: monthlyShiftRecords.keys.map((monthKey) {
-                    return DropdownMenuItem(
-                      value: monthKey,
-                      child: Text(
-                        _formatMonthKey(monthKey),
-                        style: const TextStyle(color: Colors.white),
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.end, // Align to the right
+                  children: [
+                    Directionality(
+                      textDirection:
+                          TextDirection.rtl, // Optional: For RTL text direction
+                      child: DropdownButton<String>(
+                        value: selectedMonthKey,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedMonthKey = value!;
+                          });
+                        },
+                        dropdownColor: Colors.black,
+                        items: monthlyShiftRecords.keys.map((monthKey) {
+                          return DropdownMenuItem(
+                            value: monthKey,
+                            child: Text(
+                              _formatMonthKey(monthKey),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  ],
                 ),
 
               const SizedBox(height: 20),
@@ -220,7 +230,7 @@ class TimesheetPageState extends State<TimesheetPage> {
                     : selectedShiftRecords.isEmpty
                         ? Center(
                             child: Text(
-                              'No shift records found for this month.',
+                              '.לא נמצאו רישומי משמרות לחודש זה',
                               style: TextStyle(
                                 fontSize: screenWidth * 0.05,
                                 color: Colors.white,
@@ -233,14 +243,18 @@ class TimesheetPageState extends State<TimesheetPage> {
                               DateTime date =
                                   selectedShiftRecords.keys.elementAt(index);
                               int duration = selectedShiftRecords[date]!;
-                              return ListTile(
-                                title: Text(
-                                  '${date.day}/${date.month}/${date.year}',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                subtitle: Text(
-                                  _formatDuration(duration),
-                                  style: TextStyle(color: Colors.grey[300]),
+                              return Directionality(
+                                textDirection: TextDirection
+                                    .rtl, // Set text direction to RTL
+                                child: ListTile(
+                                  title: Text(
+                                    '${date.day}/${date.month}/${date.year}',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  subtitle: Text(
+                                    _formatDuration(duration),
+                                    style: TextStyle(color: Colors.grey[300]),
+                                  ),
                                 ),
                               );
                             },
@@ -251,12 +265,20 @@ class TimesheetPageState extends State<TimesheetPage> {
               const Divider(color: Colors.grey),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  'Total Hours: ${_formatDuration(selectedShiftRecords.values.fold(0, (sum1, item) => sum1 + item))}',
-                  style: TextStyle(
-                    fontSize: screenWidth * 0.05,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                child: Align(
+                  alignment:
+                      Alignment.centerRight, // Align the text to the right side
+                  child: Directionality(
+                    textDirection:
+                        TextDirection.rtl, // Set text direction to RTL
+                    child: Text(
+                      'סה"כ שעות: ${_formatDuration(selectedShiftRecords.values.fold(0, (sum1, item) => sum1 + item))}',
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.05,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),
