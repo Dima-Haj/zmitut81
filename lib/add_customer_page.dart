@@ -811,7 +811,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
           'weight': double.tryParse(weight) ?? 0.0,
           'weightType': weightType,
           'isPackaged': isPackaged,
-          'packagingDetails': isPackaged ? 'Bags' : packagingDetails,
+          if (packagingDetails != '') 'packagingDetails': packagingDetails,
           if (size != null) 'size': size, // Save the selected size
           'Date': formattedDate,
         };
