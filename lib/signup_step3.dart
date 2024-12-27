@@ -14,6 +14,8 @@ class SignupStep3 extends StatelessWidget {
   final String phone;
   final String id;
   final String role;
+  final String truckType;
+  final String truckSize;
 
   SignupStep3({
     super.key,
@@ -25,6 +27,8 @@ class SignupStep3 extends StatelessWidget {
     required this.phone,
     required this.id,
     required this.role,
+    required this.truckType,
+    required this.truckSize,
   });
 
   final FirebaseAuthServices _auth = FirebaseAuthServices(); // Initialize here
@@ -320,47 +324,47 @@ class SignupStep3 extends StatelessWidget {
               emailController.text, passwordController.text);
 
           if (user != null) {
+            Map<String, dynamic> commonData = {
+              'firstName': firstName,
+              'lastName': lastName,
+              'birthDay': day,
+              'birthMonth': month,
+              'birthYear': year,
+              'phone': phone,
+              'id': id,
+              'email': emailController.text,
+            };
+
             if (role == "מנהל") {
-              FirebaseFirestore.instance
+              await FirebaseFirestore.instance
                   .collection('Managers')
                   .doc(user.uid)
-                  .set({
-                'firstName': firstName,
-                'lastName': lastName,
-                'birthDay': day,
-                'birthMonth': month,
-                'birthYear': year,
-                'phone': phone,
-                'id': id,
-                'email': emailController.text,
-              });
+                  .set(commonData);
             } else {
-              FirebaseFirestore.instance
+              Map<String, dynamic> employeeData = {
+                ...commonData,
+                if (truckType != 'defaultTruckType') 'truckType': truckType,
+                if (truckSize != 'defaultSize') 'truckSize': truckSize,
+              };
+
+              await FirebaseFirestore.instance
                   .collection('Employees')
                   .doc(user.uid)
-                  .set({
-                'firstName': firstName,
-                'lastName': lastName,
-                'birthDay': day,
-                'birthMonth': month,
-                'birthYear': year,
-                'phone': phone,
-                'id': id,
-                'email': emailController.text,
-              });
+                  .set(employeeData);
             }
 
-            // ignore: use_build_context_synchronously
+            // Notify user about successful signup
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Directionality(
-                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  textDirection: TextDirection.rtl,
                   child: const Text(
                       'המשתמש נוסף בהצלחה'), // Hebrew for "User added successfully"
                 ),
               ),
             );
-            // ignore: use_build_context_synchronously
+
+            // Navigate back to the initial route
             Navigator.popUntil(context, (route) => route.isFirst);
           } else {
             // ignore: use_build_context_synchronously
