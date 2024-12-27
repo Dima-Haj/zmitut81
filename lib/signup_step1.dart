@@ -16,7 +16,9 @@ class _SignupStep1State extends State<SignupStep1> {
   String? selectedDay;
   String? selectedMonth;
   String? selectedYear;
-  String? selectedRole; // Add this to store the selected role
+  String? selectedRole;
+  String? selectedTruckType; // Nullable type for the truck type
+  String? selectedSize; // Nullable type for the truck size
 
   final List<String> months = [
     'ינואר', // January
@@ -145,32 +147,130 @@ class _SignupStep1State extends State<SignupStep1> {
                     Directionality(
                       textDirection:
                           TextDirection.rtl, // Set text direction to RTL
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: RadioListTile<String>(
-                              value: 'מנהל', // Hebrew for "Manager"
-                              groupValue: selectedRole,
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedRole = value;
-                                });
-                              },
-                              title: const Text('מנהל'),
-                            ),
+                          // Role Selection
+                          Row(
+                            children: [
+                              Expanded(
+                                child: RadioListTile<String>(
+                                  value: 'מנהל', // Hebrew for "Manager"
+                                  groupValue: selectedRole,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedRole = value;
+                                      selectedTruckType =
+                                          null; // Reset the truck type
+                                      selectedSize = null; // Reset the size
+                                    });
+                                  },
+                                  title: const Text('מנהל'),
+                                ),
+                              ),
+                              Expanded(
+                                child: RadioListTile<String>(
+                                  value: 'שליח', // Hebrew for "Delivery Person"
+                                  groupValue: selectedRole,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedRole = value;
+                                      selectedTruckType =
+                                          null; // Reset the truck type
+                                      selectedSize = null; // Reset the size
+                                    });
+                                  },
+                                  title: const Text('שליח'),
+                                ),
+                              ),
+                            ],
                           ),
-                          Expanded(
-                            child: RadioListTile<String>(
-                              value: 'שליח', // Hebrew for "Delivery Person"
-                              groupValue: selectedRole,
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedRole = value;
-                                });
-                              },
-                              title: const Text('שליח'),
+
+                          // Truck Type Selection
+                          if (selectedRole ==
+                              'שליח') // Show only if "Delivery Person" is selected
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Text(
+                                              'בחר סוג משאית',
+                                              style: GoogleFonts.exo2(
+                                                textStyle: TextStyle(
+                                                  color: const Color.fromARGB(
+                                                      255, 141, 126, 106),
+                                                  fontSize:
+                                                      screenHeight * 0.015,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          dropdownFieldFromList(
+                                            'סוג',
+                                            ['פלטה', 'צובר', 'תפזורת'],
+                                            selectedTruckType,
+                                            (value) {
+                                              setState(() {
+                                                selectedTruckType = value;
+                                                selectedSize =
+                                                    null; // Reset size when truck type changes
+                                              });
+                                            },
+                                            MediaQuery.of(context).size.width,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (selectedTruckType == 'פלטה' ||
+                                        selectedTruckType == 'תפזורת')
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: Text(
+                                                'בחר גודל',
+                                                style: GoogleFonts.exo2(
+                                                  textStyle: TextStyle(
+                                                    color: const Color.fromARGB(
+                                                        255, 141, 126, 106),
+                                                    fontSize:
+                                                        screenHeight * 0.015,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            dropdownFieldFromList(
+                                              'בחר גודל',
+                                              ['גדול', 'קטן'],
+                                              selectedSize,
+                                              (value) {
+                                                setState(() {
+                                                  selectedSize = value;
+                                                });
+                                              },
+                                              MediaQuery.of(context).size.width,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -363,6 +463,31 @@ class _SignupStep1State extends State<SignupStep1> {
             return;
           }
 
+          if (selectedRole == 'שליח' && selectedTruckType == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text('אנא בחר סוג משאית.'),
+                ),
+              ),
+            );
+            return;
+          }
+
+          if ((selectedTruckType == 'פלטה' || selectedTruckType == 'תפזורת') &&
+              selectedSize == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text('אנא בחר גודל למשאית.'),
+                ),
+              ),
+            );
+            return;
+          }
+
           if (_firstNameController.text.contains(RegExp(r'[0-9]')) ||
               _lastNameController.text.contains(RegExp(r'[0-9]'))) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -400,6 +525,8 @@ class _SignupStep1State extends State<SignupStep1> {
                 month: selectedMonth!,
                 year: selectedYear!,
                 role: selectedRole!, // Pass the role to the next step
+                truckType:selectedTruckType ?? 'defaultTruckType', // Default value
+                truckSize: selectedSize ?? 'defaultSize', // Default value
               ),
             ),
           );
