@@ -256,8 +256,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                 border: Border.all(
                                   color: selectedCategory == category
                                       ? Colors.blue
-                                      : const Color.fromARGB(
-                                          255, 134, 118, 98)!,
+                                      : const Color.fromARGB(255, 134, 118, 98),
                                   width: 2,
                                 ),
                                 boxShadow: [
@@ -1033,7 +1032,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false, // Disable default leading behavior
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color.fromARGB(0, 255, 255, 255),
           elevation: 0,
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween, // Spread widgets
@@ -1174,7 +1173,33 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                       alignment: Alignment.center,
                       child: ElevatedButton(
                         onPressed: _showCategoryDialog,
-                        child: const Text('הוסף קטגוריה'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white, // White background
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12.0, horizontal: 24.0), // Padding
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(24.0), // Rounded corners
+                            side: const BorderSide(
+                              color: Color.fromARGB(
+                                  255, 134, 118, 98), // Brown border color
+                              width: 1.5, // Border width
+                            ),
+                          ),
+                          shadowColor: const Color.fromARGB(255, 43, 43, 43)
+                              .withOpacity(0.3), // Subtle shadow
+                          elevation: 4, // Light shadow
+                        ),
+                        child: Text(
+                          'הוסף קטגוריה',
+                          style: const TextStyle(
+                            fontSize: 18, // Font size
+                            fontWeight: FontWeight.bold, // Bold text
+                            color: Color.fromARGB(
+                                255, 134, 118, 98), // Brown text color
+                            fontFamily: 'Arial', // Optional custom font
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1217,11 +1242,15 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                       if (product['Sub-Product'] != '')
                                         Text(
                                             'תת-מוצר: ${product['Sub-Product']}'),
+                                      if (product['size'] != null &&
+                                          product['size'].isNotEmpty)
+                                        Text('גודל: ${product['size']}'),
                                       Text(
                                         'משקל: ${product['weight']} ${product['weightType']}',
                                       ),
                                       Text(
-                                          'שקיות: ${product['isPackaged'] == true ? 'כן' : 'לא'}'),
+                                        'אריזה: ${product['isPackaged'] == true ? 'שקיות' : product['packagingDetails']}',
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1283,9 +1312,18 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                     // Get a reference to Firestore
                     final firestore = FirebaseFirestore.instance;
 
-                    // Add client document and get the document ID
+                    // Add customer document and get the document ID
                     final clientDoc =
                         await firestore.collection('clients').add(clientData);
+
+                    // Save categories as orders under the customer
+                    for (var category in categories) {
+                      await firestore
+                          .collection('clients')
+                          .doc(clientDoc.id)
+                          .collection('orders')
+                          .add(category);
+                    }
 
                     // Add categories as sub-collection (orders)
                     for (var category in categories) {

@@ -171,7 +171,14 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                       MaterialPageRoute(
                                         builder: (context) => OrderHistoryPage(
                                           customerName: customer['name']!,
-                                          orders: orders,
+                                          orders: customer[
+                                              'products'], // Pass the customer's orders here
+                                          onAddOrder: (newOrder) {
+                                            setState(() {
+                                              customer['products'].add(
+                                                  newOrder); // Add the new order to the customer's orders list
+                                            });
+                                          },
                                         ),
                                       ),
                                     );
