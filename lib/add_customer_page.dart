@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart' as time;
 
 class AddCustomerPage extends StatefulWidget {
   final Function(Map<String, dynamic>) onAddCustomer;
@@ -385,7 +386,6 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                         ? item.keys.first
                                         : item.toString();
                                     hasSubProducts = item is Map;
-                                    selectedSubProduct = null;
                                   });
                                 }
                               },
@@ -737,7 +737,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                         ElevatedButton(
                           onPressed: () {
                             if (weightController.text.isNotEmpty &&
-                                selectedSize != null) {
+                                ((sizes.isNotEmpty && selectedSize != null) ||
+                                    sizes.isEmpty)) {
                               Navigator.pop(context);
                               _saveProductDetails(
                                 category,
@@ -749,7 +750,9 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                 showOtherPackaging
                                     ? otherPackagingController.text
                                     : 'Bags',
-                                selectedSize!, // Pass the selected size
+                                sizes.isNotEmpty
+                                    ? selectedSize!
+                                    : null, // Pass selectedSize if sizes is not empty, otherwise null
                               );
                             }
                           },
@@ -796,19 +799,22 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       String weightType,
       bool isPackaged,
       String packagingDetails,
-      String size) {
+      String? size) {
     setState(() {
       if (selectedCategoryIndex != null && selectedProductIndex != null) {
+        final formattedDate =
+            time.DateFormat('dd-MM-yyyy').format(DateTime.now());
         // Update the existing product
         categories[selectedCategoryIndex!]['products']
             [selectedProductIndex!] = {
           'product': product,
-          'Sub-Product': subProduct,
+          if (subProduct != '') 'Sub-Product': subProduct,
           'weight': double.tryParse(weight) ?? 0.0,
           'weightType': weightType,
           'isPackaged': isPackaged,
-          'packagingDetails': isPackaged ? 'Bags' : packagingDetails,
-          'size': size, // Save the selected size
+          if (packagingDetails != '') 'packagingDetails': packagingDetails,
+          if (size != null) 'size': size, // Save the selected size
+          'Date': formattedDate,
         };
 
         // Reset the selection
@@ -816,19 +822,18 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         selectedProductIndex = null;
       } else {
         // Add a new product
+        final formattedDate =
+            time.DateFormat('dd-MM-yyyy').format(DateTime.now());
         categories.add({
           'name': category,
-          'products': [
-            {
-              'product': product,
-              'Sub-Product': subProduct,
-              'weight': double.tryParse(weight) ?? 0.0,
-              'weightType': weightType,
-              'isPackaged': isPackaged,
-              'packagingDetails': isPackaged ? 'Bags' : packagingDetails,
-              'size': size, // Save the selected size
-            }
-          ],
+          'product': product,
+          if (subProduct != '') 'Sub-Product': subProduct,
+          'weight': double.tryParse(weight) ?? 0.0,
+          'weightType': weightType,
+          'isPackaged': isPackaged,
+          'packagingDetails': isPackaged ? 'Bags' : packagingDetails,
+          if (size != null) 'size': size, // Save the selected size
+          'Date': formattedDate,
         });
       }
     });
@@ -1076,6 +1081,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                   bottom: 80,
                 ),
                 child: Column(
+                  mainAxisSize: MainAxisSize
+                      .min, // Add this line to prevent Column expansion
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Row(
@@ -1238,18 +1245,19 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text('מוצר: ${product['product']}'),
-                                      if (product['Sub-Product'] != '')
+                                      Text('מוצר: ${category['product']}'),
+                                      if (category['Sub-Product'] != null &&
+                                          category['Sub-Product'] != '')
                                         Text(
-                                            'תת-מוצר: ${product['Sub-Product']}'),
-                                      if (product['size'] != null &&
-                                          product['size'].isNotEmpty)
-                                        Text('גודל: ${product['size']}'),
+                                            'תת-מוצר: ${category['Sub-Product']}'),
+                                      if (category['size'] != null &&
+                                          category['size'].isNotEmpty)
+                                        Text('גודל: ${category['size']}'),
                                       Text(
-                                        'משקל: ${product['weight']} ${product['weightType']}',
+                                        'משקל: ${category['weight']} ${category['weightType']}',
                                       ),
                                       Text(
-                                        'אריזה: ${product['isPackaged'] == true ? 'שקיות' : product['packagingDetails']}',
+                                        'אריזה: ${category['isPackaged'] == true ? 'שקיות' : category['packagingDetails']}',
                                       ),
                                     ],
                                   ),
@@ -1268,8 +1276,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                         });
                                         _handleProductSelection(
                                           category['name'],
-                                          product['product'],
-                                          product['Sub-Product'],
+                                          category['product'],
+                                          category['Sub-Product'],
                                         );
                                       },
                                     ),
