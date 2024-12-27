@@ -1214,7 +1214,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                       Column(
                         children: List.generate(categories.length, (index) {
                           final category = categories[index];
-                          final product = category['products'][0];
+                          //final product = category['products'][0];
                           return Container(
                             margin: const EdgeInsets.symmetric(vertical: 8.0),
                             padding: const EdgeInsets.all(16.0),
@@ -1325,15 +1325,6 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                         await firestore.collection('clients').add(clientData);
 
                     // Save categories as orders under the customer
-                    for (var category in categories) {
-                      await firestore
-                          .collection('clients')
-                          .doc(clientDoc.id)
-                          .collection('orders')
-                          .add(category);
-                    }
-
-                    // Add categories as sub-collection (orders)
                     for (var category in categories) {
                       await firestore
                           .collection('clients')

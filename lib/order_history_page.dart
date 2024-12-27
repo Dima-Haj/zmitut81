@@ -38,8 +38,10 @@ class OrderHistoryPage extends StatelessWidget {
                 Text('שם מוצר: ${order['product']}', style: GoogleFonts.exo2()),
                 if (order.containsKey('Sub-Product') &&
                     order['Sub-Product'] != '')
-                  Text('שם תת-מוצר: ${order['Sub-Product']}',
+                  Text('פרטי הזמנה: ${order['packagingDetails']}',
                       style: GoogleFonts.exo2()),
+                Text('שם תת-מוצר: ${order['Sub-Product']}',
+                    style: GoogleFonts.exo2()),
                 Text('משקל: ${order['weight']} ${order['weightType']}',
                     style: GoogleFonts.exo2()),
                 if (order.containsKey('size'))
