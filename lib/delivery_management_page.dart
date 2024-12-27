@@ -56,14 +56,15 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
   Set<Marker> _buildMarkers() {
     return deliveries.map((delivery) {
       return Marker(
-        markerId: MarkerId(delivery['id']),
-        position: LatLng(delivery['latitude'], delivery['longitude']),
+        markerId: MarkerId(delivery['id']), // Required parameter
+        position: LatLng(
+            delivery['latitude'], delivery['longitude']), // Correct position
         infoWindow: InfoWindow(
           title: 'Delivery ${delivery['id']}',
           snippet: 'Assigned to: ${delivery['assignedTo']}',
         ),
         icon: BitmapDescriptor.defaultMarkerWithHue(
-          _getMarkerHue(delivery['status']),
+          _getMarkerHue(delivery['status']), // Status-based marker hue
         ),
       );
     }).toSet();
@@ -79,6 +80,19 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
         return BitmapDescriptor.hueGreen;
       default:
         return BitmapDescriptor.hueRed;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Active':
+        return Colors.blue;
+      case 'Pending':
+        return Colors.orange;
+      case 'Completed':
+        return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -131,16 +145,17 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
                   margin: const EdgeInsets.only(bottom: 15.0),
                   child: GoogleMap(
                     initialCameraPosition: CameraPosition(
-                      target: LatLng(
-                          35.2271, -80.8431), // Initial center of the map
-                      zoom: 7.0, // Initial zoom level
+                      target: LatLng(35.2271, -80.8431), // Initial center
+                      zoom: 7.0, // Zoom level
                     ),
-                    markers:
-                        _buildMarkers(), // Use your existing _buildMarkers method
                     onMapCreated: (GoogleMapController controller) {
-                      mapController =
-                          controller; // Assign map controller for future use
+                      if (mounted) {
+                        setState(() {
+                          mapController = controller;
+                        });
+                      }
                     },
+                    markers: _buildMarkers(), // Add markers to the map
                   ),
                 ),
 
@@ -171,27 +186,25 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
                           ),
                           subtitle:
                               Text('Assigned to: ${delivery['assignedTo']}'),
-                          trailing: DropdownButton<String>(
-                            value: delivery['status'],
-                            icon: const Icon(Icons.arrow_downward),
-                            elevation: 16,
-                            style: GoogleFonts.exo2(color: Colors.black87),
-                            underline: Container(
-                              height: 2,
-                              color: Colors.black54,
+                          trailing: Container(
+                            width: 110,
+                            height: 33,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 6, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(delivery[
+                                  'status']), // Dynamic color based on status
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            onChanged: (String? newStatus) {
-                              if (newStatus != null) {
-                                _updateStatus(index, newStatus);
-                              }
-                            },
-                            items: validStatuses
-                                .map<DropdownMenuItem<String>>((String status) {
-                              return DropdownMenuItem<String>(
-                                value: status,
-                                child: Text(status),
-                              );
-                            }).toList(),
+                            alignment: Alignment.center,
+                            child: Text(
+                              delivery['status'],
+                              style: GoogleFonts.exo2(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
                       );
