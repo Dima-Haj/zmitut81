@@ -11,7 +11,7 @@ class DateOfBirthDropdowns extends StatelessWidget {
   final double screenWidth;
 
   const DateOfBirthDropdowns({
-    Key? key,
+    super.key,
     required this.selectedDay,
     required this.selectedMonth,
     required this.selectedYear,
@@ -19,7 +19,7 @@ class DateOfBirthDropdowns extends StatelessWidget {
     required this.onMonthChanged,
     required this.onYearChanged,
     required this.screenWidth,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

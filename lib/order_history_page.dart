@@ -109,10 +109,10 @@ class OrderHistoryPage extends StatelessWidget {
                                     fontSize: screenHeight * 0.016),
                               ),
                             Text(
-                                'סטטוס: ${order['status']}',
-                                style: GoogleFonts.exo2(
-                                    fontSize: screenHeight * 0.016),
-                              ),
+                              'סטטוס: ${order['status']}',
+                              style: GoogleFonts.exo2(
+                                  fontSize: screenHeight * 0.016),
+                            ),
                           ],
                         ),
                       ),
@@ -186,8 +186,9 @@ class OrderHistoryPage extends StatelessWidget {
                                           ),
                                         );
 
-                                        if (!confirmDelete)
+                                        if (!confirmDelete) {
                                           return; // If the user cancels, exit the function
+                                        }
 
                                         // Delete the order from Firestore
                                         await FirebaseFirestore.instance

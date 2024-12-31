@@ -39,12 +39,12 @@ dependencies:
   http: ^1.2.1
   csslib: ^1.0.2    
   firebase_core: ^3.8.0
-  cloud_firestore: ^5.3.0
+  cloud_firestore: ^5.6.0
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
-  fl_chart: ^0.69.2
+  fl_chart: ^0.70.0
   percent_indicator: ^4.2.2
-  google_fonts: ^4.0.4
+  google_fonts: ^6.2.1
   table_calendar: ^3.0.8
  
     
@@ -65,9 +65,15 @@ dependencies:
   permission_handler: ^11.3.1
   intl: ^0.19.0
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
+  table_calendar: ^3.0.7 # Ensure this is added for TableCalendar
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

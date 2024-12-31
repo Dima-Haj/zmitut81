@@ -6,10 +6,10 @@ class PhoneField extends StatelessWidget {
   final TextEditingController secondPartController;
 
   const PhoneField({
-    Key? key,
+    super.key,
     required this.firstPartController,
     required this.secondPartController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
