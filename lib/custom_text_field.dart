@@ -6,14 +6,16 @@ class CustomTextField extends StatelessWidget {
   final IconData icon;
   final TextEditingController controller;
   final double screenWidth;
+  final TextInputType keyboardType; // Add this parameter
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.hintText,
     required this.icon,
     required this.controller,
     required this.screenWidth,
-  }) : super(key: key);
+    this.keyboardType = TextInputType.text, // Default to text input
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +36,7 @@ class CustomTextField extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              keyboardType: TextInputType.number,
+              keyboardType: keyboardType, // Use the specified keyboard type
               style: GoogleFonts.exo2(
                 textStyle: const TextStyle(
                   color: Colors.black,

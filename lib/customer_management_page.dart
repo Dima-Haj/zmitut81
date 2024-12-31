@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/custom_text_field.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'order_history_page.dart';
 import 'add_customer_page.dart';
@@ -51,6 +52,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
           'phone': clientData['phone'] ?? '',
           'email': clientData['email'] ?? '',
           'address': clientData['address'] ?? '',
+          'clientId': clientData['clientId'] ?? '',
           'products': orders,
         });
       }
@@ -205,44 +207,416 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                 flex: 2,
                                 child: Align(
                                   alignment: Alignment.centerRight,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              OrderHistoryPage(
-                                            customerName: customer['name']!,
-                                            orders: (customer['products']
-                                                    as List<
-                                                        Map<String,
-                                                            dynamic>>?) ??
-                                                [], // Ensure orders is a valid list
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color.fromARGB(
-                                          255, 131, 107, 81),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            screenHeight * 0.02),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment
+                                        .end, // Align all icons to the right
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.visibility,
+                                            color: Colors.blue), // Eye icon
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  OrderHistoryPage(
+                                                customerName: customer['name']!,
+                                                clientId: customer['clientId'],
+                                                orders: (customer['products']
+                                                        as List<
+                                                            Map<String,
+                                                                dynamic>>?) ??
+                                                    [],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        tooltip: 'צפיה בהזמנות',
                                       ),
-                                    ),
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.005,
-                                        horizontal: screenWidth * 0.002,
+                                      IconButton(
+                                        icon: const Icon(Icons.edit,
+                                            color: Colors.orange), // Edit icon
+                                        onPressed: () {
+                                          showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled:
+                                                true, // Allow the panel to take up needed space
+                                            shape: const RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.vertical(
+                                                      top: Radius.circular(20)),
+                                            ),
+                                            builder: (BuildContext context) {
+                                              // Responsive screen sizing
+
+                                              // Split name into first name and last name
+                                              List<String> nameParts =
+                                                  (customer['name'] ?? '')
+                                                      .split(' ');
+                                              final TextEditingController
+                                                  firstNameController =
+                                                  TextEditingController(
+                                                      text: nameParts.isNotEmpty
+                                                          ? nameParts[0]
+                                                          : '');
+                                              final TextEditingController
+                                                  lastNameController =
+                                                  TextEditingController(
+                                                      text: nameParts.length > 1
+                                                          ? nameParts
+                                                              .sublist(1)
+                                                              .join(' ')
+                                                          : '');
+                                              final TextEditingController
+                                                  phoneController =
+                                                  TextEditingController(
+                                                      text: customer['phone']);
+                                              final TextEditingController
+                                                  emailController =
+                                                  TextEditingController(
+                                                      text: customer['email']);
+                                              final TextEditingController
+                                                  addressController =
+                                                  TextEditingController(
+                                                      text:
+                                                          customer['address']);
+
+                                              return Padding(
+                                                  padding: EdgeInsets.only(
+                                                    left: screenWidth * 0.04,
+                                                    right: screenWidth * 0.04,
+                                                    bottom:
+                                                        MediaQuery.of(context)
+                                                            .viewInsets
+                                                            .bottom,
+                                                    top: screenHeight * 0.02,
+                                                  ),
+                                                  child: Directionality(
+                                                    textDirection:
+                                                        TextDirection.rtl,
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        // Header Title
+                                                        Text(
+                                                          'עריכת פרטי לקוח',
+                                                          style: TextStyle(
+                                                            fontSize:
+                                                                screenHeight *
+                                                                    0.025,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                        CustomTextField(
+                                                          hintText: 'שם פרטי',
+                                                          icon: Icons.person,
+                                                          controller:
+                                                              firstNameController,
+                                                          screenWidth:
+                                                              screenWidth,
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .text, // Text input
+                                                        ),
+                                                        SizedBox(
+                                                            height:
+                                                                screenHeight *
+                                                                    0.01),
+
+                                                        // Last Name Field
+                                                        CustomTextField(
+                                                          hintText: 'שם משפחה',
+                                                          icon: Icons
+                                                              .person_outline,
+                                                          controller:
+                                                              lastNameController,
+                                                          screenWidth:
+                                                              screenWidth,
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .text, // Text input
+                                                        ),
+                                                        SizedBox(
+                                                            height:
+                                                                screenHeight *
+                                                                    0.01),
+
+                                                        // Phone Number Field
+                                                        CustomTextField(
+                                                          hintText:
+                                                              'מספר טלפון',
+                                                          icon: Icons.phone,
+                                                          controller:
+                                                              phoneController,
+                                                          screenWidth:
+                                                              screenWidth,
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .phone, // Numeric phone input
+                                                        ),
+                                                        SizedBox(
+                                                            height:
+                                                                screenHeight *
+                                                                    0.01),
+
+                                                        // Email Field
+                                                        CustomTextField(
+                                                          hintText: 'אימייל',
+                                                          icon: Icons.email,
+                                                          controller:
+                                                              emailController,
+                                                          screenWidth:
+                                                              screenWidth,
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .emailAddress, // Email input
+                                                        ),
+                                                        SizedBox(
+                                                            height:
+                                                                screenHeight *
+                                                                    0.01),
+
+                                                        // Address Field
+                                                        CustomTextField(
+                                                          hintText: 'כתובת',
+                                                          icon:
+                                                              Icons.location_on,
+                                                          controller:
+                                                              addressController,
+                                                          screenWidth:
+                                                              screenWidth,
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .text, // Text input
+                                                        ),
+                                                        SizedBox(
+                                                            height:
+                                                                screenHeight *
+                                                                    0.02),
+
+                                                        // Action Buttons: Cancel and Save
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            // Cancel Button
+                                                            ElevatedButton(
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop(),
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.grey,
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                  vertical:
+                                                                      screenHeight *
+                                                                          0.015,
+                                                                  horizontal:
+                                                                      screenWidth *
+                                                                          0.05,
+                                                                ),
+                                                              ),
+                                                              child: Text(
+                                                                'ביטול',
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        screenHeight *
+                                                                            0.02),
+                                                              ),
+                                                            ),
+
+                                                            // Save Button
+                                                            ElevatedButton(
+                                                              onPressed:
+                                                                  () async {
+                                                                try {
+                                                                  // Combine first and last name
+                                                                  final updatedName =
+                                                                      '${firstNameController.text} ${lastNameController.text}'
+                                                                          .trim();
+
+                                                                  // Update the Firestore database
+                                                                  await FirebaseFirestore
+                                                                      .instance
+                                                                      .collection(
+                                                                          'clients')
+                                                                      .doc(customer[
+                                                                          'clientId'])
+                                                                      .update({
+                                                                    'name':
+                                                                        updatedName,
+                                                                    'phone':
+                                                                        phoneController
+                                                                            .text,
+                                                                    'email':
+                                                                        emailController
+                                                                            .text,
+                                                                    'address':
+                                                                        addressController
+                                                                            .text,
+                                                                  });
+
+                                                                  // Optionally refresh the parent page or local state
+                                                                  setState(() {
+                                                                    customer[
+                                                                            'name'] =
+                                                                        updatedName;
+                                                                    customer[
+                                                                            'phone'] =
+                                                                        phoneController
+                                                                            .text;
+                                                                    customer[
+                                                                            'email'] =
+                                                                        emailController
+                                                                            .text;
+                                                                    customer[
+                                                                            'address'] =
+                                                                        addressController
+                                                                            .text;
+                                                                  });
+
+                                                                  // Close the edit panel
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+
+                                                                  // Show success message
+                                                                  ScaffoldMessenger.of(
+                                                                          context)
+                                                                      .showSnackBar(
+                                                                    const SnackBar(
+                                                                        content:
+                                                                            Text('פרטי הלקוח עודכנו בהצלחה')),
+                                                                  );
+                                                                } catch (e) {
+                                                                  // Handle error
+                                                                  ScaffoldMessenger.of(
+                                                                          context)
+                                                                      .showSnackBar(
+                                                                    SnackBar(
+                                                                        content:
+                                                                            Text('שגיאה בעדכון פרטי הלקוח: $e')),
+                                                                  );
+                                                                }
+                                                              },
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .orange,
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                  vertical:
+                                                                      screenHeight *
+                                                                          0.015,
+                                                                  horizontal:
+                                                                      screenWidth *
+                                                                          0.05,
+                                                                ),
+                                                              ),
+                                                              child: Text(
+                                                                'ערוך',
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        screenHeight *
+                                                                            0.02),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ));
+                                            },
+                                          );
+                                        },
+                                        tooltip: 'עריכת לקוח',
                                       ),
-                                      child: Text(
-                                        'צפיה בהזמנות',
-                                        style: GoogleFonts.exo2(
-                                          color: Colors.white,
-                                          fontSize: screenHeight * 0.015,
-                                        ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red), // Delete icon
+                                        onPressed: () async {
+                                          try {
+                                            // Confirm deletion
+                                            bool confirmDelete =
+                                                await showDialog(
+                                              context: context,
+                                              builder: (context) =>
+                                                  Directionality(
+                                                textDirection:
+                                                    TextDirection.rtl,
+                                                child: AlertDialog(
+                                                  title:
+                                                      const Text('מחיקת לקוח'),
+                                                  content: const Text(
+                                                    'האם אתה בטוח שברצונך למחוק את הלקוח?',
+                                                    textAlign: TextAlign.right,
+                                                  ),
+                                                  actionsAlignment:
+                                                      MainAxisAlignment.start,
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(false),
+                                                      child:
+                                                          const Text('ביטול'),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(true),
+                                                      child:
+                                                          const Text('מחיקה'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+
+                                            if (confirmDelete) {
+                                              // Perform deletion from Firestore
+                                              await FirebaseFirestore.instance
+                                                  .collection('clients')
+                                                  .doc(customer['clientId'])
+                                                  .delete();
+
+                                              // Remove the customer locally
+                                              setState(() {
+                                                customers.removeWhere((c) =>
+                                                    c['clientId'] ==
+                                                    customer['clientId']);
+                                              });
+
+                                              // Optionally show a success message
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'הלקוח נמחק בהצלחה')),
+                                              );
+                                            }
+                                          } catch (e) {
+                                            // Handle errors
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      'שגיאה במחיקת הלקוח: $e')),
+                                            );
+                                          }
+                                        },
+                                        tooltip: 'מחיקת לקוח',
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -270,13 +644,16 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
               MaterialPageRoute(
                 builder: (context) => AddCustomerPage(
                   onAddCustomer: (newCustomer) {
-                    setState(() {
-                      customers.add(newCustomer);
-                    });
+                    // This is where you handle the new customer addition if needed
                   },
                 ),
               ),
-            );
+            ).then((result) {
+              if (result == true) {
+                // Re-fetch the data since the result indicates the data changed
+                fetchClientsWithOrders();
+              }
+            });
           },
           backgroundColor: const Color.fromARGB(255, 255, 255, 255),
           foregroundColor: const Color.fromARGB(255, 131, 107, 81),
