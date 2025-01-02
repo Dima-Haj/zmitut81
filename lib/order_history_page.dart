@@ -186,8 +186,9 @@ class OrderHistoryPage extends StatelessWidget {
                                           ),
                                         );
 
-                                        if (!confirmDelete)
+                                        if (!confirmDelete) {
                                           return; // If the user cancels, exit the function
+                                        }
 
                                         // Delete the order from Firestore
                                         await FirebaseFirestore.instance

@@ -6,15 +6,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'timesheet_page.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class StopwatchWidget extends StatefulWidget {
   final Function(DateTime, int) onShiftEnd;
-  final String employeeId;
 
   const StopwatchWidget({
     super.key,
     required this.onShiftEnd,
-    required this.employeeId,
   });
 
   @override
@@ -28,11 +28,22 @@ class StopwatchWidgetState extends State<StopwatchWidget>
   bool _isRunning = false;
   bool _isShiftStarted = false;
   DateTime? _startTime;
+
   late AnimationController _controller;
+  void configureTimezone() {
+    tz.initializeTimeZones();
+  }
+
+  DateTime getIsraelTime() {
+    // Set the timezone to Israel
+    final israelTimeZone = tz.getLocation('Asia/Jerusalem');
+    return tz.TZDateTime.now(israelTimeZone);
+  }
 
   @override
   void initState() {
     super.initState();
+    configureTimezone();
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -41,22 +52,51 @@ class StopwatchWidgetState extends State<StopwatchWidget>
   }
 
   Future<void> _loadShiftState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedStartTime = prefs.getString('start_time');
-    final savedSeconds = prefs.getInt('elapsed_seconds') ?? 0;
+    try {
+      final currentShiftState = await fetchCurrentShiftState();
 
-    if (savedStartTime != null) {
-      _startTime = DateTime.parse(savedStartTime);
-      final now = DateTime.now();
-      final difference = now.difference(_startTime!);
+      if (currentShiftState != null) {
+        setState(() {
+          _startTime = DateTime.parse(currentShiftState['startTime']);
+          _isRunning = currentShiftState['isRunning'];
+          _isShiftStarted = currentShiftState['isShiftStarted'];
 
-      setState(() {
-        _seconds = savedSeconds + difference.inSeconds;
-        _isRunning = true;
-        _isShiftStarted = true;
-      });
+          // Calculate the elapsed time
+          final now = getIsraelTime();
+          final elapsedTime = now
+              .difference(_startTime!)
+              .inSeconds; // Adjust based on start time
+          _seconds = elapsedTime;
+        });
 
-      _startTimer();
+        _startTimer(); // Resume the timer
+      }
+    } catch (e) {
+      debugPrint('Failed to load shift state: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchCurrentShiftState() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('No authenticated user found.');
+
+      final employeeDocRef =
+          FirebaseFirestore.instance.collection('Employees').doc(user.uid);
+
+      final currentShiftDoc = await employeeDocRef
+          .collection('activeShift')
+          .doc('currentShift')
+          .get();
+
+      if (currentShiftDoc.exists) {
+        return currentShiftDoc.data(); // Return the document data
+      } else {
+        return null; // No active shift found
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch current shift state: $e');
+      return null; // Return null on error
     }
   }
 
@@ -78,13 +118,31 @@ class StopwatchWidgetState extends State<StopwatchWidget>
     super.dispose();
   }
 
-  void _startStopwatch() {
+  Future<void> _startStopwatch() async {
     if (!_isRunning) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('No authenticated user found.');
+
       setState(() {
-        _startTime = DateTime.now();
+        _startTime = getIsraelTime();
         _isRunning = true;
         _isShiftStarted = true;
       });
+
+      try {
+        final employeeDocRef =
+            FirebaseFirestore.instance.collection('Employees').doc(user.uid);
+
+        // Add shift details to the temporary subcollection
+        await employeeDocRef.collection('activeShift').doc('currentShift').set({
+          'startTime': _startTime!.toIso8601String(),
+          'isRunning': _isRunning,
+          'isShiftStarted': _isShiftStarted,
+        });
+      } catch (e) {
+        debugPrint('Failed to start shift: $e');
+      }
+
       _startTimer();
       _saveShiftState();
     }
@@ -102,56 +160,61 @@ class StopwatchWidgetState extends State<StopwatchWidget>
   }
 
   Future<void> _resetStopwatch() async {
-  if (_isRunning) {
-    _timer.cancel();
-    DateTime endTime = DateTime.now();
+    if (_isRunning) {
+      _timer.cancel();
+      DateTime endTime = getIsraelTime();
 
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('No authenticated user found.');
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          throw Exception('No authenticated user found.');
+        }
+
+        final employeeDocRef =
+            FirebaseFirestore.instance.collection('Employees').doc(user.uid);
+
+        // Log the completed shift in a permanent collection
+        await employeeDocRef.collection('work_shifts').add({
+          'startTime': _startTime!.toIso8601String(),
+          'endTime': endTime.toIso8601String(),
+          'date': _startTime!.toIso8601String().split('T')[0],
+        });
+
+        // Delete the temporary shift details from `activeShift`
+        await employeeDocRef
+            .collection('activeShift')
+            .doc('currentShift')
+            .delete();
+
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Shift saved successfully.')),
+        );
+
+        // Refresh TimesheetPage if it exists in the widget tree
+        TimesheetPageState? timesheetState =
+            // ignore: use_build_context_synchronously
+            context.findAncestorStateOfType<TimesheetPageState>();
+        if (timesheetState != null) {
+          await timesheetState.fetchShiftRecords();
+        }
+      } catch (e) {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save shift: ${e.toString()}')),
+        );
       }
-
-      CollectionReference shiftCollection = FirebaseFirestore.instance
-          .collection('Employees')
-          .doc(user.uid) // Correctly using user.uid for authenticated user
-          .collection('work_shifts');
-
-      await shiftCollection.add({
-        'start': _startTime!.toIso8601String(),
-        'end': endTime.toIso8601String(),
-        'date': _startTime!.toIso8601String().split('T')[0],
-      });
-
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Shift saved successfully.')),
-      );
-
-      // Refresh TimesheetPage if it exists in the widget tree
-      TimesheetPageState? timesheetState =
-          // ignore: use_build_context_synchronously
-          context.findAncestorStateOfType<TimesheetPageState>();
-      if (timesheetState != null) {
-        await timesheetState.fetchShiftRecords();
-      }
-    } catch (e) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save shift: ${e.toString()}')),
-      );
     }
-  }
 
-  setState(() {
-    _seconds = 0;
-    _isRunning = false;
-    _isShiftStarted = false;
-    _startTime = null;
-  });
-  _controller.reverse();
-  _saveShiftState();
-}
+    setState(() {
+      _seconds = 0;
+      _isRunning = false;
+      _isShiftStarted = false;
+      _startTime = null;
+    });
+    _controller.reverse();
+    _saveShiftState();
+  }
 
   String _formatTime(int seconds) {
     int hours = seconds ~/ 3600;

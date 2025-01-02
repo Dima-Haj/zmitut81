@@ -217,7 +217,9 @@ const getLatLngFromAddress = async (address) => {
         for (const orderDoc of ordersSnapshot.docs) {
           const order = {
             clientId,
-            clientAddress: clientData.address, // Assume each client has an address field
+            clientAddress: clientData.address,
+            clientPhone: clientData.phone,
+            clientName: clientData.name,
             ...orderDoc.data(),
           };
           allOrders.push(order);

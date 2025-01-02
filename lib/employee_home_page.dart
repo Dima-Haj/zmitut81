@@ -14,9 +14,16 @@ class EmployeeHomePage extends StatefulWidget {
 }
 
 class EmployeeHomePageState extends State<EmployeeHomePage> {
+  final ValueNotifier<bool> isRunningNotifier = ValueNotifier<bool>(false);
   int _selectedIndex = 0;
   final Map<DateTime, int> _shiftRecords = {};
   final GlobalKey<TimesheetPageState> _timesheetKey = GlobalKey();
+
+  @override
+  void dispose() {
+    isRunningNotifier.dispose();
+    super.dispose();
+  }
 
   void _onShiftEnd(DateTime endDate, int durationInSeconds) {
     setState(() {
@@ -42,7 +49,6 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
     List<Widget> widgetOptions = <Widget>[
       StopwatchWidget(
         onShiftEnd: _onShiftEnd,
-        employeeId: widget.employeeDetails['id'], // Pass the employeeId here
       ),
       ClientsForTodayPage(),
       TimesheetPage(
@@ -127,10 +133,12 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.watch_later), label: 'משמרת שלי'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.watch_later), label: 'משמרת שלי'),
           BottomNavigationBarItem(
               icon: Icon(Icons.local_shipping), label: 'המשלוחים שלי'),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'דוח שעות חודשי'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.list), label: 'דוח שעות חודשי'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.amber[800],

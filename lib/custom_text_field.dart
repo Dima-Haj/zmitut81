@@ -9,13 +9,13 @@ class CustomTextField extends StatelessWidget {
   final TextInputType keyboardType; // Add this parameter
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.hintText,
     required this.icon,
     required this.controller,
     required this.screenWidth,
     this.keyboardType = TextInputType.text, // Default to text input
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
