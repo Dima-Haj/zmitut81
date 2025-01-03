@@ -46,6 +46,8 @@ dependencies:
   percent_indicator: ^4.2.2
   google_fonts: ^6.2.1
   table_calendar: ^3.0.8
+  timezone: ^0.8.0
+
  
     
 
