@@ -109,10 +109,10 @@ class OrderHistoryPage extends StatelessWidget {
                                     fontSize: screenHeight * 0.016),
                               ),
                             Text(
-                                'סטטוס: ${order['status']}',
-                                style: GoogleFonts.exo2(
-                                    fontSize: screenHeight * 0.016),
-                              ),
+                              'סטטוס: ${order['status']}',
+                              style: GoogleFonts.exo2(
+                                  fontSize: screenHeight * 0.016),
+                            ),
                           ],
                         ),
                       ),

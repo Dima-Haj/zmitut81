@@ -30,7 +30,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
     _pages = [
       const CustomerManagementPage(),
-      AdminDashboardPage(managerDetails: widget.managerDetails), // Pass managerDetails here
+      AdminDashboardPage(
+        managerDetails: widget.managerDetails,
+        categories: [], // Pass the appropriate list of deliveries or categories here
+      ),
       const DeliveryManagementPage(),
       const EmployeeManagementPage(),
     ];
