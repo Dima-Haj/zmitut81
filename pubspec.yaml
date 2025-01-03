@@ -74,8 +74,6 @@ dev_dependencies:
 
   flutter_localizations:
     sdk: flutter
-  intl: ^0.19.0
-  table_calendar: ^3.0.7 # Ensure this is added for TableCalendar
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
