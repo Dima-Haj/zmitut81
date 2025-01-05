@@ -33,9 +33,6 @@ const optimizeRouteForDriver = async (order, companyLocation, preparationTime, w
       console.error(`Invalid latitude or longitude for order ${order.orderId}:`, { clientLat, clientLng });
       return; // Skip this order
     }
-    
-    // Debug log
-    
     const route = [];
     startTime += (30 * 60);
     const travelToDestination = await calculateTravelTime(
