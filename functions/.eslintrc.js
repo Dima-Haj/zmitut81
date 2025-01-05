@@ -13,7 +13,6 @@ module.exports = {
   rules: {
     "no-restricted-globals": ["error", "name", "length"],
     "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
     // "linebreak-style": ["error", "unix"],
     // If you want to allow both styles:
     "linebreak-style": ["off"],
@@ -21,6 +20,10 @@ module.exports = {
     "indent": "off",
     "no-trailing-spaces": "off",
     "padded-blocks": "off",
+    "object-curly-spacing": ["off"], // Disable spacing rule for object braces
+    "comma-dangle": ["off"], // Disable trailing comma rule
+    "no-unused-vars": ["warn"], // Change unused vars to a warning
+    "quotes": ["off"],
   },
   overrides: [
     {
