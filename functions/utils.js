@@ -76,15 +76,8 @@ const separateOrdersByTruckType = async () => {
                 }
             }
         }
-        const batch = db.batch();
+        console.log("No postponed deliveries to save.");
 
-        orderspostponed.docs.forEach((doc) => {
-          const docRef = db.collection("PostponedDeliveries").doc(doc.id);
-          batch.delete(docRef);
-        });
-    
-        await batch.commit();
-        console.log("All documents in PostponedDeliveries have been deleted.");
     }
     for (const clientDoc of clientsSnapshot.docs) {
       const clientId = clientDoc.id;
@@ -157,7 +150,7 @@ const separateOrdersByTruckType = async () => {
       }
     }
 
-    const categorizedOrdersRef = db.collection("categorizedOrders");
+    const categorizedOrdersRef = await db.collection("categorizedOrders");
 
     await categorizedOrdersRef.doc("פלטה").set(allOrders.פלטה);
 
@@ -175,8 +168,10 @@ const separateOrdersByTruckType = async () => {
 
 const processOrders = async () => {
     try {
-      await separateOrdersByTruckType();
-      console.log("Orders have been processed and categorized.");
+        console.log("Starting to process PostponedDeliveries:", new Date().toISOString());
+        await separateOrdersByTruckType();
+        console.log("Completed processing PostponedDeliveries:", new Date().toISOString());
+     console.log("Orders have been processed and categorized.");
     } catch (error) {
       console.error("Error processing orders:", error);
     }
@@ -239,8 +234,8 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
           .filter((order) => !order.isPackaged && order.product !== "אבן גיר")
           .sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
       };
-      
-  
+
+
       for (const truckType in ordersByTruckType) {
         if (Object.prototype.hasOwnProperty.call(ordersByTruckType, truckType)) {
           const orders = ordersByTruckType[truckType];
@@ -254,21 +249,24 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
           for (const assignment of assignments) {
             const driver = truckEmployees.find((e) => e.employeeDocId === assignment.driverId);
             if (!driver) continue;
-      
+            console.log("Starting assignment for driver:", driver.employeeDocId);
+
             const START_TIME = DateTime.now().setZone('Asia/Jerusalem').startOf('day').plus({ days: 1, hours: 8 });
             const queue = new PriorityQueue((a, b) => a.cost - b.cost); // Min-heap based on cost
             const visited = new Set(); // Track visited states to avoid redundant calculations
             const lateOrders = assignment.orders.filter((order) => order.status === "באיחור");
             const newOrders = assignment.orders.filter((order) => order.status === "חדשה");
-            const prioritizedOrders = [...lateOrders, ...newOrders];
-            let currentTime = Math.floor(START_TIME.toSeconds()); // Unix time in seconds
       
+            let currentTime = Math.floor(START_TIME.toSeconds()); // Unix time in seconds
+            console.log("Queue enqueue for late orders...");
+
+            // Prioritize Late Orders
             queue.enqueue({
               regularRoute: [],
               postponedRoute: [],
               costHours: 0,
               costMinutes: 0,
-              remainingOrders: prioritizedOrders,
+              remainingOrders: lateOrders,
               currentTime: currentTime,
             });
       
@@ -276,16 +274,10 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
             let optimalPostponedRoute = [];
             let maxOrders = 0;
       
+            // Handle late orders first using UCS (Uniform Cost Search)
             while (!queue.isEmpty()) {
-              const {
-                regularRoute,
-                postponedRoute,
-                costHours,
-                costMinutes,
-                remainingOrders,
-                currentTime,
-              } = queue.dequeue();
-
+              const { regularRoute, postponedRoute, costHours, costMinutes, remainingOrders, currentTime } = queue.dequeue();
+      
               const stateId = JSON.stringify({
                 regularRoute: regularRoute.map((order) => order.orderId),
                 postponedRoute: postponedRoute.map((order) => order.orderId),
@@ -294,34 +286,24 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
                 remainingOrders: remainingOrders.map((order) => order.orderId),
                 currentTime,
               });
-            
-            
-              // Skip if this state has already been visited
+      
               if (visited.has(stateId)) {
                 continue;
               }
-            
-              // Mark this state as visited
               visited.add(stateId);
-
-
-              // Update optimal route if more orders are delivered
-              if (regularRoute.length > maxOrders || (regularRoute.length == maxOrders && remainingOrders.length==0)) {
+      
+              if (regularRoute.length > maxOrders || (regularRoute.length === maxOrders && remainingOrders.length === 0)) {
                 maxOrders = regularRoute.length;
                 optimalRoute = regularRoute;
                 optimalPostponedRoute = postponedRoute; // Temporarily store postponed route
-                console.log(stateId);
               }
-
-              // Process each remaining order
+              // console.log(stateId);
+      
+              // Try each remaining order and add to the route
               for (const [index, order] of remainingOrders.entries()) {
-                const optimizedRoute = await optimizeRouteForDriver(
-                  order,
-                  COMPANY_LOCATION,
-                  PREPARATION_TIME,
-                  CLIENT_WAITING_TIME,
-                  currentTime
-                );
+                console.log("Optimizing route for order:", order.orderId);
+
+                const optimizedRoute = await optimizeRouteForDriver(order, COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, currentTime);
       
                 const totalDeliveryTime =
                   optimizedRoute[0].totalDeliveryTime.hours * 3600 +
@@ -340,9 +322,6 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
                 // If time exceeds limit, temporarily store the postponed route
                 if (newCostHours > 8 || (newCostHours === 8 && newCostMinutes !== 0)) {
                   const newPostponedRoute = [...postponedRoute, order];
-      
-                  // Update order status for temporary storage
-      
                   queue.enqueue({
                     regularRoute,
                     postponedRoute: newPostponedRoute,
@@ -368,47 +347,119 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
               }
             }
       
-            // Assign optimal route to the driver
-            for (const order of optimalRoute) {
-              const optimizedRoute = await optimizeRouteForDriver(
-                order,
-                COMPANY_LOCATION,
-                PREPARATION_TIME,
-                CLIENT_WAITING_TIME,
-                currentTime
-              );
+            // Handle new orders after the late orders are assigned
+            queue.enqueue({
+              regularRoute: optimalRoute,
+              postponedRoute: optimalPostponedRoute,
+              costHours: 0,
+              costMinutes: 0,
+              remainingOrders: newOrders,
+              currentTime: currentTime,
+            });
       
+            // Recalculate the optimal route by considering new orders and maintaining late order constraints
+            while (!queue.isEmpty()) {
+              const { regularRoute, postponedRoute, costHours, costMinutes, remainingOrders, currentTime } = queue.dequeue();
+      
+              const stateId = JSON.stringify({
+                regularRoute: regularRoute.map((order) => order.orderId),
+                postponedRoute: postponedRoute.map((order) => order.orderId),
+                costHours,
+                costMinutes,
+                remainingOrders: remainingOrders.map((order) => order.orderId),
+                currentTime,
+              });
+      
+              if (visited.has(stateId)) {
+                continue;
+              }
+              visited.add(stateId);
+      
+              if (regularRoute.length > maxOrders || (regularRoute.length === maxOrders && postponedRoute.length > optimalPostponedRoute.length)) {
+                maxOrders = regularRoute.length;
+                optimalRoute = regularRoute;
+                optimalPostponedRoute = postponedRoute;
+              }
+              // console.log(stateId);
+      
+              let bestCostHours = Infinity;
+              let bestCostMinutes = Infinity;
+
+              for (const [index, order] of remainingOrders.entries()) {
+                console.log("Optimizing route for order:", order.orderId);
+
+                const minimalTime = 8;
+
+                // Try inserting the order at different positions in the regular route
+                for (let i = 0; i <= regularRoute.length; i++) {
+
+                  const newRegularRoute = [...regularRoute.slice(0, i), order, ...regularRoute.slice(i)];
+                  let newCostHours1 = 0;
+                  let newCostMinutes1 = 0;
+                  let newCurrentTime = currentTime;
+      
+                  // Recalculate the delivery times for each order in the updated regular route
+                  for (let j = 0; j < newRegularRoute.length; j++) {
+
+                    const optimizedRoute = await optimizeRouteForDriver(newRegularRoute[j], COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, newCurrentTime);
+      
+                    const deliveryTime =
+                      optimizedRoute[0].totalDeliveryTime.hours * 3600 +
+                      optimizedRoute[0].totalDeliveryTime.minutes * 60;
+      
+                    newCurrentTime += deliveryTime;
+                    newCostHours1 += optimizedRoute[0].totalDeliveryTime.hours;
+                    newCostMinutes1 += optimizedRoute[0].totalDeliveryTime.minutes;
+      
+                    // Normalize minutes to hours
+                    if (newCostMinutes1 >= 60) {
+                      newCostHours1 += Math.floor(newCostMinutes1 / 60);
+                      newCostMinutes1 = newCostMinutes1 % 60;
+                    }
+                  }
+
+      
+                  // Check if inserting the order at position 'i' exceeds 8 hours
+                  if ((newCostHours1 < bestCostHours) || ((newCostHours1 === bestCostHours) && (newCostMinutes1 < bestCostMinutes))) {
+                    if (newCostHours1 > 8 || (newCostHours1 === 8 && newCostMinutes1 > 0)) {
+                      postponedRoute.push(order);
+                    } else {
+                      bestCostHours = newCostHours1;
+                      bestCostMinutes = newCostMinutes1;
+                      optimalRoute = newRegularRoute;
+                    }
+                  }
+                }
+
+                const newRemainingOrders = remainingOrders.filter((_, i) => i !== index);
+                queue.enqueue({
+                  regularRoute: optimalRoute,
+                  postponedRoute: postponedRoute,
+                  costHours: bestCostHours,
+                  costMinutes: bestCostMinutes,
+                  remainingOrders: newRemainingOrders,
+                  currentTime: currentTime,
+                });
+              }
+            }
+            console.log("1) reached");
+            // Save the deliveries to Firebase for this driver
+            for (const order of optimalRoute) {
+              const optimizedRoute = await optimizeRouteForDriver(order, COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, currentTime);
               driver.deliveries.push(...optimizedRoute);
       
-              currentTime +=
-                optimizedRoute[0].totalDeliveryTime.hours * 3600 +
-                optimizedRoute[0].totalDeliveryTime.minutes * 60;
-            }
-      
-            // Add temporarily stored postponed routes to the postponed deliveries
-            if (optimalPostponedRoute.length > 0) {
-                console.log("-------------the length is: ", +optimalPostponedRoute.length);
-              for (const postponedOrder of optimalPostponedRoute) {
-                // Ensure the status in Firestore is updated
-                const orderRef = db
-                  .collection("clients")
-                  .doc(postponedOrder.clientId)
-                  .collection("orders")
-                  .doc(postponedOrder.orderId);
-      
-                await orderRef.update({ status: "באיחור" });
-                postponedDeliveries.push(postponedOrder);
-              }
+              currentTime += optimizedRoute[0].totalDeliveryTime.hours * 3600 + optimizedRoute[0].totalDeliveryTime.minutes * 60;
             }
           }
         }
-      }      
-  
+      }
+      
+      console.log("2) reached");
       // Save assignments to Firestore
       for (const driver of employees) {
         if (driver.deliveries.length > 0) {
           const date = new Date().toISOString().split("T")[0];
-          const dailyDeliveriesRef = db
+          const dailyDeliveriesRef = await db
             .collection("Employees")
             .doc(driver.employeeDocId)
             .collection("dailyDeliveries");
@@ -421,30 +472,61 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
   
           for (const delivery of driver.deliveries) {
             await dailyDeliveriesRef.doc(`${date}-${delivery.orderId}`).set({
-              ...delivery,
+                ...delivery,
               date,
             });
           }
         }
       }
-  
-      // Save postponed deliveries
-      if (postponedDeliveries.length > 0) {
+    if (postponedDeliveries.length > 0) {
+        console.log("length is more than 0", postponedDeliveries.length);
+        console.log("Postponed deliveries: ", postponedDeliveries);
         const nextDay = DateTime.now()
         .setZone('Asia/Jerusalem')
         .plus({ days: 2 })
         .startOf('day')
         .toISODate();
-        const postponedRef = db.collection("PostponedDeliveries");
-        console.log("-------------the length is: ", +postponedDeliveries.length);
-        for (const postponed of postponedDeliveries) {
-          await postponedRef.doc(`${nextDay}-${postponed.orderId}`).set({
+            
+        try {
+            const postponedRef = await db.collection("PostponedDeliveries");
+        // First, update the status of each postponed delivery
+        for (const postponedOrder of postponedDeliveries) {
+            const orderRef = await db
+            .collection("clients")
+            .doc(postponedOrder.clientId)
+            .collection("orders")
+            .doc(postponedOrder.orderId);
+    
+            await orderRef.update({ status: "באיחור" });
+            console.log("Order ${postponedOrder.orderId} marked as postponed.");
+        }
+
+        const existingOrdersPostponed = await postponedRef.get();
+        const batch = db.batch();
+
+        existingOrdersPostponed.forEach((doc) => batch.delete(doc.ref));
+        if (!existingOrdersPostponed.empty) await batch.commit();
+    
+        console.log("All documents in PostponedDeliveries have been deleted.");
+        // Create an array of promises to save all postponed orders to the PostponedDeliveries collection
+        const promises = postponedDeliveries.map((postponed) => {
+            console.log("Saving postponed order:", postponed.orderId);
+            return postponedRef.doc('${nextDay}-${postponed.orderId}').set({
             ...postponed,
             date: nextDay,
-          });
-        }
-      }
+            });
+        });
     
+        // Wait for all promises to resolve
+        await Promise.all(promises);
+        console.log("All postponed orders saved successfully.");
+        } catch (error) {
+        console.error("Error saving postponed deliveries:", error);
+        }
+    } else {
+        console.log("No postponed deliveries to save.");
+    }  
+  
       console.log("Delivery assignments completed.");
     } catch (error) {
       console.error("Error assigning deliveries:", error);
@@ -452,7 +534,13 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
   };
   
   
-assignDeliveries().then().catch(console.error);
+  assignDeliveries().then(() => {
+    console.log("Completed delivery assignments");
+  }).catch((error) => {
+    console.error("Error in assignDeliveries:", error);
+  });
+
+
 module.exports = {
   assignDeliveries,
   separateOrdersByTruckType,

@@ -15,7 +15,6 @@ const { getLatLngFromAddress } = require('./geocodeApi');
 const optimizeRouteForDriver = async (order, companyLocation, preparationTime, waitingTime, startTime) => {
     if (!order.clientLat || !order.clientLng) {
       try {
-        console.warn(`Order ${order.orderId} is missing location data. Fetching...`);
         const location = await getLatLngFromAddress(order.clientAddress);
         order.clientLat = location.lat;
         order.clientLng = location.lng;
