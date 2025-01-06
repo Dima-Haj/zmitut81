@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -9,6 +10,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
 import 'login_page.dart'; // Import the utility file
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'currentLocation.dart';
 
 class ClientsForTodayPage extends StatefulWidget {
   const ClientsForTodayPage({super.key});
@@ -30,6 +32,8 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   };
   bool isLoading = true; // To track loading state
   bool isRunning = false;
+  bool isRunningOrder = false; // Track if the order preparation started
+  bool isDeliveryStarted = false;
 
   Future<google_maps.LatLng?> getCoordinatesFromAddress(String address) async {
     try {
@@ -97,10 +101,14 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
 
         if (data['clientName'] != null &&
             data['clientAddress'] != null &&
-            data['clientPhone'] != null) {
+            data['clientPhone'] != null &&
+            data['clientLat'] != null &&
+            data['clientLng'] != null &&
+            data['departureTime'] != null &&
+            data['status'] != null &&
+            data['orderId'] != null &&
+            data['clientId'] != null) {
           // Convert address to LatLng (if possible)
-          final location =
-              await getCoordinatesFromAddress(data['clientAddress']);
 
           // Create Client object and add to the list
           final client = Client(
@@ -108,13 +116,32 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
             phoneNumber: data['clientPhone'],
             email: data['clientEmail'] ?? '',
             address: data['clientAddress'],
-            location: location ??
-                google_maps.LatLng(0, 0), // Default to (0,0) if null
+            lat: data['clientLat'],
+            lng: data['clientLng'],
+            status: data['status'],
+            departureTime: data['departureTime'],
+            orderId: data['orderId'],
+            clientId: data['clientId'],
           );
+          if (client.status == "בתהליך" || client.status == "בדרך ללקוח") {
+            setState(() {
+              isRunningOrder = true; // Set to true after clicking
+            });
+          }
+          if (client.status == "בדרך ללקוח") {
+            setState(() {
+              isDeliveryStarted = true; // Set to true after clicking
+            });
+          }
 
           clients.add(client);
         }
       }
+      clients.sort((a, b) {
+        DateTime timeA = DateTime.parse(a.departureTime);
+        DateTime timeB = DateTime.parse(b.departureTime);
+        return timeA.compareTo(timeB); // Compare the DateTime objects
+      });
 
       setState(() {
         isLoading = false; // Update loading state after fetching data
@@ -160,6 +187,27 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     super.initState();
     _initializeClients();
     _fetchShiftStateFromDatabase();
+    _getEmployeeLocationAndCalculateDistance();
+  }
+
+  // Get employee location and calculate distance from company location
+  Future<void> _getEmployeeLocationAndCalculateDistance() async {
+    // Initialize EmployeeLocationPage
+    EmployeeLocationPage locationPage = EmployeeLocationPage();
+
+    // Get the current location of the employee
+    LatLng currentLocation = await locationPage.getEmployeeLocation();
+
+    // Calculate the distance from the company location
+    double distance = locationPage.calculateDistance(
+      currentLocation.latitude,
+      currentLocation.longitude,
+      companyLocation['latitude']!,
+      companyLocation['longitude']!,
+    );
+
+    // Show the result (you can use it in your app as needed)
+    print('Distance from employee to company: $distance km');
   }
 
   Future<void> _fetchShiftStateFromDatabase() async {
@@ -245,8 +293,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     try {
       // Construct waypoints
       final waypoints = clients
-          .map((client) =>
-              '${client.location.latitude},${client.location.longitude}')
+          .map((client) => '${client.lat},${client.lng}')
           .expand((location) => [
                 location, // Client's location
                 '${companyLocation['latitude']},${companyLocation['longitude']}' // Return to company
@@ -292,10 +339,8 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
             // Match the client for the delivery leg
             final matchingClient = clients.firstWhere(
               (client) =>
-                  (client.location.latitude - deliveryLocation['lat']).abs() <
-                      0.0005 &&
-                  (client.location.longitude - deliveryLocation['lng']).abs() <
-                      0.0005,
+                  (client.lat - deliveryLocation['lat']).abs() < 0.0005 &&
+                  (client.lng - deliveryLocation['lng']).abs() < 0.0005,
               orElse: () {
                 throw Exception(
                     'No matching client found for location: $deliveryLocation');
@@ -375,6 +420,65 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
         latLng.latitude <= 90 &&
         latLng.longitude >= -180 &&
         latLng.longitude <= 180;
+  }
+
+  Future<void> _updateClientStatusInFirestore(
+      String clientId, String orderId, String status) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      // Update client status in the 'orders' collection
+      final clientOrderRef = firestore
+          .collection("clients")
+          .doc(clientId)
+          .collection("orders")
+          .doc(orderId);
+      await clientOrderRef.update({
+        'status': status,
+      });
+
+      print("Client status updated to: $status in 'orders' collection");
+
+      // Now update the status in the employee's 'dailyDeliveries' subcollection
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final employeeDocRef = firestore.collection('Employees').doc(user.uid);
+
+        // Reference to the dailyDeliveries subcollection and update the client's status
+        final dailyDeliveriesRef = employeeDocRef.collection('dailyDeliveries');
+        final dailyDeliveryDoc = await dailyDeliveriesRef
+            .where('clientId', isEqualTo: clientId)
+            .where('orderId', isEqualTo: orderId)
+            .limit(1)
+            .get();
+
+        if (dailyDeliveryDoc.docs.isNotEmpty) {
+          // Update status in the dailyDeliveries subcollection
+          final dailyDeliveryDocRef = dailyDeliveryDoc.docs.first.reference;
+          await dailyDeliveryDocRef.update({
+            'status': status,
+          });
+
+          print(
+              "Client status updated to: $status in 'dailyDeliveries' subcollection");
+        } else {
+          print("No matching daily delivery document found for the client.");
+        }
+      } else {
+        print("No authenticated user found.");
+      }
+    } catch (e) {
+      print("Error updating client status: $e");
+    }
+  }
+
+  void _startPreparingOrder(String clientId, String orderId) {
+    setState(() {
+      isRunningOrder = true;
+    });
+
+    // Assuming you have a method to update the client status in your database
+    _updateClientStatusInFirestore(clientId, orderId, "בתהליך");
   }
 
   @override
@@ -543,7 +647,15 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                                   0.02),
                                                     ),
                                                   Text(
-                                                    client.address,
+                                                    'כתובת: ${client.address}',
+                                                    style: TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize:
+                                                          screenHeight * 0.02,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'סטטוס הזמנה: ${client.status}',
                                                     style: TextStyle(
                                                       color: Colors.white70,
                                                       fontSize:
@@ -588,14 +700,16 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                           child: google_maps.GoogleMap(
                                             initialCameraPosition:
                                                 google_maps.CameraPosition(
-                                              target: client.location,
+                                              target: LatLng(
+                                                  client.lat, client.lng),
                                               zoom: 14,
                                             ),
                                             markers: {
                                               google_maps.Marker(
                                                 markerId: google_maps.MarkerId(
                                                     client.fullName),
-                                                position: client.location,
+                                                position: LatLng(
+                                                    client.lat, client.lng),
                                                 infoWindow:
                                                     google_maps.InfoWindow(
                                                   title: client.fullName,
@@ -611,32 +725,207 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceEvenly,
                                         children: [
-                                          ElevatedButton.icon(
-                                            style: ElevatedButton.styleFrom(
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: screenHeight * 0.01,
-                                                horizontal: screenWidth * 0.04,
+                                          // Conditionally show the "Start Preparing" button when isPreparingOrder is false
+                                          if (client.status != "בתהליך" &&
+                                              client.status != "בדרך ללקוח")
+                                            ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: screenHeight * 0.01,
+                                                  horizontal:
+                                                      screenWidth * 0.04,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          screenHeight * 0.015),
+                                                ),
+                                                backgroundColor:
+                                                    Colors.greenAccent,
                                               ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        screenHeight * 0.015),
+                                              icon: Icon(Icons.work,
+                                                  size: screenHeight * 0.023),
+                                              label: Text(
+                                                'התחלת הכנת הזמנה',
+                                                style: TextStyle(
+                                                    fontSize:
+                                                        screenHeight * 0.02),
                                               ),
-                                              backgroundColor:
-                                                  Colors.orangeAccent,
+                                              onPressed: () async {
+                                                if (isRunningOrder) {
+                                                  // Show Snackbar message if another order is running
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                          'ישנה הזמנה פעילה כבר, אנא חכה שהיא תסיים.'), // Missing quotes fixed
+                                                      duration:
+                                                          Duration(seconds: 3),
+                                                    ),
+                                                  );
+                                                } else {
+                                                  // Get employee's current location
+                                                  LatLng currentLocation =
+                                                      await EmployeeLocationPage()
+                                                          .getEmployeeLocation(); // Get current location of the employee
+                                                  // Calculate the distance from the company location
+                                                  double distance =
+                                                      EmployeeLocationPage()
+                                                          .calculateDistance(
+                                                    currentLocation.latitude,
+                                                    currentLocation.longitude,
+                                                    companyLocation[
+                                                        'latitude']!,
+                                                    companyLocation[
+                                                        'longitude']!,
+                                                  );
+
+                                                  if (distance > 50) {
+                                                    // Show Snackbar message if employee is more than 50 meters away
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'אתה צריך להיות בחברה כדי להתחיל את ההזמנה.'), // Missing quotes fixed
+                                                        duration: Duration(
+                                                            seconds: 3),
+                                                      ),
+                                                    );
+
+                                                    // Optionally, you can show a "Navigate to Company" button here
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (_) =>
+                                                          AlertDialog(
+                                                        title: Text(
+                                                            "Navigate to Company"),
+                                                        content: Text(
+                                                            "You are too far from the company. Would you like to navigate?"),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () {
+                                                              Navigator.pop(
+                                                                  context);
+                                                              _startNavigation(LatLng(
+                                                                  companyLocation[
+                                                                      'latitude']!,
+                                                                  companyLocation[
+                                                                      'longitude']!)); // Open Google Maps to navigate to the company
+                                                            },
+                                                            child: Text(
+                                                                'Navigate'),
+                                                          ),
+                                                          TextButton(
+                                                            onPressed: () {
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                            child:
+                                                                Text('Cancel'),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  } else {
+                                                    // Proceed with starting the order if within range
+                                                    setState(() {
+                                                      isRunningOrder = true;
+                                                    });
+                                                    client.status = "בתהליך";
+                                                    _startPreparingOrder(
+                                                        client.clientId,
+                                                        client.orderId);
+                                                  }
+                                                }
+                                              },
                                             ),
-                                            icon: Icon(Icons.directions,
-                                                size: screenHeight * 0.025),
-                                            label: Text(
-                                              'התחלת נסיעה',
-                                              style: TextStyle(
-                                                  fontSize:
-                                                      screenHeight * 0.022),
+
+                                          // Conditionally show the "Start Journey" button when isPreparingOrder is true
+                                          if (client.status == "בתהליך")
+                                            ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: screenHeight * 0.01,
+                                                  horizontal:
+                                                      screenWidth * 0.04,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          screenHeight * 0.015),
+                                                ),
+                                                backgroundColor:
+                                                    Colors.orangeAccent,
+                                              ),
+                                              icon: Icon(Icons.directions,
+                                                  size: screenHeight * 0.025),
+                                              label: Text(
+                                                'התחלת נסיעה',
+                                                style: TextStyle(
+                                                    fontSize:
+                                                        screenHeight * 0.022),
+                                              ),
+                                              onPressed: () {
+                                                _startNavigation(LatLng(
+                                                    client.lat,
+                                                    client
+                                                        .lng)); // Open Google Maps
+                                                setState(() {
+                                                  client.status =
+                                                      "בדרך ללקוח"; // Update client status in your database to "Delivered"
+                                                  isDeliveryStarted = true;
+                                                });
+
+                                                // Update the client status in Firestore after the delivery is done
+                                                _updateClientStatusInFirestore(
+                                                    client.clientId,
+                                                    client.orderId,
+                                                    "בדרך ללקוח");
+                                              },
                                             ),
-                                            onPressed: () {
-                                              _startNavigation(client.location);
-                                            },
-                                          ),
+
+                                          // Conditionally display the "ההזמנה סופקה" button after the delivery has started
+                                          if (isDeliveryStarted &&
+                                              client.status == "בדרך ללקוח")
+                                            ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: screenHeight * 0.01,
+                                                  horizontal:
+                                                      screenWidth * 0.04,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          screenHeight * 0.015),
+                                                ),
+                                                backgroundColor:
+                                                    Colors.greenAccent,
+                                              ),
+                                              icon: Icon(Icons.check_circle,
+                                                  size: screenHeight * 0.025),
+                                              label: Text(
+                                                'ההזמנה סופקה', // "Order Delivered"
+                                                style: TextStyle(
+                                                    fontSize:
+                                                        screenHeight * 0.022),
+                                              ),
+                                              onPressed: () {
+                                                // Optional: Show a Snackbar or any other feedback
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                        'ההזמנה סופקה בהצלחה!'), // "Order delivered successfully"
+                                                    duration:
+                                                        Duration(seconds: 3),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+
+                                          // The existing "Call" button
                                           ElevatedButton.icon(
                                             style: ElevatedButton.styleFrom(
                                               padding: EdgeInsets.symmetric(
