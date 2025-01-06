@@ -24,12 +24,6 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
       'hoursWorked': 35,
       'performance': 'Excellent',
     },
-    {
-      'name': 'Alice Johnson',
-      'deliveryAssigned': 'D003',
-      'hoursWorked': 30,
-      'performance': 'Average',
-    },
   ];
 
   void _addEmployee(String name) {
@@ -94,7 +88,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
               Padding(
                 padding: EdgeInsets.only(bottom: screenHeight * 0.02),
                 child: Text(
-                  'Employee Management',
+                  'ניהול הזמנות ומשלוחים',
                   style: GoogleFonts.exo2(
                     fontSize: screenHeight * 0.03,
                     fontWeight: FontWeight.bold,
