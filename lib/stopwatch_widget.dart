@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/current_location.dart';
 import 'dart:math';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'timesheet_page.dart';
@@ -28,6 +30,10 @@ class StopwatchWidgetState extends State<StopwatchWidget>
   bool _isRunning = false;
   bool _isShiftStarted = false;
   DateTime? _startTime;
+  final Map<String, double> companyLocation = {
+    'latitude': 32.849758840523386,
+    'longitude': 35.17350796263602,
+  };
 
   late AnimationController _controller;
   void configureTimezone() {
@@ -122,6 +128,39 @@ class StopwatchWidgetState extends State<StopwatchWidget>
     if (!_isRunning) {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('No authenticated user found.');
+      LatLng currentLocation = await EmployeeLocationPage()
+          .getEmployeeLocation(); // Get current location of the employee
+
+      double distance =
+          await EmployeeLocationPage().calculateDistanceFromGoogleMaps(
+        LatLng(currentLocation.latitude, currentLocation.longitude),
+        LatLng(companyLocation['latitude']!, companyLocation['longitude']!),
+      );
+
+      if (distance > 0.05) {
+        // If distance is more than 50 meters, show a dialog and prevent starting the shift
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("החלה לא אפשרית"),
+            content:
+                Text("אתה רחוק מדי מהחברה, אינך יכול להתחיל את המשמרת כרגע."),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the dialog
+                },
+                child: Text("סגור"),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.red,
+                ),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
 
       setState(() {
         _startTime = getIsraelTime();
@@ -168,6 +207,39 @@ class StopwatchWidgetState extends State<StopwatchWidget>
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) {
           throw Exception('No authenticated user found.');
+        }
+        LatLng currentLocation = await EmployeeLocationPage()
+            .getEmployeeLocation(); // Get current location of the employee
+
+        double distance =
+            await EmployeeLocationPage().calculateDistanceFromGoogleMaps(
+          LatLng(currentLocation.latitude, currentLocation.longitude),
+          LatLng(companyLocation['latitude']!, companyLocation['longitude']!),
+        );
+
+        if (distance > 0.05) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text("הסיום לא אפשרי"),
+              content:
+                  Text("אתה רחוק מדי מהחברה, אינך יכול לסיים את המשמרת כרגע."),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the dialog
+                    _loadShiftState();
+                  },
+                  child: Text("סגור"),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          );
+          return;
         }
 
         final employeeDocRef =
