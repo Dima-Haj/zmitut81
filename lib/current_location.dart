@@ -1,10 +1,12 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class EmployeeLocationPage extends StatelessWidget {
+  const EmployeeLocationPage({super.key});
+
   // Function to get the current location of the employee
   Future<LatLng> getEmployeeLocation() async {
     Location location = Location();
@@ -34,23 +36,41 @@ class EmployeeLocationPage extends StatelessWidget {
     return LatLng(locationData.latitude!, locationData.longitude!);
   }
 
-  // Function to calculate the distance from two LatLng coordinates
-  double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
-    const double earthRadius = 6371; // Earth's radius in km
-    double dLat =
-        (lat2 - lat1) * (3.141592653589793 / 180); // Convert degrees to radians
-    double dLng =
-        (lng2 - lng1) * (3.141592653589793 / 180); // Convert degrees to radians
+  Future<double> calculateDistanceFromGoogleMaps(
+      LatLng origin, LatLng destination) async {
+    final apiKey =
+        'AIzaSyBXHnIAKqan9xNW5XEgaPe1JBVgFAexIR8'; // Replace with your Google Maps API key
+    final url = Uri.parse(
+      'https://maps.googleapis.com/maps/api/directions/json'
+      '?origin=${origin.latitude},${origin.longitude}'
+      '&destination=${destination.latitude},${destination.longitude}'
+      '&key=$apiKey',
+    );
 
-    double a = (sin(dLat / 2) * sin(dLat / 2)) +
-        cos(lat1 * (3.141592653589793 / 180)) *
-            cos(lat2 * (3.141592653589793 / 180)) *
-            (sin(dLng / 2) * sin(dLng / 2));
+    try {
+      // Make the API call
+      final response = await http.get(url);
 
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
 
-    double distance = earthRadius * c; // Distance in km
-    return distance;
+        if (data['routes'] != null && data['routes'].isNotEmpty) {
+          // Get the distance (in meters) from the first route's legs
+          final legs = data['routes'][0]['legs'];
+          final distanceInMeters = legs[0]['distance']['value'];
+
+          // Convert distance to kilometers
+          final distanceInKm = distanceInMeters / 1000.0;
+          return distanceInKm;
+        } else {
+          throw Exception('No routes found');
+        }
+      } else {
+        throw Exception('Failed to load directions');
+      }
+    } catch (e) {
+      return 0.0;
+    }
   }
 
   @override

@@ -10,7 +10,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
 import 'login_page.dart'; // Import the utility file
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'currentLocation.dart';
+import 'current_location.dart';
 
 class ClientsForTodayPage extends StatefulWidget {
   const ClientsForTodayPage({super.key});
@@ -156,7 +156,6 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   }
 
   final Map<int, bool> _expandedClientMap = {};
-  final Map<int, String> _estimatedTimes = {};
   String convertToHebrew(String duration) {
     // Split the English duration string
     List<String> parts = duration.split(' ');
@@ -187,28 +186,9 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     super.initState();
     _initializeClients();
     _fetchShiftStateFromDatabase();
-    _getEmployeeLocationAndCalculateDistance();
   }
 
   // Get employee location and calculate distance from company location
-  Future<void> _getEmployeeLocationAndCalculateDistance() async {
-    // Initialize EmployeeLocationPage
-    EmployeeLocationPage locationPage = EmployeeLocationPage();
-
-    // Get the current location of the employee
-    LatLng currentLocation = await locationPage.getEmployeeLocation();
-
-    // Calculate the distance from the company location
-    double distance = locationPage.calculateDistance(
-      currentLocation.latitude,
-      currentLocation.longitude,
-      companyLocation['latitude']!,
-      companyLocation['longitude']!,
-    );
-
-    // Show the result (you can use it in your app as needed)
-    print('Distance from employee to company: $distance km');
-  }
 
   Future<void> _fetchShiftStateFromDatabase() async {
     try {
@@ -265,7 +245,6 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     DateTime currentTime =
         getIsraelTime(); // Use Israel time instead of system time
     if (isRunning) {
-      print(currentTime);
       return currentTime; // If delivering now, use the current time
     }
     if (currentTime.hour < 12) {
@@ -309,8 +288,6 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
         '&waypoints=optimize:false|$waypoints' // Preserve order of waypoints
         '&key=$apiKey', // API key
       );
-      print('Waypoints: $waypoints');
-      print('URL: $url');
 
       final response = await http.get(url);
 
@@ -327,13 +304,10 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
           DateTime currentTime =
               calculateNextDayWithFixedTime().add(preparationTime);
           final optimizedClients = <Map<String, dynamic>>[];
-          print("length= ${legs.length}");
-
           for (int i = 0; i < legs.length - 1; i += 2) {
             final deliveryLeg = legs[i];
             final travelTimeToClient =
                 Duration(seconds: deliveryLeg['duration']['value']);
-            print("traveltime= ${travelTimeToClient.inMinutes}");
             final deliveryLocation = deliveryLeg['end_location'];
 
             // Match the client for the delivery leg
@@ -382,46 +356,6 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     }
   }
 
-  Future<String> _getTravelTimeWithTraffic(
-      google_maps.LatLng origin, google_maps.LatLng destination) async {
-    final url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/directions/json'
-      '?origin=${origin.latitude},${origin.longitude}'
-      '&destination=${destination.latitude},${destination.longitude}'
-      '&waypoints=${companyLocation['latitude']},${companyLocation['longitude']}'
-      '&mode=driving&departure_time=now&key=$apiKey',
-    );
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['routes'] != null && data['routes'].isNotEmpty) {
-          final duration = data['routes'][0]['legs']
-              .map((leg) =>
-                  leg['duration_in_traffic']?['value'] ??
-                  leg['duration']['value'])
-              .reduce((a, b) => a + b);
-
-          return '${(duration ~/ 60)} min'; // Convert to minutes
-        }
-      }
-      return 'Error: ${response.statusCode}';
-    } catch (e) {
-      return 'Exception: $e';
-    }
-  }
-
-  bool _isValidLatLng(google_maps.LatLng latLng) {
-    // Latitude ranges from -90 to 90, and longitude ranges from -180 to 180.
-    return latLng.latitude >= -90 &&
-        latLng.latitude <= 90 &&
-        latLng.longitude >= -180 &&
-        latLng.longitude <= 180;
-  }
-
   Future<void> _updateClientStatusInFirestore(
       String clientId, String orderId, String status) async {
     try {
@@ -436,8 +370,6 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
       await clientOrderRef.update({
         'status': status,
       });
-
-      print("Client status updated to: $status in 'orders' collection");
 
       // Now update the status in the employee's 'dailyDeliveries' subcollection
       final user = FirebaseAuth.instance.currentUser;
@@ -458,17 +390,95 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
           await dailyDeliveryDocRef.update({
             'status': status,
           });
-
-          print(
-              "Client status updated to: $status in 'dailyDeliveries' subcollection");
-        } else {
-          print("No matching daily delivery document found for the client.");
         }
-      } else {
-        print("No authenticated user found.");
       }
     } catch (e) {
-      print("Error updating client status: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'שגיאה בעדכון סטטוס הלקוח: $e', // "Error updating client status"
+            style: TextStyle(
+              fontSize: 16, // You can adjust the font size as needed
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateDeliveredOrdersInFirestore(
+      String clientId, String orderId) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        return;
+      }
+      final israelTime = getIsraelTime();
+
+      // Reference to the client's order in the 'orders' collection
+      final clientOrderRef = firestore
+          .collection("clients")
+          .doc(clientId)
+          .collection("orders")
+          .doc(orderId);
+
+      // Get the current order data before deleting
+      final clientOrderSnapshot = await clientOrderRef.get();
+      if (!clientOrderSnapshot.exists) {
+        return;
+      }
+
+      // Prepare the order data to move it to 'previousDeliveries'
+      final orderData = clientOrderSnapshot.data();
+
+      // Create or reference the 'previousDeliveries' collection
+      final previousDeliveriesRef = firestore
+          .collection("clients")
+          .doc(clientId)
+          .collection("previousDeliveries");
+
+      // Add the order to 'previousDeliveries' and change status to 'נמסר'
+      await previousDeliveriesRef.add({
+        ...orderData!,
+        'status': 'נמסר', // Change the status to "Delivered"
+        'deliveryDate': israelTime, // Add a timestamp for delivery
+      });
+
+      // Now delete the order from 'orders' collection
+      await clientOrderRef.delete();
+
+      // Delete the order from the employee's 'dailyDeliveries' subcollection
+      final employeeDocRef = firestore.collection('Employees').doc(user.uid);
+      final dailyDeliveriesRef = employeeDocRef.collection('dailyDeliveries');
+      final dailyDeliveryDoc = await dailyDeliveriesRef
+          .where('clientId', isEqualTo: clientId)
+          .where('orderId', isEqualTo: orderId)
+          .limit(1)
+          .get();
+
+      if (dailyDeliveryDoc.docs.isNotEmpty) {
+        // Delete the order from the employee's 'dailyDeliveries' subcollection
+        final dailyDeliveryDocRef = dailyDeliveryDoc.docs.first.reference;
+        await dailyDeliveryDocRef.delete();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('לא נמצא מסמך משלוח תואם ללקוח.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('שגיאה בעדכון הזמנת המסירה: $e'),
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -498,7 +508,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                 image: const AssetImage('assets/images/image1.png'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.7),
+                  Color.fromRGBO(0, 0, 0, 0.7),
                   BlendMode.darken,
                 ),
               ),
@@ -763,24 +773,27 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                           Duration(seconds: 3),
                                                     ),
                                                   );
-                                                } else {
+                                                }
+                                                if (!isRunningOrder) {
                                                   // Get employee's current location
                                                   LatLng currentLocation =
                                                       await EmployeeLocationPage()
                                                           .getEmployeeLocation(); // Get current location of the employee
                                                   // Calculate the distance from the company location
-                                                  double distance =
-                                                      EmployeeLocationPage()
-                                                          .calculateDistance(
-                                                    currentLocation.latitude,
-                                                    currentLocation.longitude,
-                                                    companyLocation[
-                                                        'latitude']!,
-                                                    companyLocation[
-                                                        'longitude']!,
-                                                  );
 
-                                                  if (distance > 50) {
+                                                  double distance = await EmployeeLocationPage()
+                                                      .calculateDistanceFromGoogleMaps(
+                                                          LatLng(
+                                                              currentLocation
+                                                                  .latitude,
+                                                              currentLocation
+                                                                  .longitude),
+                                                          LatLng(
+                                                              companyLocation[
+                                                                  'latitude']!,
+                                                              companyLocation[
+                                                                  'longitude']!));
+                                                  if (distance > 0.05) {
                                                     // Show Snackbar message if employee is more than 50 meters away
                                                     ScaffoldMessenger.of(
                                                             context)
@@ -798,31 +811,116 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                       context: context,
                                                       builder: (_) =>
                                                           AlertDialog(
-                                                        title: Text(
-                                                            "Navigate to Company"),
+                                                        title: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Text(
+                                                                "נווט לחברה"), // "Navigate to Company"
+                                                            IconButton(
+                                                              icon: Icon(Icons
+                                                                  .close), // "X" button
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context); // Close the dialog when clicked
+                                                              },
+                                                            ),
+                                                          ],
+                                                        ),
                                                         content: Text(
-                                                            "You are too far from the company. Would you like to navigate?"),
+                                                            "אתה רחוק מדי מהחברה. האם אתה רוצה לנווט לשם?"), // "You are too far from the company. Would you like to navigate?"
                                                         actions: [
-                                                          TextButton(
-                                                            onPressed: () {
-                                                              Navigator.pop(
-                                                                  context);
-                                                              _startNavigation(LatLng(
-                                                                  companyLocation[
-                                                                      'latitude']!,
-                                                                  companyLocation[
-                                                                      'longitude']!)); // Open Google Maps to navigate to the company
-                                                            },
-                                                            child: Text(
-                                                                'Navigate'),
-                                                          ),
-                                                          TextButton(
-                                                            onPressed: () {
-                                                              Navigator.pop(
-                                                                  context);
-                                                            },
-                                                            child:
-                                                                Text('Cancel'),
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .end, // Align buttons to the right
+                                                            children: [
+                                                              ElevatedButton
+                                                                  .icon(
+                                                                icon: Icon(Icons
+                                                                    .arrow_back), // Back arrow icon
+                                                                label: Text(
+                                                                    'נווט לחברה'), // "Navigate to Company"
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .blue, // Set text color
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            8), // Rounded corners
+                                                                  ),
+                                                                  padding: EdgeInsets.symmetric(
+                                                                      vertical:
+                                                                          10,
+                                                                      horizontal:
+                                                                          15),
+                                                                ),
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context); // Close the dialog
+                                                                  _startNavigation(LatLng(
+                                                                      companyLocation[
+                                                                          'latitude']!,
+                                                                      companyLocation[
+                                                                          'longitude']!)); // Navigate to the company
+                                                                },
+                                                              ),
+                                                              SizedBox(
+                                                                  width: MediaQuery.of(
+                                                                              context)
+                                                                          .size
+                                                                          .width *
+                                                                      0.02), // 5% of dialog width
+                                                              ElevatedButton
+                                                                  .icon(
+                                                                icon: Icon(Icons
+                                                                    .work), // Normal arrow icon for destination
+                                                                label: Text(
+                                                                    'הכנה בכל זאת'), // "Navigate to Destination"
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .green, // Set text color
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            8), // Rounded corners
+                                                                  ),
+                                                                  padding: EdgeInsets.symmetric(
+                                                                      vertical:
+                                                                          10,
+                                                                      horizontal:
+                                                                          18),
+                                                                ),
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  setState(() {
+                                                                    isRunningOrder =
+                                                                        true;
+                                                                  });
+                                                                  client.status =
+                                                                      "בתהליך";
+                                                                  _startPreparingOrder(
+                                                                      client
+                                                                          .clientId,
+                                                                      client
+                                                                          .orderId);
+                                                                },
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
@@ -866,22 +964,177 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                     fontSize:
                                                         screenHeight * 0.022),
                                               ),
-                                              onPressed: () {
-                                                _startNavigation(LatLng(
-                                                    client.lat,
-                                                    client
-                                                        .lng)); // Open Google Maps
-                                                setState(() {
-                                                  client.status =
-                                                      "בדרך ללקוח"; // Update client status in your database to "Delivered"
-                                                  isDeliveryStarted = true;
-                                                });
+                                              onPressed: () async {
+                                                // Get employee's current location
+                                                LatLng currentLocation =
+                                                    await EmployeeLocationPage()
+                                                        .getEmployeeLocation();
 
-                                                // Update the client status in Firestore after the delivery is done
-                                                _updateClientStatusInFirestore(
-                                                    client.clientId,
-                                                    client.orderId,
-                                                    "בדרך ללקוח");
+                                                // Calculate the distance from the company location
+                                                double distance =
+                                                    await EmployeeLocationPage()
+                                                        .calculateDistanceFromGoogleMaps(
+                                                  LatLng(
+                                                      currentLocation.latitude,
+                                                      currentLocation
+                                                          .longitude),
+                                                  LatLng(
+                                                      companyLocation[
+                                                          'latitude']!,
+                                                      companyLocation[
+                                                          'longitude']!),
+                                                );
+
+                                                if (distance > 0.05) {
+                                                  // Show the dialog if the distance is greater than 50 meters
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (_) => AlertDialog(
+                                                      title: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Text(
+                                                              "נווט ללקוח"), // "Navigate to Client"
+                                                          IconButton(
+                                                            icon: Icon(Icons
+                                                                .close), // "X" button
+                                                            onPressed: () {
+                                                              Navigator.pop(
+                                                                  context); // Close the dialog when clicked
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      content: Text(
+                                                          "אתה רחוק מדי מהחברה. האם אתה רוצה לנווט לחברה או ליעד?"), // "You are too far from the company. Would you like to navigate to the company or destination?"
+                                                      actions: [
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .end, // Align buttons to the right
+                                                          children: [
+                                                            ElevatedButton.icon(
+                                                              icon: Icon(Icons
+                                                                  .arrow_back), // Back arrow icon for company
+                                                              label: Text(
+                                                                  'נווט לחברה'), // "Navigate to Company"
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                foregroundColor:
+                                                                    Colors
+                                                                        .white,
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .blue, // Set text color
+                                                                shape:
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              8), // Rounded corners
+                                                                ),
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        vertical:
+                                                                            10,
+                                                                        horizontal:
+                                                                            20),
+                                                              ),
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context); // Close the dialog
+                                                                _startNavigation(LatLng(
+                                                                    companyLocation[
+                                                                        'latitude']!,
+                                                                    companyLocation[
+                                                                        'longitude']!)); // Navigate to the company
+                                                              },
+                                                            ),
+                                                            SizedBox(
+                                                                width: MediaQuery.of(
+                                                                            context)
+                                                                        .size
+                                                                        .width *
+                                                                    0.02), // Space between buttons
+                                                            ElevatedButton.icon(
+                                                              icon: Icon(Icons
+                                                                  .arrow_forward), // Normal arrow icon for destination
+                                                              label: Text(
+                                                                  'נווט ליעד'), // "Navigate to Destination"
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                foregroundColor:
+                                                                    Colors
+                                                                        .white,
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .green, // Set text color
+                                                                shape:
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              8), // Rounded corners
+                                                                ),
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        vertical:
+                                                                            10,
+                                                                        horizontal:
+                                                                            20),
+                                                              ),
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context);
+                                                                _startNavigation(
+                                                                    LatLng(
+                                                                        client
+                                                                            .lat,
+                                                                        client
+                                                                            .lng)); // Open Google Maps
+                                                                setState(() {
+                                                                  client.status =
+                                                                      "בדרך ללקוח"; // Update client status in your database to "Delivered"
+                                                                  isDeliveryStarted =
+                                                                      true;
+                                                                });
+
+                                                                // Update the client status in Firestore after the delivery is done
+                                                                _updateClientStatusInFirestore(
+                                                                    client
+                                                                        .clientId,
+                                                                    client
+                                                                        .orderId,
+                                                                    "בדרך ללקוח");
+                                                                
+                                                              },
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                } else {
+                                                  _startNavigation(LatLng(
+                                                      client.lat,
+                                                      client
+                                                          .lng)); // Open Google Maps
+                                                  setState(() {
+                                                    client.status =
+                                                        "בדרך ללקוח"; // Update client status in your database to "Delivered"
+                                                    isDeliveryStarted = true;
+                                                  });
+
+                                                  // Update the client status in Firestore after the delivery is done
+                                                  _updateClientStatusInFirestore(
+                                                      client.clientId,
+                                                      client.orderId,
+                                                      "בדרך ללקוח");
+                                                }
                                               },
                                             ),
 
@@ -911,17 +1164,243 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                     fontSize:
                                                         screenHeight * 0.022),
                                               ),
-                                              onPressed: () {
-                                                // Optional: Show a Snackbar or any other feedback
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                        'ההזמנה סופקה בהצלחה!'), // "Order delivered successfully"
-                                                    duration:
-                                                        Duration(seconds: 3),
-                                                  ),
+                                              onPressed: () async {
+                                                // Get employee's current location
+                                                LatLng currentLocation =
+                                                    await EmployeeLocationPage()
+                                                        .getEmployeeLocation();
+
+                                                // Calculate the distance from the client's location
+                                                double distance =
+                                                    await EmployeeLocationPage()
+                                                        .calculateDistanceFromGoogleMaps(
+                                                  LatLng(
+                                                      currentLocation.latitude,
+                                                      currentLocation
+                                                          .longitude),
+                                                  LatLng(
+                                                      client.lat, client.lng),
                                                 );
+
+                                                if (distance > 0.05) {
+                                                  // If the employee is more than 50 meters away from the client, show the confirmation dialog
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (_) => AlertDialog(
+                                                      title: Text(
+                                                          "אתה רחוק מהלקוח"),
+                                                      content: Text(
+                                                          "אתה רחוק מדי ממיקום מהלקוח. האם אתה בטוח שההזמנה סופקה?"), // "You are too far from the client. Are you sure the delivery was made?"
+                                                      actions: [
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .end,
+                                                            children: [
+                                                              ElevatedButton(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context); // Close the dialog
+                                                                },
+                                                                child: Text(
+                                                                    'לא'), // "No"
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .red, // Set text color
+                                                                  padding: EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          20,
+                                                                      vertical:
+                                                                          10),
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                  width: 10),
+                                                              ElevatedButton(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context); // Close the current dialog
+                                                                  // Show a new dialog thanking the driver and offering to navigate back
+                                                                  showDialog(
+                                                                    context:
+                                                                        context,
+                                                                    builder: (_) =>
+                                                                        AlertDialog(
+                                                                      title: Text(
+                                                                          "תודה על ההספקה!"),
+                                                                      content: Text(
+                                                                          "ההזמנה סופקה בהצלחה. האם תרצה לנווט חזרה לחברה?"), // "Order delivered successfully. Would you like to navigate back to the company?"
+                                                                      actions: [
+                                                                        Align(
+                                                                          alignment:
+                                                                              Alignment.centerRight,
+                                                                          child:
+                                                                              Row(
+                                                                            mainAxisAlignment:
+                                                                                MainAxisAlignment.end,
+                                                                            children: [
+                                                                              ElevatedButton(
+                                                                                onPressed: () {
+                                                                                  Navigator.pop(context); // Close this dialog
+                                                                                  _startNavigation(LatLng(companyLocation['latitude']!, companyLocation['longitude']!)); // Navigate back to the company
+                                                                                },
+                                                                                child: Text('נווט לחברה'), // "Navigate to Company"
+                                                                                style: ElevatedButton.styleFrom(
+                                                                                  foregroundColor: Colors.white, backgroundColor: Colors.green, // Set text color
+                                                                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                                                                ),
+                                                                              ),
+                                                                              SizedBox(width: 10),
+                                                                              ElevatedButton(
+                                                                                onPressed: () {
+                                                                                  Navigator.pop(context); // Close the dialog without navigation
+                                                                                },
+                                                                                child: Text('סגור'), // "Close"
+                                                                                style: ElevatedButton.styleFrom(
+                                                                                  foregroundColor: Colors.white, backgroundColor: Colors.grey, // Set text color
+                                                                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                  _updateDeliveredOrdersInFirestore(
+                                                                      client
+                                                                          .clientId,
+                                                                      client
+                                                                          .orderId);
+                                                                  setState(() {
+                                                                    isDeliveryStarted =
+                                                                        false;
+                                                                    isRunningOrder =
+                                                                        false;
+                                                                    clients.removeAt(
+                                                                        index);
+                                                                    _clientTimes
+                                                                        .removeAt(
+                                                                            index); // Removes the client at the current index
+                                                                  });
+                                                                },
+                                                                child: Text(
+                                                                    'כן'), // "Yes"
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .green, // Set text color
+                                                                  padding: EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          20,
+                                                                      vertical:
+                                                                          10),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                } else {
+                                                  // If the distance is less than 50 meters, show the snackbar and proceed
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (_) => AlertDialog(
+                                                      title: Text(
+                                                          "תודה על ההספקה!"),
+                                                      content: Text(
+                                                          "ההזמנה סופקה בהצלחה. האם תרצה לנווט חזרה לחברה?"), // "Order delivered successfully. Would you like to navigate back to the company?"
+                                                      actions: [
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .end,
+                                                            children: [
+                                                              ElevatedButton(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context); // Close this dialog
+                                                                  _startNavigation(LatLng(
+                                                                      companyLocation[
+                                                                          'latitude']!,
+                                                                      companyLocation[
+                                                                          'longitude']!)); // Navigate back to the company
+                                                                },
+                                                                child: Text(
+                                                                    'נווט לחברה'), // "Navigate to Company"
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .green, // Set text color
+                                                                  padding: EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          20,
+                                                                      vertical:
+                                                                          10),
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                  width: 10),
+                                                              ElevatedButton(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context); // Close the dialog without navigation
+                                                                },
+                                                                child: Text(
+                                                                    'סגור'), // "Close"
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .grey, // Set text color
+                                                                  padding: EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          20,
+                                                                      vertical:
+                                                                          10),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                  _updateDeliveredOrdersInFirestore(
+                                                      client.clientId,
+                                                      client.orderId);
+                                                  setState(() {
+                                                    isDeliveryStarted = false;
+                                                    isRunningOrder = false;
+                                                    clients.removeAt(index);
+                                                    _clientTimes.removeAt(
+                                                        index); // Removes the client at the current index
+                                                  });
+                                                }
                                               },
                                             ),
 

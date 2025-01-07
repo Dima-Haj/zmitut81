@@ -1,6 +1,5 @@
 // client.dart
 
-import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
 
 class Client {
   final String fullName;
