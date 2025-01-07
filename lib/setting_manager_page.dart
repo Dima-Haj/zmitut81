@@ -5,11 +5,20 @@ import 'package:google_fonts/google_fonts.dart';
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
+  void _navigateToSettings(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SettingsPage()),
+    );
+  }
+
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings',
+        title: Text('הגדרות',
             style: GoogleFonts.exo2(fontSize: 18, fontWeight: FontWeight.bold)),
       ),
       body: Padding(
@@ -17,26 +26,22 @@ class SettingsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('System Settings',
-                style: GoogleFonts.exo2(
-                    fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
             ListTile(
-              title: const Text('Manage User Roles and Permissions'),
+              title: const Text('ניהול תפקידי משתמש והרשאות'),
               leading: const Icon(Icons.admin_panel_settings),
               onTap: () {
                 // Logic for managing roles
               },
             ),
             ListTile(
-              title: const Text('Notification Preferences'),
+              title: const Text('העדפות התראות'),
               leading: const Icon(Icons.notifications),
               onTap: () {
                 // Logic for setting notifications
               },
             ),
             ListTile(
-              title: const Text('System Configurations'),
+              title: const Text('הגדרות מערכת'),
               leading: const Icon(Icons.settings),
               onTap: () {
                 // Logic for system configurations

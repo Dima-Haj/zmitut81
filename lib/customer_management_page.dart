@@ -103,6 +103,20 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               SizedBox(height: screenHeight * 0.1),
+              // Title
+              Center(
+                child: Text(
+                  'ניהול לקוחות והזמנות',
+                  style: GoogleFonts.exo2(
+                    fontSize: screenHeight * 0.025,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              SizedBox(
+                  height: screenHeight *
+                      0.02), // Spacing between title and search field
 
               // Search Field
               Directionality(
@@ -117,16 +131,48 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                   },
                   textAlign: TextAlign.right, // Align text to the right
                   decoration: InputDecoration(
-                    hintText: 'חפש לקוח לפי שם',
-                    hintStyle: GoogleFonts.exo2(
-                      fontSize: screenHeight * 0.018,
-                      color: const Color.fromARGB(255, 213, 213, 213),
+                    labelText: 'חפש לקוח לפי שם',
+                    labelStyle: const TextStyle(
+                      color: Color.fromARGB(255, 131, 107, 81), // Brown color
                     ),
+                    floatingLabelBehavior: FloatingLabelBehavior
+                        .auto, // Ensure label floats properly
+                    contentPadding: const EdgeInsets.fromLTRB(
+                        20.0, 30.0, 20.0, 10.0), // Adjust padding
                     prefixIcon: const Icon(
-                        Icons.search), // Search icon stays on the left
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(screenHeight * 0.02),
+                      Icons.search,
+                      color: Color.fromARGB(
+                          255, 131, 107, 81), // Brown color for icon
                     ),
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(30.0), // Rounded corners
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(
+                            255, 131, 107, 81), // Brown color for border
+                        width: 2.0,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 131, 107, 81),
+                        width: 2.0,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 131, 107, 81),
+                        width: 2.5,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: const Color.fromARGB(
+                        255, 255, 255, 255), // White background
+                  ),
+                  style: const TextStyle(
+                    color: Colors.black,
                   ),
                 ),
               ),

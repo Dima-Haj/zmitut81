@@ -35,7 +35,7 @@ class TermsOfServicePage extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(
-              height: screenHeight * 0.87, // Adjust height as needed
+              height: screenHeight * 0.80, // Adjust height as needed
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
@@ -58,7 +58,7 @@ class TermsOfServicePage extends StatelessWidget {
                     SizedBox(height: screenHeight * 0.05),
                     Center(
                       child: Text(
-                        'Terms of Service',
+                        'תנאי שירות',
                         style: GoogleFonts.exo2(
                           color: const Color.fromARGB(255, 141, 126, 106),
                           fontSize: screenHeight * 0.04,
@@ -83,40 +83,23 @@ class TermsOfServicePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(
-                        height: screenHeight *
-                            0.03), // Space before the "Accept" button
 
-                    // Accept Button
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 141, 126, 106),
-                        padding: EdgeInsets.symmetric(
-                          vertical: screenHeight * 0.02,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(screenWidth * 0.07),
-                        ),
-                      ),
-                      onPressed: () {
-                        // Handle what happens when the user accepts the terms
-                        Navigator.pop(context); // Go back to the previous page
-                      },
-                      child: Text(
-                        'Accept',
-                        style: GoogleFonts.exo2(
-                          color: const Color.fromARGB(255, 255, 255, 255),
-                          fontSize: screenHeight * 0.025,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 2.0,
-                        ),
-                      ),
-                    ),
                     SizedBox(height: screenHeight * 0.02),
                   ],
                 ),
+              ),
+            ),
+          ),
+          // Logo Positioned Above the Container
+          Positioned(
+            top: screenHeight * 0.08,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Image.asset(
+                'assets/images/logo_zmitut.png', // Replace with your logo's asset path
+                height: screenHeight * 0.1, // Adjust logo size as needed
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -140,31 +123,33 @@ class TermsOfServicePage extends StatelessWidget {
   // Method that provides the content of the terms
   String _termsOfServiceContent() {
     return '''
-   Welcome to Zmitut 81!
+  ברוכים הבאים לצמיתות 81!
 
-    These terms and conditions outline the rules and regulations for the use of Zmitut 81’s App.
+תנאים והגבלות אלה מתארים את הכללים והתקנות לשימוש באפליקציית צמיתות 81.
 
-    By accessing this app we assume you accept these terms and conditions. Do not continue to use Zmitut 81 if you do not agree to take all of the terms and conditions stated on this page.
+בגישה לאפליקציה זו, אנו מניחים שאתם מסכימים לתנאים ולהגבלות המפורטים כאן. אם אינכם מסכימים לתנאים ולהגבלות אלה, נא לא להמשיך להשתמש בצמיתות 81.
 
-    The following terminology applies to these Terms and Conditions, Privacy Statement and all Agreements: “Client”, “You” and “Your” refers to you, the person logging on this app and compliant to the Company’s terms and conditions. “The Company”, “Ourselves”, “We”, “Our” and “Us”, refers to our Company. “Party”, “Parties”, or “Us”, refers to both the Client and ourselves.
+המונחים הבאים חלים על תנאי השירות, הצהרת הפרטיות וכל ההסכמים:
 
-    Cookies:
-    We employ the use of cookies. By accessing Zmitut 81, you agreed to use cookies in agreement with the Zmitut 81’s Privacy Policy.
+"לקוח", "אתם" ו"שלכם" מתייחסים למשתמש הנכנס לאפליקציה ומסכים לתנאים ולהגבלות של החברה.
+"החברה", "אנחנו", "שלנו" ו"אותנו" מתייחסים לצמיתות 81.
+"צד", "הצדדים" או "אנחנו" מתייחסים גם ללקוח וגם לחברה.
 
-    License:
-    Unless otherwise stated, Zmitut 81 and/or its licensors own the intellectual property rights for all material on Zmitut 81. All intellectual property rights are reserved. You may access this from Zmitut 81 for your own personal use subject to restrictions set in these terms and conditions.
+רישיון:
 
-    You must not:
-    - Republish material from Zmitut 81
-    - Sell, rent, or sub-license material from Zmitut 81
-    - Reproduce, duplicate, or copy material from Zmitut 81
-    - Redistribute content from Zmitut 81
+אלא אם צוין אחרת, צמיתות 81 ו/או מעניקי הרישיון שלה מחזיקים בזכויות הקניין הרוחני עבור כל החומר באפליקציה. כל הזכויות שמורות. אתם רשאים לגשת לחומר זה לשימוש אישי בלבד, בכפוף להגבלות המפורטות בתנאים אלו.
 
-    This Agreement shall begin on the date hereof.
-    
-    For further details, you can contact us directly at support@zmitut81.com.
-    
-    Thank you for using Zmitut 81.
+אין לבצע את הפעולות הבאות:
+
+לפרסם מחדש חומר מצמיתות 81.
+למכור, להשכיר או לתת רישיון משנה לחומר מצמיתות 81.
+לשכפל, להעתיק או להעתיק חומר מצמיתות 81.
+להפיץ מחדש תוכן מצמיתות 81.
+מדיניות זו מתחילה מתאריך זה ואילך.
+
+לפרטים נוספים, אתם מוזמנים לפנות אלינו ישירות בכתובת: support@zmitut81.com.
+
+תודה על השימוש בצמיתות 81!
     ''';
   }
 }
