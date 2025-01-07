@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'client.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
@@ -68,8 +69,8 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                 : google_maps.GoogleMap(
                     initialCameraPosition: google_maps.CameraPosition(
                       target: google_maps.LatLng(
-                        widget.client.location.latitude,
-                        widget.client.location.longitude,
+                        widget.client.lat,
+                        widget.client.lng,
                       ),
                       zoom: 15,
                     ),
@@ -77,8 +78,8 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                       google_maps.Marker(
                         markerId: google_maps.MarkerId("clientLocation"),
                         position: google_maps.LatLng(
-                          widget.client.location.latitude,
-                          widget.client.location.longitude,
+                          widget.client.lat,
+                          widget.client.lng,
                         ),
                         infoWindow: google_maps.InfoWindow(
                           title: widget.client.fullName,
@@ -103,7 +104,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
             child: ElevatedButton(
               onPressed: () {
                 // Trigger navigation
-                _startNavigation(widget.client.location);
+                _startNavigation(LatLng(widget.client.lat, widget.client.lng));
               },
               child: const Text('Start Driving'),
             ),

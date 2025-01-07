@@ -39,20 +39,6 @@ class _DeliveryManagementPageState extends State<DeliveryManagementPage> {
   final List<String> validStatuses = ['Pending', 'Active', 'Completed'];
   late GoogleMapController mapController;
 
-  void _updateStatus(int index, String newStatus) {
-    if (index < 0 || index >= deliveries.length) {
-      return;
-    }
-    if (newStatus.isEmpty) {
-      return;
-    }
-
-    setState(() {
-      deliveries = List.from(deliveries)
-        ..[index] = {...deliveries[index], 'status': newStatus};
-    });
-  }
-
   Set<Marker> _buildMarkers() {
     return deliveries.map((delivery) {
       return Marker(
