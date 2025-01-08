@@ -5,6 +5,7 @@
  * @return {Array<Object>} An array of assignments, each containing a driver ID and their assigned orders.
  */
 const balanceOrdersAmongDrivers = (orders, drivers) => {
+    console.log(orders.length);
     const assignments = drivers.map((d) => ({driverId: d.employeeDocId, orders: []}));
     orders.sort((a, b) => b.weight - a.weight); // Assign heavier orders first
   
@@ -12,7 +13,7 @@ const balanceOrdersAmongDrivers = (orders, drivers) => {
       const driver = assignments.reduce((a, b) => (a.orders.length <= b.orders.length ? a : b));
       driver.orders.push(order);
     }
-  
+    console.log("Assignments before enqueuing:", assignments);
     return assignments;
   };
   
