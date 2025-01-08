@@ -301,7 +301,7 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
       
               // Try each remaining order and add to the route
               for (const [index, order] of remainingOrders.entries()) {
-                console.log("Optimizing route for order:", order.orderId);
+                // console.log("Optimizing route for order:", order.orderId);
 
                 const optimizedRoute = await optimizeRouteForDriver(order, COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, currentTime);
       
@@ -386,9 +386,7 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
               let bestCostMinutes = Infinity;
 
               for (const [index, order] of remainingOrders.entries()) {
-                console.log("Optimizing route for order:", order.orderId);
-
-                const minimalTime = 8;
+              // console.log("Optimizing route for order:", order.orderId);
 
                 // Try inserting the order at different positions in the regular route
                 for (let i = 0; i <= regularRoute.length; i++) {
@@ -540,8 +538,119 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
     console.error("Error in assignDeliveries:", error);
   });
 
+  const calculateMonthlyWorkHours = async () => {
+    const currentDate = new Date();
+  
+    // Use Israel Standard Time (IST) for the current date
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth(); // Gets month number (0 = January, 1 = February, etc.)
+    // Convert current month number to month name
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June", 
+      "July", "August", "September", "October", "November", "December"
+    ];
+    let currentmon = currentMonth - 1;
+    let currentye = currentYear;
+    if (currentmon < 0) {
+      currentye-=1;
+      currentmon = 11;
+    }
+
+    const monthName = monthNames[currentmon];
+  
+    // Calculate the first and last day of the previous month
+    const firstDayOfPreviousMonth = new Date(currentYear, currentMonth - 1, 0);
+    firstDayOfPreviousMonth.setHours(0, 0, 0, 0);
+    const lastDayOfPreviousMonth = new Date(currentYear, currentMonth, 0);
+    lastDayOfPreviousMonth.setHours(0, 0, 0, 0);
+    const options = { timeZone: 'Asia/Jerusalem', hour12: false };
+    const israelFirstDay = new Date(firstDayOfPreviousMonth.toLocaleString('en-US', options));
+    const israelLastDay = new Date(lastDayOfPreviousMonth.toLocaleString('en-US', options));
+    console.log("first Day of previous month: ", israelFirstDay);
+    console.log("Last Day of previous month: ", israelLastDay);
+      // Convert the Israel time to UTC for Firestore query
+  const israelFirstDayUTC = new Date(israelFirstDay.toISOString());
+  const israelLastDayUTC = new Date(israelLastDay.toISOString());
+
+  console.log("Israel First Day in UTC:", israelFirstDayUTC);
+  console.log("Israel Last Day in UTC:", israelLastDayUTC);
+  
+    const EmployeesSnapshot = await db.collection("Employees").get();
+  
+    for (const EmployeeDoc of EmployeesSnapshot.docs) {
+      const EmployeeId = EmployeeDoc.id;
+      console.log("Employee Id: ", EmployeeId);
+  
+      const shiftSnapshot = await db
+        .collection("Employees")
+        .doc(EmployeeId)
+        .collection("work_shifts")
+        .get();
+  
+      console.log("Reached here successfully ------");
+  
+      let totalTime = 0;
+  
+      // Calculate total worked hours and minutes
+      for (const shiftDoc of shiftSnapshot.docs) {
+        const shiftData = shiftDoc.data();
+        
+        // Parse start and end time directly from Firestore's Timestamp
+        let start = 0;
+        let end = 0;
+        if (shiftData.start == null) {
+          start = new Date(shiftData.startTime);
+          end = new Date(shiftData.endTime);
+        } else {
+          start = new Date(shiftData.start);
+          end = new Date(shiftData.end); 
+        }
+        console.log("current Month: ", currentmon);
+        if (start.getMonth() != currentmon) {
+          continue;
+        }
+        console.log("start Hour: ", start.getHours());
+        console.log("end Hour: ", end.getHours());
+        console.log("start Minutes: ", start.getMinutes());
+        console.log("end Hour: ", end.getMinutes());
+  
+        // Calculate milliseconds worked
+        totalTime += end - start;
+      }
+      let totalHoursWorked = Math.floor(totalTime / (1000 * 60 * 60)); // Convert to hours
+      let totalMinutesWorked = Math.floor((totalTime % (1000 * 60 * 60)) / (1000 * 60)); // Convert remaining milliseconds to minutes
+  
+      // Handle overflow minutes (if minutes exceed 60, add them to hours)
+      if (totalMinutesWorked >= 60) {
+        const additionalHours = Math.floor(totalMinutesWorked / 60);
+        totalHoursWorked += additionalHours;
+        totalMinutesWorked = totalMinutesWorked % 60; // Keep the remainder as minutes
+      }
+  
+      console.log("Total Hours Worked: ", totalHoursWorked);
+      console.log("Total Minutes Worked: ", totalMinutesWorked);
+  
+      // Store the total hours and minutes worked in the monthlyWorkHours subcollection
+      const monthlyWorkHoursRef = db
+        .collection("Employees")
+        .doc(EmployeeId)
+        .collection("monthlyWorkHours")
+        .doc(`${currentye}-${monthName}`); // Use the month name as the document ID
+  
+      await monthlyWorkHoursRef.set({
+        totalHours: totalHoursWorked,
+        totalMinutes: totalMinutesWorked,
+        month: monthName,
+        year: currentye,
+      });
+    }
+  };
+  
+  calculateMonthlyWorkHours();
+  
 
 module.exports = {
   assignDeliveries,
   separateOrdersByTruckType,
+  calculateMonthlyWorkHours,
 };

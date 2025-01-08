@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "zmitut81-1af26"
-  }
+    "default": "zmitut81-1af26",
+    "zmitut81": "zmitut81-1af26"
+  },
+  "targets": {},
+  "etags": {}
 }
