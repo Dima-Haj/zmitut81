@@ -20,12 +20,13 @@ const db = admin.firestore();
 
 const cache = {};
 const optimizeRouteForDriverEfficiently = async (order, COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, currentTime) => {
+  const cacheKey = `${order.orderId}-${currentTime}`;
   // Check if route for this order has already been calculated to save time
-  if (cache[order.orderId]) {
-    return cache[order.orderId];
+  if (cache[cacheKey]) {
+    return cache[cacheKey];
   }
   const optimizedRoute = await optimizeRouteForDriver(order, COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, currentTime);
-  cache[order.orderId] = optimizedRoute;
+  cache[cacheKey] = optimizedRoute;
   return optimizedRoute;
 };
 const separateOrdersByTruckType = async () => {
@@ -262,73 +263,92 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
           for (const assignment of assignments) {
             const driver = truckEmployees.find((e) => e.employeeDocId === assignment.driverId);
             if (!driver) continue;
-
+      
             const START_TIME = DateTime.now().setZone('Asia/Jerusalem').startOf('day').plus({ days: 1, hours: 8 });
-            const queue = new PriorityQueue((a, b) => a.cost - b.cost); // Min-heap based on cost
+            const queue = new PriorityQueue((a, b) => {
+              // Prioritize states with more late orders
+              if (a.lateOrderCount !== b.lateOrderCount) {
+                return b.lateOrderCount - a.lateOrderCount; // More late orders come first
+              }
+              // If both have the same number of late orders, prefer the one with more hours
+              if (a.regularRoute.length === b.regularRoute.length) {
+                return b.totalDeliveryTime - a.totalDeliveryTime; // Prefer longer routes
+              }
+              // Otherwise, prefer routes with more orders
+              return b.regularRoute.length - a.regularRoute.length;
+            });
+      
             const visited = new Set(); // Track visited states to avoid redundant calculations
             const lateOrders = assignment.orders.filter((order) => order.status === "באיחור");
             const newOrders = assignment.orders.filter((order) => order.status !== "באיחור");
-            console.log("new Orders length: ", newOrders.length);
+      
+            console.log("New Orders length: ", newOrders.length);
             console.log("Late Orders length: ", lateOrders.length);
-
+      
             let optimalRoute = [];
-            let optimalPostponedRoute = [];
+            let optimalPostponedRoute = []; // Store all postponed orders
             let maxOrders = 0;
+            let maxDeliveryTime = 0; // Track the longest delivery time for routes with the same number of orders
+            let maxLateOrders = 0; // Track the maximum number of late orders in a route
       
             let currentTime = Math.floor(START_TIME.toSeconds()); // Unix time in seconds
-            console.log("Queue enqueue for late orders...");
-            if (lateOrders.length!=0) {
-            // Prioritize Late Orders
+      
+            // Enqueue initial state with all orders
             queue.enqueue({
               regularRoute: [],
               postponedRoute: [],
               costHours: 0,
               costMinutes: 0,
-              remainingOrders: lateOrders,
+              totalDeliveryTime: 0, // Track total delivery time for the route
+              remainingOrders: [...lateOrders, ...newOrders], // Combine late and new orders
+              lateOrderCount: lateOrders.length, // Track the number of late orders in the remainingOrders
               currentTime: currentTime,
             });
       
-            // Handle late orders first using UCS (Uniform Cost Search)
             console.log("Queue size before processing: ", queue.size());
-
+      
+            // Process all orders in a single loop
             while (!queue.isEmpty()) {
-
-              const { regularRoute, postponedRoute, costHours, costMinutes, remainingOrders, currentTime } = queue.dequeue();
+              const { regularRoute, postponedRoute, costHours, costMinutes, totalDeliveryTime, remainingOrders, lateOrderCount, currentTime } = queue.dequeue();
               console.log('Queue size:', queue.size()); // Check queue size after dequeue
-
+      
               const stateId = JSON.stringify({
                 regularRoute: regularRoute.map((order) => order.orderId),
-                postponedRoute: postponedRoute.orderId,
+                postponedRoute: postponedRoute.map((order) => order.orderId), // Include postponedRoute in stateId
                 costHours,
                 costMinutes,
                 remainingOrders: remainingOrders.map((order) => order.orderId),
                 currentTime,
               });
-
+      
               if (visited.has(stateId)) {
                 continue;
               }
               visited.add(stateId);
       
-              if (regularRoute.length > maxOrders || (regularRoute.length === maxOrders && remainingOrders.length === 0)) {
+              // Track the best route
+              if (
+                lateOrderCount > maxLateOrders || // Prefer routes with more late orders
+                (lateOrderCount === maxLateOrders && regularRoute.length > maxOrders) || // If same late orders, prefer more orders
+                (lateOrderCount === maxLateOrders && regularRoute.length === maxOrders && ((totalDeliveryTime > maxDeliveryTime) || (optimalPostponedRoute.length < postponedRoute.length))) 
+              ) {
+                maxLateOrders = lateOrderCount;
                 maxOrders = regularRoute.length;
+                maxDeliveryTime = totalDeliveryTime;
                 optimalRoute = regularRoute;
-                optimalPostponedRoute = postponedRoute; // Temporarily store postponed route
+                optimalPostponedRoute = postponedRoute; // Update the postponed orders
+                console.log("Updated optimalPostponedRoute:", optimalPostponedRoute.length);
               }
-              // console.log(stateId);
       
               // Try each remaining order and add to the route
               for (const [index, order] of remainingOrders.entries()) {
-                // console.log("Optimizing route for order:", order.orderId);
-                // console.log("index :", index);
-                // console.log("of size: ", remainingOrders.length);
                 const optimizedRoute = await optimizeRouteForDriverEfficiently(order, COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, currentTime);
       
-                const totalDeliveryTime =
+                const deliveryTime =
                   optimizedRoute[0].totalDeliveryTime.hours * 3600 +
                   optimizedRoute[0].totalDeliveryTime.minutes * 60;
       
-                const newTime = currentTime + totalDeliveryTime;
+                const newTime = currentTime + deliveryTime;
                 let newCostHours = costHours + optimizedRoute[0].totalDeliveryTime.hours;
                 let newCostMinutes = costMinutes + optimizedRoute[0].totalDeliveryTime.minutes;
       
@@ -341,12 +361,15 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
                 // If time exceeds limit, temporarily store the postponed route
                 if (newCostHours > 8 || (newCostHours === 8 && newCostMinutes !== 0)) {
                   const newPostponedRoute = [...postponedRoute, order];
+                  console.log("Order postponed:", order.orderId);
                   queue.enqueue({
                     regularRoute,
                     postponedRoute: newPostponedRoute,
                     costHours,
                     costMinutes,
+                    totalDeliveryTime, // Keep the same total delivery time
                     remainingOrders: remainingOrders.filter((_, i) => i !== index),
+                    lateOrderCount: remainingOrders.filter((o) => o.status === "באיחור").length, // Update lateOrderCount
                     currentTime,
                   });
                 } else {
@@ -359,137 +382,34 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
                     postponedRoute,
                     costHours: newCostHours,
                     costMinutes: newCostMinutes,
+                    totalDeliveryTime: totalDeliveryTime + deliveryTime, // Update total delivery time
                     remainingOrders: newRemainingOrders,
+                    lateOrderCount: newRemainingOrders.filter((o) => o.status === "באיחור").length, // Update lateOrderCount
                     currentTime: newTime,
                   });
                 }
               }
             }
-            console.log("Queue processing completed.");
-          } 
-          if (newOrders.length != 0) {
-            // Handle new orders after the late orders are assigned
-            queue.enqueue({
-              regularRoute: optimalRoute,
-              postponedRoute: optimalPostponedRoute,
-              costHours: 0,
-              costMinutes: 0,
-              remainingOrders: newOrders,
-              currentTime: currentTime,
-            });
       
-            // Recalculate the optimal route by considering new orders and maintaining late order constraints
-            console.log("Queue size before processing: ", queue.size());
-            const visitedStates = new Map(); // This will store the best cost for each state
-
-            while (!queue.isEmpty()) {
-              const { regularRoute, postponedRoute, costHours, costMinutes, remainingOrders, currentTime } = queue.dequeue();
-              console.log('Queue size:', queue.size()); // Check queue size after dequeue
-
-              const stateId = JSON.stringify({
-                regularRoute: regularRoute.map((order) => order.orderId),
-                postponedRoute: postponedRoute.orderId,
-                currentTime,
-              });
-            
-             // console.log("Processing task: ", stateId);
-            
-              // Check if the state has already been visited and if the new cost is better
-              if (visitedStates.has(stateId)) {
-                const previousCost = visitedStates.get(stateId);
-                // If the previous cost is better, skip this state
-                if (previousCost.hours < costHours || (previousCost.hours === costHours && previousCost.minutes <= costMinutes)) {
-                  continue;
-                }
-              }
-            
-              // Add the current state with its cost
-              visitedStates.set(stateId, { hours: costHours, minutes: costMinutes });
-            
-              // Keep track of the best route
-              if (regularRoute.length > maxOrders || (regularRoute.length === maxOrders && postponedRoute.length > optimalPostponedRoute.length)) {
-                maxOrders = regularRoute.length;
-                optimalRoute = regularRoute;
-                optimalPostponedRoute = postponedRoute;
-              }
-            
-              let bestCostHours = Infinity;
-              let bestCostMinutes = Infinity;
-            
-              for (const [index, order] of remainingOrders.entries()) {
-                // console.log("index :", index);
-                // console.log("of size: ", remainingOrders.length);
-                
-            
-                // Try inserting the order at different positions in the regular route
-                for (let i = 0; i <= regularRoute.length; i++) {
-                  const newRegularRoute = [...regularRoute.slice(0, i), order, ...regularRoute.slice(i)];
-                  let newCostHours1 = 0;
-                  let newCostMinutes1 = 0;
-                  let newCurrentTime = currentTime;
-            
-                  // Recalculate the delivery times for each order in the updated regular route
-                  for (let j = 0; j < newRegularRoute.length; j++) {
-                    const optimizedRoute = await optimizeRouteForDriverEfficiently(newRegularRoute[j], COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, newCurrentTime);
-            
-                    const deliveryTime =
-                      optimizedRoute[0].totalDeliveryTime.hours * 3600 +
-                      optimizedRoute[0].totalDeliveryTime.minutes * 60;
-            
-                    newCurrentTime += deliveryTime;
-                    newCostHours1 += optimizedRoute[0].totalDeliveryTime.hours;
-                    newCostMinutes1 += optimizedRoute[0].totalDeliveryTime.minutes;
-            
-                    // Normalize minutes to hours
-                    if (newCostMinutes1 >= 60) {
-                      newCostHours1 += Math.floor(newCostMinutes1 / 60);
-                      newCostMinutes1 = newCostMinutes1 % 60;
-                    }
-                  }
-            
-                  // Check if inserting the order at position 'i' exceeds 8 hours
-                  if ((newCostHours1 < bestCostHours) || ((newCostHours1 === bestCostHours) && (newCostMinutes1 < bestCostMinutes))) {
-                    if (newCostHours1 > 8 || (newCostHours1 === 8 && newCostMinutes1 > 0)) {
-                      optimalPostponedRoute = order;
-                    } else {
-                      bestCostHours = newCostHours1;
-                      bestCostMinutes = newCostMinutes1;
-                      optimalRoute = newRegularRoute;
-                    }
-                  }
-                }
-            
-                const newRemainingOrders = remainingOrders.filter((_, i) => i !== index);
-                queue.enqueue({
-                  regularRoute: optimalRoute,
-                  postponedRoute: optimalPostponedRoute,
-                  costHours: bestCostHours,
-                  costMinutes: bestCostMinutes,
-                  remainingOrders: newRemainingOrders,
-                  currentTime,
-                });
-              }
-            }
-            
             console.log("Queue processing completed.");
-          }
-            console.log("1) reached");
-            // Push the postponedRoute into postponedDeliveries
-            // Save the deliveries to Firebase for this driver
+            console.log("Optimal postponedRoute length:", optimalPostponedRoute.length);
+      
+            // Save the optimal route to the driver's deliveries
             for (const order of optimalRoute) {
               const optimizedRoute = await optimizeRouteForDriverEfficiently(order, COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, currentTime);
               driver.deliveries.push(...optimizedRoute);
       
               currentTime += optimizedRoute[0].totalDeliveryTime.hours * 3600 + optimizedRoute[0].totalDeliveryTime.minutes * 60;
             }
-            console.log("Optimal postponedRoute: ", optimalPostponedRoute.length);
-            if (optimalPostponedRoute.length != 0) postponedDeliveries.push(optimalPostponedRoute);
-
+      
+            // Save postponed orders
+            if (optimalPostponedRoute.length !== 0) {
+              postponedDeliveries.push(...optimalPostponedRoute); // Add all postponed orders to the array
+              console.log("Postponed orders added to postponedDeliveries:", optimalPostponedRoute.length);
+            }
           }
-
         }
       }
-      
       console.log("2) reached");
       // Save assignments to Firestore
       for (const driver of employees) {
