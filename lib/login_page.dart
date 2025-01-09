@@ -679,13 +679,13 @@ class LoginPageState extends State<LoginPage> {
             ),
           ),
           Positioned(
-            top: screenHeight * 0.03,
+            top: screenHeight * 0.1,
             left: 0,
             right: 0,
             child: Center(
               child: Image.asset(
                 'assets/images/logo_zmitut.png',
-                height: screenHeight * 0.06, // Adjust the height as needed
+                height: screenHeight * 0.15, // Adjust the height as needed
               ),
             ),
           ),
