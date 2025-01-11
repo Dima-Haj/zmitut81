@@ -23,7 +23,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   String userLocationMessage = "Fetching your location...";
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final List<Client> clients = [];
-  final String apiKey = 'AIzaSyBXHnIAKqan9xNW5XEgaPe1JBVgFAexIR8';
+  final String apiKey = 'AIzaSyAGJkXj13xt1A665k3XO5GspS6i6tbieuA';
   List<Map<String, dynamic>> _clientTimes = []; // Initialize as an empty list
   DateTime? _returnTime; // To store a single return time
   final Map<String, double> companyLocation = {
@@ -1440,6 +1440,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                             ],
                           );
                         }
+                        return null;
                       },
                     ),
                   ),
