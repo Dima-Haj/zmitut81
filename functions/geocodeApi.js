@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // Replace with your Google API Key
-const GOOGLE_API_KEY = "AIzaSyBXHnIAKqan9xNW5XEgaPe1JBVgFAexIR8";
+const GOOGLE_API_KEY = "AIzaSyAGJkXj13xt1A665k3XO5GspS6i6tbieuA";
 
 /**
  * Fetch latitude and longitude for a given address using Google Geocoding API.

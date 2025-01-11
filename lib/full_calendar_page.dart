@@ -105,7 +105,7 @@ class _FullCalendarPageState extends State<FullCalendarPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    ...?widget.eventMap[_selectedDay]?.map(
+                    ...widget.eventMap[_selectedDay]?.map(
                           (event) => Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Text("- $event"),
