@@ -103,20 +103,6 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               SizedBox(height: screenHeight * 0.1),
-              // Title
-              Center(
-                child: Text(
-                  'ניהול לקוחות והזמנות',
-                  style: GoogleFonts.exo2(
-                    fontSize: screenHeight * 0.025,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              SizedBox(
-                  height: screenHeight *
-                      0.02), // Spacing between title and search field
 
               // Search Field
               Directionality(
@@ -131,48 +117,16 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                   },
                   textAlign: TextAlign.right, // Align text to the right
                   decoration: InputDecoration(
-                    labelText: 'חפש לקוח לפי שם',
-                    labelStyle: const TextStyle(
-                      color: Color.fromARGB(255, 131, 107, 81), // Brown color
+                    hintText: 'חפש לקוח לפי שם',
+                    hintStyle: GoogleFonts.exo2(
+                      fontSize: screenHeight * 0.018,
+                      color: const Color.fromARGB(255, 213, 213, 213),
                     ),
-                    floatingLabelBehavior: FloatingLabelBehavior
-                        .auto, // Ensure label floats properly
-                    contentPadding: const EdgeInsets.fromLTRB(
-                        20.0, 30.0, 20.0, 10.0), // Adjust padding
                     prefixIcon: const Icon(
-                      Icons.search,
-                      color: Color.fromARGB(
-                          255, 131, 107, 81), // Brown color for icon
-                    ),
+                        Icons.search), // Search icon stays on the left
                     border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(30.0), // Rounded corners
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(
-                            255, 131, 107, 81), // Brown color for border
-                        width: 2.0,
-                      ),
+                      borderRadius: BorderRadius.circular(screenHeight * 0.02),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 2.0,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 2.5,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: const Color.fromARGB(
-                        255, 255, 255, 255), // White background
-                  ),
-                  style: const TextStyle(
-                    color: Colors.black,
                   ),
                 ),
               ),
@@ -189,7 +143,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                     return Container(
                       height: screenHeight * 0.14,
                       margin:
-                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.005),
                       decoration: BoxDecoration(
                         borderRadius:
                             BorderRadius.circular(screenHeight * 0.02),
@@ -203,13 +157,12 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                         color: Colors.white,
                       ),
                       child: Padding(
-                        padding: EdgeInsets.all(screenHeight * 0.01),
+                        padding: EdgeInsets.all(screenHeight * 0.005),
                         child: Directionality(
                           textDirection: TextDirection.rtl,
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              // Labels on the right
                               Expanded(
                                 flex: 3,
                                 child: Column(
@@ -222,6 +175,8 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                         fontSize: screenHeight * 0.02,
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
                                     SizedBox(height: screenHeight * 0.005),
                                     Text(
