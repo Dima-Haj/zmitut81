@@ -97,7 +97,6 @@ const optimizeRouteForDriver = async (order, companyLocation, preparationTime, w
   
     return route;
   };
-
   
   // Export the function for use in other files
 module.exports = {

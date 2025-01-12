@@ -39,7 +39,7 @@ class EmployeeLocationPage extends StatelessWidget {
   Future<double> calculateDistanceFromGoogleMaps(
       LatLng origin, LatLng destination) async {
     final apiKey =
-        'AIzaSyBXHnIAKqan9xNW5XEgaPe1JBVgFAexIR8'; // Replace with your Google Maps API key
+        'AIzaSyAGJkXj13xt1A665k3XO5GspS6i6tbieuA'; // Replace with your Google Maps API key
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/directions/json'
       '?origin=${origin.latitude},${origin.longitude}'
@@ -50,7 +50,6 @@ class EmployeeLocationPage extends StatelessWidget {
     try {
       // Make the API call
       final response = await http.get(url);
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 

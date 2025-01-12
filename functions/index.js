@@ -1,4 +1,4 @@
-const {scheduleDailyTasks} = require("./scheduler");
+const {scheduleDailyTasks, scheduleMonthlySheets} = require("./scheduler");
 
 // Export the scheduled function
-module.exports = {scheduleDailyTasks};
+module.exports = {scheduleDailyTasks, scheduleMonthlySheets};
