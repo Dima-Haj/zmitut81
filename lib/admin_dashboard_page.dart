@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'full_calendar_page.dart'; // Import the FullCalendarPage from its file
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -59,6 +60,7 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
 
       int newCount = 0;
       int activeCount = 0;
+      //int completedcount = 0;
 
       int total = 0;
 
@@ -78,7 +80,7 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
 
           if (status == 'חדשה') {
             newCount++;
-          } else if (status == 'בדרך') {
+          } else if (status == 'בדרך' || status == 'בתהליך') {
             activeCount++;
           }
         }
@@ -91,7 +93,7 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
         setState(() {
           this.pendingCount = newCount;
           this.activeCount = activeCount;
-          //this.completedCount = completedCount;
+          //this.completedCount = completedcount;
           this.total = total; // Set the total deliveries value
         });
       }
@@ -144,9 +146,13 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
       }
 
       // Update the UI with the count of completed deliveries
+      // Add completed deliveries to the total count
       if (mounted) {
         setState(() {
-          this.completedCount = completedCount; // Ensure UI gets updated
+          this.completedCount =
+              completedCount; // Update completed deliveries count
+          this.total +=
+              completedCount; // Add completed deliveries to the total count
         });
       }
     } catch (e) {
@@ -186,6 +192,7 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
                   ),
                 ),
                 backgroundColor: const Color.fromARGB(255, 141, 126, 106),
+                automaticallyImplyLeading: false, // Disables the back arrow
               ),
               Expanded(
                 child: DashboardPage(
@@ -247,7 +254,7 @@ class DashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(screenHeight * 0.02),
         boxShadow: const [
           BoxShadow(
-            color: Colors.black12,
+            color: Color.fromARGB(31, 4, 4, 4),
             blurRadius: 10,
             spreadRadius: 5,
           ),
@@ -323,9 +330,9 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: screenHeight * 0.03),
+          SizedBox(height: screenHeight * 0.02),
           // Active and Pending Deliveries
-          SizedBox(height: screenHeight * 0.03),
+          //  SizedBox(height: screenHeight * 0.03),
           // Active and Pending Deliveries
           Row(
             mainAxisAlignment:
@@ -472,33 +479,58 @@ class DeliveryCalendarWidget extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "היום",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+            Center(
+              child: Text(
+                "לוח חודש",
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
-                Text(
-                  "${today.day}/${today.month}/${today.year}",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
+              ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: eventMap[today]?.map((e) => Text(e)).toList() ??
-                  [const Text("No deliveries")],
+            //const SizedBox(height: 5),
+            SizedBox(
+              height: 340, // Adjust the height to make the calendar smaller
+              child: TableCalendar(
+                locale: 'he_IL',
+                focusedDay: DateTime.now(),
+                firstDay: DateTime(2020),
+                lastDay: DateTime(2030),
+                calendarFormat: CalendarFormat.month,
+                eventLoader: (day) {
+                  DateTime normalizedDate =
+                      DateTime(day.year, day.month, day.day); // Normalize day
+                  return eventMap[normalizedDate] ?? [];
+                },
+                headerStyle: HeaderStyle(
+                  titleCentered: true,
+                  formatButtonVisible: false,
+                  titleTextStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  leftChevronIcon: const Icon(Icons.chevron_right),
+                  rightChevronIcon: const Icon(Icons.chevron_left),
+                ),
+                calendarStyle: CalendarStyle(
+                  selectedDecoration: BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    shape: BoxShape.circle,
+                  ),
+                  weekendTextStyle: const TextStyle(color: Colors.red),
+                  defaultTextStyle: const TextStyle(fontSize: 14),
+                ),
+                onDaySelected: (selectedDay, focusedDay) {
+                  // Handle the day selection if needed
+                },
+              ),
             ),
           ],
         ),
