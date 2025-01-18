@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EmployeeManagementPage extends StatefulWidget {
-  final Map<String, dynamic>? managerDetails; // Optional manager details
+  final Map<String, dynamic>? managerDetails;
 
   const EmployeeManagementPage({super.key, this.managerDetails});
 
@@ -14,274 +15,493 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
   final List<Map<String, dynamic>> employees = [];
   final List<Map<String, dynamic>> originalEmployees = [];
 
-  void _addEmployee(String name, String phoneNumber, bool availability) {
-    if (mounted) {
-      setState(() {
-        final newEmployee = {
-          'name': name,
-          'phoneNumber': phoneNumber,
-          'availability': availability,
-          'deliveryDetails': null, // Initially no delivery details
-        };
-        employees.add(newEmployee);
-        originalEmployees.add(newEmployee); // Sync the original list
+  // Form Key
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  String? selectedBirthDay;
+  String? selectedBirthMonth;
+  String? selectedBirthYear;
+  String? selectedTruckSize;
+  String? selectedTruckType;
+
+  //bool isFormValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEmployees();
+  }
+
+  // Fetch employees from Firestore
+  void _fetchEmployees() async {
+    final QuerySnapshot snapshot =
+        await FirebaseFirestore.instance.collection('Employees').get();
+
+    final List<Map<String, dynamic>> fetchedEmployees = [];
+    for (var doc in snapshot.docs) {
+      fetchedEmployees.add({
+        'firstName': doc['firstName'],
+        'lastName': doc['lastName'],
+        'id': doc['id'],
+        'phone': doc['phone'],
+        'birthDay': doc['birthDay'],
+        'birthMonth': doc['birthMonth'],
+        'birthYear': doc['birthYear'],
+        'email': doc['email'],
+        'truckSize': doc['truckSize'],
+        'truckType': doc['truckType']
       });
+    }
+
+    setState(() {
+      employees.clear();
+      employees.addAll(fetchedEmployees);
+      originalEmployees.addAll(fetchedEmployees);
+    });
+  }
+
+  void _addEmployee(
+      String firstName,
+      String lastName,
+      String phone,
+      String email,
+      String id,
+      String birthDay,
+      String birthMonth,
+      String birthYear,
+      String truckSize,
+      String truckType) async {
+    setState(() {
+      final newEmployee = {
+        'firstName': firstName,
+        'lastName': lastName,
+        'phone': phone,
+        'email': email,
+        'id': id,
+        'birthDay': birthDay,
+        'birthMonth': birthMonth,
+        'birthYear': birthYear,
+        'truckSize': truckSize,
+        'truckType': truckType,
+        //'birthday': '$birthDay/$birthMonth/$birthYear', // Combined birthday
+      };
+      employees.add(newEmployee);
+      originalEmployees.add(newEmployee); // Sync the original list
+    });
+
+    // Add the new employee to Firebase Firestore
+    try {
+      final employeeRef =
+          FirebaseFirestore.instance.collection('Employees').doc();
+      await employeeRef.set({
+        'firstName': firstName,
+        'lastName': lastName,
+        'phone': phone,
+        'email': email,
+        'id': id,
+        'birthDay': birthDay,
+        'birthMonth': birthMonth,
+        'birthYear': birthYear,
+        'truckSize': truckSize,
+        'truckType': truckType,
+        //'id': employeeRef.id, // Store the Firestore document ID
+      });
+
+      // Success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('העובד נוסף בהצלחה')),
+      );
+    } catch (e) {
+      // Handle any error that may occur
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('שגיאה בהוספת העובד: $e')),
+      );
     }
   }
 
-  void _assignDelivery(int index, Map<String, dynamic> deliveryDetails) {
-    setState(() {
-      employees[index]['availability'] = false;
-      employees[index]['deliveryDetails'] = deliveryDetails;
-    });
-  }
+  void _removeEmployee(int index) async {
+    // First, get the employee's ID before removing the employee from the list
+    final removedEmployeeId = employees[index]['id'];
 
-  void _showOnMap(int index) {
-    // Placeholder for future functionality
-    print("הצג משלוח במפה לעובד: ${employees[index]['name']}");
+    // Remove the employee locally
+    setState(() {
+      final removedEmployee = employees.removeAt(index);
+      originalEmployees.removeWhere(
+          (employee) => employee['firstName'] == removedEmployee['firstName']);
+    });
+
+    // Now, remove the employee from Firebase
+    try {
+      // Using the employee ID to delete the document from Firestore
+      await FirebaseFirestore.instance
+          .collection('Employees')
+          .doc(removedEmployeeId) // Use the stored ID here
+          .delete();
+
+      // A success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('העובד נמחק בהצלחה')),
+      );
+    } catch (e) {
+      // Handle any error that may occur
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('שגיאה במחיקת העובד: $e')),
+      );
+    }
   }
 
   void _editEmployee(
-      int index, String name, String phoneNumber, bool availability) {
-    setState(() {
-      final updatedEmployee = {
-        'name': name,
-        'phoneNumber': phoneNumber,
-        'availability': availability,
-        'deliveryDetails': employees[index]
-            ['deliveryDetails'], // Retain delivery details
-      };
-      employees[index] = updatedEmployee;
-      final originalIndex = originalEmployees.indexWhere(
-          (employee) => employee['name'] == employees[index]['name']);
-      if (originalIndex != -1) {
-        originalEmployees[originalIndex] =
-            updatedEmployee; // Sync original list
+      int index,
+      String firstName,
+      String lastName,
+      String phone,
+      String email,
+      String id, // Employee ID
+      String birthDay,
+      String birthMonth,
+      String birthYear,
+      String truckSize,
+      String truckType) async {
+    try {
+      // Update the local employee data
+      setState(() {
+        final updatedEmployee = {
+          'firstName': firstName,
+          'lastName': lastName,
+          'phone': phone,
+          'email': email,
+          'id': id, // Keep employee ID
+          'birthDay': birthDay,
+          'birthMonth': birthMonth,
+          'birthYear': birthYear,
+          'truckSize': truckSize,
+          'truckType': truckType,
+        };
+
+        employees[index] = updatedEmployee; // Update local list with new data
+
+        final originalIndex = originalEmployees.indexWhere((employee) =>
+            employee['id'] ==
+            employees[index]['id']); // Match by 'id' instead of first name
+        if (originalIndex != -1) {
+          originalEmployees[originalIndex] =
+              updatedEmployee; // Sync with the original list
+        }
+      });
+
+      // Find the Firestore document ID by searching for the employee ID
+      final employeeDoc = await FirebaseFirestore.instance
+          .collection('Employees')
+          .where('id', isEqualTo: id) // Search by employee 'id'
+          .limit(1) // We expect a single document
+          .get();
+
+      // If the employee document is found
+      if (employeeDoc.docs.isNotEmpty) {
+        final documentId = employeeDoc.docs.first.id; // Get the document ID
+
+        // Now, update the employee data in Firestore using the document ID
+        await FirebaseFirestore.instance
+            .collection('Employees')
+            .doc(documentId)
+            .update({
+          'firstName': firstName,
+          'lastName': lastName,
+          'phone': phone,
+          'email': email,
+          'birthDay': birthDay,
+          'birthMonth': birthMonth,
+          'birthYear': birthYear,
+          'truckSize': truckSize,
+          'truckType': truckType,
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('פרטי העובד עודכנו בהצלחה')),
+        );
+      } else {
+        // If no employee document is found with the given ID, show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('לא נמצא עובד עם ת.ז זו')),
+        );
       }
-    });
+    } catch (e) {
+      // Handle any error that may occur during the update
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('שגיאה בעדכון פרטי העובד: $e')),
+      );
+    }
   }
 
-  void _showAssignDeliveryDialog(int index) {
-    final deliveryNumberController = TextEditingController();
-    final destinationController = TextEditingController();
-    final dateController = TextEditingController();
-    final timeController = TextEditingController();
+  void _showEditEmployeeDialog(int index, Map<String, dynamic> employee) {
+    final firstNameController =
+        TextEditingController(text: employee['firstName']);
+    final lastNameController =
+        TextEditingController(text: employee['lastName']);
+    final phoneNumberController =
+        TextEditingController(text: employee['phone']);
+    final birthDayController =
+        TextEditingController(text: employee['birthDay']);
+    final birthMonthController =
+        TextEditingController(text: employee['birthMonth']);
+    final birthYearController =
+        TextEditingController(text: employee['birthYear']);
+    final emailController = TextEditingController(text: employee['email']);
+    final idController = TextEditingController(text: employee['id']);
+    final truckSizeController =
+        TextEditingController(text: employee['truckSize']);
+    final truckTypeController =
+        TextEditingController(text: employee['truckType']);
+
+    String? selectedBirthDay = employee['birthDay'];
+    String? selectedBirthMonth = employee['birthMonth'];
+    String? selectedBirthYear = employee['birthYear'];
+    String? selectedTruckSize = employee['truckSize'];
+    String? selectedTruckType = employee['truckType'];
+
+    final _formKey = GlobalKey<FormState>(); // Form key for validation
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0), // Rounded corners
+            borderRadius: BorderRadius.circular(20.0),
           ),
-          backgroundColor:
-              const Color.fromARGB(255, 255, 255, 255), // White background
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
           title: Center(
             child: Text(
-              'להקצות משלוח',
+              'עריכת עובד',
               style: TextStyle(
-                color: const Color.fromARGB(255, 131, 107, 81), // Brown color
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
-                fontSize: 20,
+                color: const Color.fromARGB(255, 131, 107, 81),
               ),
             ),
           ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                // Delivery Number Field
-                TextField(
-                  controller: deliveryNumberController,
-                  decoration: InputDecoration(
-                    labelText: 'מספר משלוח',
-                    labelStyle: const TextStyle(
-                      color: Color.fromARGB(
-                          255, 131, 107, 81), // Brown label color
-                    ),
-                    floatingLabelBehavior: FloatingLabelBehavior.auto,
-                    filled: true,
-                    fillColor: const Color.fromARGB(
-                        255, 245, 245, 245), // Light gray background
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
-                        color:
-                            Color.fromARGB(255, 131, 107, 81), // Border color
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
+            child: Form(
+              key: _formKey, // Link the form to the key
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  TextFormField(
+                    controller: firstNameController,
+                    decoration: InputDecoration(
+                      labelText: 'שם פרטי',
+                      labelStyle: const TextStyle(
                         color: Color.fromARGB(255, 131, 107, 81),
-                        width: 1.5,
                       ),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 2.0,
-                      ),
-                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'שם פרטי חייב להיות מלא';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                SizedBox(height: 10),
-                // Destination Field
-                TextField(
-                  controller: destinationController,
-                  decoration: InputDecoration(
-                    labelText: 'יעד',
-                    labelStyle: const TextStyle(
-                      color: Color.fromARGB(255, 131, 107, 81),
-                    ),
-                    floatingLabelBehavior: FloatingLabelBehavior.auto,
-                    filled: true,
-                    fillColor: const Color.fromARGB(255, 245, 245, 245),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
+                  TextFormField(
+                    controller: lastNameController,
+                    decoration: InputDecoration(
+                      labelText: 'שם משפחה',
+                      labelStyle: const TextStyle(
                         color: Color.fromARGB(255, 131, 107, 81),
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 1.5,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 2.0,
-                      ),
-                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'שם משפחה חייב להיות מלא';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                SizedBox(height: 10),
-                // Date Field
-                TextField(
-                  controller: dateController,
-                  decoration: InputDecoration(
-                    labelText: 'תאריך',
-                    labelStyle: const TextStyle(
-                      color: Color.fromARGB(255, 131, 107, 81),
-                    ),
-                    floatingLabelBehavior: FloatingLabelBehavior.auto,
-                    filled: true,
-                    fillColor: const Color.fromARGB(255, 245, 245, 245),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
+                  TextFormField(
+                    controller: idController,
+                    decoration: InputDecoration(
+                      labelText: 'ת.ז',
+                      labelStyle: const TextStyle(
                         color: Color.fromARGB(255, 131, 107, 81),
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 1.5,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 2.0,
-                      ),
-                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'ת.ז חייבת להיות מלאה';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                SizedBox(height: 10),
-                // Time Field
-                TextField(
-                  controller: timeController,
-                  decoration: InputDecoration(
-                    labelText: 'שעה',
-                    labelStyle: const TextStyle(
-                      color: Color.fromARGB(255, 131, 107, 81),
-                    ),
-                    floatingLabelBehavior: FloatingLabelBehavior.auto,
-                    filled: true,
-                    fillColor: const Color.fromARGB(255, 245, 245, 245),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
+                  TextFormField(
+                    controller: phoneNumberController,
+                    decoration: InputDecoration(
+                      labelText: 'מספר טלפון',
+                      labelStyle: const TextStyle(
                         color: Color.fromARGB(255, 131, 107, 81),
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 1.5,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: const BorderSide(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                        width: 2.0,
-                      ),
-                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'מספר טלפון חייב להיות מלא';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-              ],
+                  TextFormField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: 'אימייל',
+                      labelStyle: const TextStyle(
+                        color: Color.fromARGB(255, 131, 107, 81),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'אימייל חייב להיות מלא';
+                      }
+                      return null;
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedBirthMonth,
+                    decoration: InputDecoration(
+                      labelText: 'חודש הלידה',
+                      labelStyle: const TextStyle(
+                        color: Color.fromARGB(255, 131, 107, 81),
+                      ),
+                    ),
+                    items: [
+                      'ינואר',
+                      'פברואר',
+                      'מרץ',
+                      'אפריל',
+                      'מאי',
+                      'יוני',
+                      'יולי',
+                      'אוגוסט',
+                      'ספטמבר',
+                      'אוקטובר',
+                      'נובמבר',
+                      'דצמבר'
+                    ].map((month) {
+                      return DropdownMenuItem(value: month, child: Text(month));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedBirthMonth = value;
+                      });
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedBirthDay,
+                    decoration: InputDecoration(labelText: 'יום הלידה'),
+                    items: List.generate(31, (index) {
+                      final day = (index + 1).toString();
+                      return DropdownMenuItem(value: day, child: Text(day));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedBirthDay = value;
+                      });
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedBirthYear,
+                    decoration: InputDecoration(labelText: 'שנת הלידה'),
+                    items: List.generate(46, (index) {
+                      final year = 1980 + index;
+                      return DropdownMenuItem(
+                          value: year.toString(), child: Text(year.toString()));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedBirthYear = value;
+                      });
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedTruckSize,
+                    decoration: InputDecoration(labelText: 'גודל רכב'),
+                    items: ['גדול', 'קטן'].map((size) {
+                      return DropdownMenuItem(value: size, child: Text(size));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedTruckSize = value;
+                      });
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedTruckType,
+                    decoration: InputDecoration(labelText: 'סוג רכב'),
+                    items: ['פלטה', 'צובר', 'תפזורת'].map((type) {
+                      return DropdownMenuItem(value: type, child: Text(type));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedTruckType = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: const Color.fromARGB(255, 131, 107, 81),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: const Color.fromARGB(255, 131, 107, 81),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: const Text('ביטול'),
                 ),
-              ),
-              child: const Text('ביטול'),
-            ),
-            SizedBox(width: 60),
-            ElevatedButton(
-              onPressed: () {
-                _assignDelivery(index, {
-                  'deliveryNumber': deliveryNumberController.text,
-                  'destination': destinationController.text,
-                  'date': dateController.text,
-                  'time': timeController.text,
-                });
-                Navigator.of(context).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 131, 107, 81),
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30.0),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState?.validate() ?? false) {
+                      _editEmployee(
+                        index,
+                        firstNameController.text,
+                        lastNameController.text,
+                        phoneNumberController.text,
+                        emailController.text,
+                        idController.text,
+                        selectedBirthDay ?? '',
+                        selectedBirthMonth ?? '',
+                        selectedBirthYear ?? '',
+                        selectedTruckSize ?? '',
+                        selectedTruckType ?? '',
+                      );
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 131, 107, 81),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: const Text('שמירה'),
                 ),
-              ),
-              child: const Text('להקצות'),
+              ],
             ),
           ],
         );
       },
     );
-  }
-
-  void _removeEmployee(int index) {
-    if (mounted) {
-      setState(() {
-        final removedEmployee = employees.removeAt(index);
-        originalEmployees.removeWhere(
-            (employee) => employee['name'] == removedEmployee['name']);
-      });
-    }
   }
 
   @override
@@ -316,7 +536,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                   children: [
                     Center(
                       child: Text(
-                        'ניהול עובדים ומשלוחים',
+                        'ניהול עובדים',
                         style: GoogleFonts.exo2(
                           fontSize: screenHeight * 0.024,
                           fontWeight: FontWeight.bold,
@@ -336,25 +556,22 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             employees.clear();
                             employees.addAll(originalEmployees.where(
                                 (employee) =>
-                                    employee['name']
+                                    employee['firstName']
                                         .toString()
                                         .contains(value) ||
-                                    (employee['deliveryDetails']
-                                                ?['deliveryNumber'] ??
-                                            '')
+                                    (employee['id'] ?? '')
                                         .toString()
                                         .contains(value)));
                           }
                         });
                       },
                       decoration: InputDecoration(
-                        labelText: 'חפש לפי שם עובד או מספר משלוח',
+                        labelText: 'חפש לפי שם עובד',
                         labelStyle: const TextStyle(
                           color:
                               Color.fromARGB(255, 131, 107, 81), // Brown color
                         ),
-                        floatingLabelBehavior: FloatingLabelBehavior
-                            .auto, // Ensure label floats properly
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
                         contentPadding: const EdgeInsets.fromLTRB(
                             20.0, 30.0, 20.0, 9.0), // Adjust padding
                         border: OutlineInputBorder(
@@ -419,171 +636,18 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            employee['name'],
+                            '${employee['firstName']} ${employee['lastName']}',
                             style: GoogleFonts.exo2(
                               fontSize: screenHeight * 0.025,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text('מספר טלפון: ${employee['phoneNumber']}'),
-                          Text(
-                              'פנוי: ${employee['availability'] ? 'כן' : 'לא'}'),
-                          if (employee['deliveryDetails'] != null)
-                            InkWell(
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      backgroundColor: const Color.fromARGB(255,
-                                          255, 255, 255), // White background
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(20.0),
-                                      ),
-                                      title: Center(
-                                        child: Text(
-                                          'פרטי משלוח',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color.fromARGB(
-                                                255,
-                                                131,
-                                                107,
-                                                81), // Match your theme
-                                          ),
-                                        ),
-                                      ),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'מספר משלוח: ${employee['deliveryDetails']['deliveryNumber']}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'יעד: ${employee['deliveryDetails']['destination']}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'תאריך: ${employee['deliveryDetails']['date']}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'שעה: ${employee['deliveryDetails']['time']}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      actions: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment
-                                              .end, // Align button to the right
-                                          children: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              style: TextButton.styleFrom(
-                                                foregroundColor: Colors.white,
-                                                backgroundColor:
-                                                    const Color.fromARGB(
-                                                        255,
-                                                        131,
-                                                        107,
-                                                        81), // Match theme
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 20,
-                                                        vertical: 10),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          30.0),
-                                                ),
-                                              ),
-                                              child: const Text('סגור'),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              child: Text(
-                                'משלוח: ${employee['deliveryDetails']['deliveryNumber']}',
-                                style: const TextStyle(
-                                  decoration: TextDecoration.underline,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ),
-                          SizedBox(height: 10),
+                          Text('מספר טלפון: ${employee['phone']}'),
+                          Text('סוג משאית: ${employee['truckType']}'),
+                          Text('גודל משאית: ${employee['truckSize']}'),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              employee['availability']
-                                  ? ElevatedButton(
-                                      onPressed: () {
-                                        _showAssignDeliveryDialog(index);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color.fromARGB(
-                                            255, 255, 255, 255), // White
-                                        foregroundColor: const Color.fromARGB(
-                                            255, 131, 107, 81), // Brown
-                                        side: const BorderSide(
-                                          color: Color.fromARGB(255, 131, 107,
-                                              81), // Border color
-                                          width: 2.0,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                              30.0), // Rounded corners
-                                        ),
-                                      ),
-                                      child: const Text('להקצות משלוח'),
-                                    )
-                                  : ElevatedButton(
-                                      onPressed: () {
-                                        _showOnMap(index);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color.fromARGB(
-                                            255, 255, 255, 255), // White
-                                        foregroundColor: const Color.fromARGB(
-                                            255, 131, 107, 81), // Brown
-                                        side: const BorderSide(
-                                          color: Color.fromARGB(255, 131, 107,
-                                              81), // Border color
-                                          width: 2.0,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                              30.0), // Rounded corners
-                                        ),
-                                      ),
-                                      child: const Text('הצג במפה'),
-                                    ),
                               IconButton(
                                 icon:
                                     const Icon(Icons.edit, color: Colors.blue),
@@ -635,16 +699,24 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
   }
 
   void _showAddEmployeeDialog() {
-    final nameController = TextEditingController();
+    final firstNameController = TextEditingController();
+    final lastNameController = TextEditingController();
     final phoneNumberController = TextEditingController();
-    bool availability = true;
+    final birthDayController = TextEditingController();
+    final birthMonthController = TextEditingController();
+    final birthYearController = TextEditingController();
+    final idController = TextEditingController();
+    final emailConroller = TextEditingController();
+    final truckSizeController = TextEditingController();
+    final truckTypeController = TextEditingController();
+
+    final _formKey = GlobalKey<FormState>(); // Form key for validation
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor:
-              const Color.fromARGB(255, 255, 255, 255), // White background
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
           ),
@@ -654,95 +726,149 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color:
-                    const Color.fromARGB(255, 131, 107, 81), // Match your theme
+                color: const Color.fromARGB(255, 131, 107, 81),
               ),
             ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'שם העובד',
-                  labelStyle: const TextStyle(
-                    color:
-                        Color.fromARGB(255, 131, 107, 81), // Match your theme
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey, // Link the form to the key
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  TextFormField(
+                    controller: firstNameController,
+                    decoration: InputDecoration(labelText: 'שם פרטי'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'שם פרטי חייב להיות מלא';
+                      }
+                      return null;
+                    },
                   ),
-                  floatingLabelBehavior: FloatingLabelBehavior.auto,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 15.0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: const BorderSide(
-                      color:
-                          Color.fromARGB(255, 131, 107, 81), // Match your theme
-                      width: 2.0,
-                    ),
+                  TextFormField(
+                    controller: lastNameController,
+                    decoration: InputDecoration(labelText: 'שם משפחה'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'שם משפחה חייב להיות מלא';
+                      }
+                      return null;
+                    },
                   ),
-                  filled: true,
-                  fillColor: const Color.fromARGB(255, 245, 245, 245),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: phoneNumberController,
-                decoration: InputDecoration(
-                  labelText: 'מספר טלפון',
-                  labelStyle: const TextStyle(
-                    color:
-                        Color.fromARGB(255, 131, 107, 81), // Match your theme
+                  TextFormField(
+                    controller: idController,
+                    decoration: InputDecoration(labelText: 'ת.ז'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'ת.ז חייבת להיות מלאה';
+                      }
+                      return null;
+                    },
                   ),
-                  floatingLabelBehavior: FloatingLabelBehavior.auto,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 15.0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: const BorderSide(
-                      color:
-                          Color.fromARGB(255, 131, 107, 81), // Match your theme
-                      width: 2.0,
-                    ),
+                  TextFormField(
+                    controller: phoneNumberController,
+                    decoration: InputDecoration(labelText: 'מספר טלפון'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'מספר טלפון חייב להיות מלא';
+                      }
+                      return null;
+                    },
                   ),
-                  filled: true,
-                  fillColor: const Color.fromARGB(255, 245, 245, 245),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'פנוי:',
-                    style: TextStyle(
-                      color: Color.fromARGB(255, 131, 107, 81),
-                      fontWeight: FontWeight.bold,
-                    ),
+                  TextFormField(
+                    controller: emailConroller,
+                    decoration: InputDecoration(labelText: 'אימייל'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'אימייל חייב להיות מלא';
+                      }
+                      return null;
+                    },
                   ),
-                  StatefulBuilder(
-                    builder: (context, setState) {
-                      return Switch(
-                        value: availability,
-                        onChanged: (value) {
-                          setState(() {
-                            availability = value;
-                          });
-                        },
-                        activeColor: const Color.fromARGB(
-                            255, 131, 107, 81), // Match your theme
-                      );
+                  DropdownButtonFormField<String>(
+                    value: selectedBirthMonth,
+                    decoration: InputDecoration(labelText: 'חודש הלידה'),
+                    items: [
+                      'ינואר',
+                      'פברואר',
+                      'מרץ',
+                      'אפריל',
+                      'מאי',
+                      'יוני',
+                      'יולי',
+                      'אוגוסט',
+                      'ספטמבר',
+                      'אוקטובר',
+                      'נובמבר',
+                      'דצמבר'
+                    ].map((month) {
+                      return DropdownMenuItem(value: month, child: Text(month));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedBirthMonth = value;
+                      });
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedBirthDay,
+                    decoration: InputDecoration(labelText: 'יום הלידה'),
+                    items: List.generate(31, (index) {
+                      final day = (index + 1).toString();
+                      return DropdownMenuItem(value: day, child: Text(day));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedBirthDay = value;
+                      });
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedBirthYear,
+                    decoration: InputDecoration(labelText: 'שנת הלידה'),
+                    items: List.generate(46, (index) {
+                      final year = 1980 + index;
+                      return DropdownMenuItem(
+                          value: year.toString(), child: Text(year.toString()));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedBirthYear = value;
+                      });
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedTruckSize,
+                    decoration: InputDecoration(labelText: 'גודל רכב'),
+                    items: ['גדול', 'קטן'].map((size) {
+                      return DropdownMenuItem(value: size, child: Text(size));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedTruckSize = value;
+                      });
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedTruckType,
+                    decoration: InputDecoration(labelText: 'סוג רכב'),
+                    items: ['פלטה', 'צובר', 'תפזורת'].map((type) {
+                      return DropdownMenuItem(value: type, child: Text(type));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedTruckType = value;
+                      });
                     },
                   ),
                 ],
               ),
-            ],
+            ),
           ),
           actions: <Widget>[
             Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.end, // Align buttons to the right
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
                   onPressed: () {
@@ -762,12 +888,21 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                 const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
-                    _addEmployee(
-                      nameController.text,
-                      phoneNumberController.text,
-                      availability,
-                    );
-                    Navigator.of(context).pop();
+                    if (_formKey.currentState?.validate() ?? false) {
+                      _addEmployee(
+                        firstNameController.text,
+                        lastNameController.text,
+                        phoneNumberController.text,
+                        emailConroller.text,
+                        idController.text,
+                        selectedBirthDay ?? '',
+                        selectedBirthMonth ?? '',
+                        selectedBirthYear ?? '',
+                        selectedTruckSize ?? '',
+                        selectedTruckType ?? '',
+                      );
+                      Navigator.of(context).pop();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 131, 107, 81),
@@ -781,179 +916,6 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                   child: const Text('הוספה'),
                 ),
               ],
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showEditEmployeeDialog(int index, Map<String, dynamic> employee) {
-    final nameController = TextEditingController(text: employee['name']);
-    final phoneNumberController =
-        TextEditingController(text: employee['phoneNumber']);
-    bool availability = employee['availability'];
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0), // Rounded corners
-          ),
-          backgroundColor:
-              const Color.fromARGB(255, 255, 255, 255), // White background
-          title: Center(
-            child: Text(
-              'עריכת עובד',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 131, 107, 81), // Brown color
-              ),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'שם',
-                  labelStyle: const TextStyle(
-                    color: Color.fromARGB(255, 131, 107, 81), // Brown color
-                  ),
-                  floatingLabelBehavior: FloatingLabelBehavior.auto,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 20.0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 131, 107, 81), // Brown border
-                      width: 1.5,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 131, 107, 81), // Brown border
-                      width: 1.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 131, 107, 81), // Brown border
-                      width: 2.0,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor:
-                      const Color.fromARGB(255, 240, 240, 240), // Light gray
-                ),
-              ),
-              const SizedBox(height: 15),
-              TextField(
-                controller: phoneNumberController,
-                decoration: InputDecoration(
-                  labelText: 'מספר טלפון',
-                  labelStyle: const TextStyle(
-                    color: Color.fromARGB(255, 131, 107, 81), // Brown color
-                  ),
-                  floatingLabelBehavior: FloatingLabelBehavior.auto,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 20.0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 131, 107, 81), // Brown border
-                      width: 1.5,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 131, 107, 81), // Brown border
-                      width: 1.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(
-                      color: Color.fromARGB(255, 131, 107, 81), // Brown border
-                      width: 2.0,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor:
-                      const Color.fromARGB(255, 240, 240, 240), // Light gray
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 15),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'פנוי:',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color.fromARGB(255, 131, 107, 81), // Brown color
-                    ),
-                  ),
-                  StatefulBuilder(
-                    builder: (context, setState) {
-                      return Switch(
-                        value: availability,
-                        onChanged: (value) {
-                          setState(() {
-                            availability = value;
-                          });
-                        },
-                        activeColor: const Color.fromARGB(
-                            255, 131, 107, 81), // Match your theme
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                foregroundColor:
-                    const Color.fromARGB(255, 131, 107, 81), // Brown color
-                textStyle: const TextStyle(fontSize: 16),
-              ),
-              child: const Text('ביטול'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _editEmployee(
-                  index,
-                  nameController.text,
-                  phoneNumberController.text,
-                  availability,
-                );
-                Navigator.of(context).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    const Color.fromARGB(255, 131, 107, 81), // Brown button
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 10.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              child: const Text(
-                'שמירה',
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
             ),
           ],
         );

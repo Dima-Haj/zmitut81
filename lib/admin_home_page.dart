@@ -84,20 +84,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         },
                       ),
                       ListTile(
-                        leading: const Icon(Icons.notifications),
-                        title: const Text('העדפות התראות'),
-                        onTap: () {
-                          Navigator.pop(context); // Close drawer
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.settings),
-                        title: const Text('הגדרות מערכת'),
-                        onTap: () {
-                          Navigator.pop(context); // Close drawer
-                        },
-                      ),
-                      ListTile(
                         leading: const Icon(Icons.logout),
                         title: const Text('יציאה'),
                         onTap: () {
