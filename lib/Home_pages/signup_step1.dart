@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_step2.dart'; // Import the next step
-import 'login_page.dart'; // Import the login page
-import 'custom_text_field.dart';
+import '../Home_pages/login_page.dart'; // Import the login page
+import '../Designed_helper_fields/custom_text_field.dart';
 
 class SignupStep1 extends StatefulWidget {
   const SignupStep1({super.key});
@@ -43,198 +43,168 @@ class _SignupStep1State extends State<SignupStep1> {
     final double screenWidth = screenSize.width;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          background(screenHeight),
-          Positioned(
-            top: screenHeight * 0.05,
-            left: screenWidth * 0.05,
-            child: backArrow(context),
-          ),
-          Positioned(
-            top: screenHeight * 0.03,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Image.asset(
-                'assets/images/logo_zmitut.png', // Update the logo path as needed
-                height: screenHeight * 0.06,
+      body: GestureDetector(
+        onTap: () {
+          // Unfocus the current focus node to dismiss the keyboard
+          FocusScope.of(context).unfocus();
+        },
+        child: Stack(
+          children: [
+            background(screenHeight),
+            Positioned(
+              top: screenHeight * 0.05,
+              left: screenWidth * 0.05,
+              child: backArrow(context),
+            ),
+            Positioned(
+              top: screenHeight * 0.03,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Image.asset(
+                  'assets/images/logo_zmitut.png', // Update the logo path as needed
+                  height: screenHeight * 0.06,
+                ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: screenHeight * 0.75,
-              decoration: whiteFrame(screenWidth),
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: screenHeight * 0.05),
-                    Center(
-                      child: Text(
-                        'צור חשבון',
-                        style: GoogleFonts.exo2(
-                          textStyle: TextStyle(
-                            color: const Color.fromARGB(255, 141, 126, 106),
-                            fontSize: screenHeight * 0.027,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.03),
-                    Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Set text direction to RTL
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              hintText: 'שם פרטי', // Hebrew for "First Name"
-                              icon: Icons.person,
-                              controller: _firstNameController,
-                              screenWidth: MediaQuery.of(context).size.width,
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: screenHeight * 0.6,
+                decoration: whiteFrame(screenWidth),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(height: screenHeight * 0.05),
+                      Center(
+                        child: Text(
+                          'צור חשבון',
+                          style: GoogleFonts.exo2(
+                            textStyle: TextStyle(
+                              color: const Color.fromARGB(255, 141, 126, 106),
+                              fontSize: screenHeight * 0.027,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.03),
-                          Expanded(
-                            child: CustomTextField(
-                              hintText: 'שם משפחה', // Hebrew for "Last Name"
-                              icon: Icons.person_outline,
-                              controller: _lastNameController,
-                              screenWidth: MediaQuery.of(context).size.width,
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.03),
+                      Directionality(
+                        textDirection:
+                            TextDirection.rtl, // Set text direction to RTL
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: CustomTextField(
+                                hintText: 'שם פרטי', // Hebrew for "First Name"
+                                icon: Icons.person,
+                                controller: _firstNameController,
+                                screenWidth: MediaQuery.of(context).size.width,
+                              ),
+                            ),
+                            SizedBox(
+                                width:
+                                    MediaQuery.of(context).size.width * 0.03),
+                            Expanded(
+                              child: CustomTextField(
+                                hintText: 'שם משפחה', // Hebrew for "Last Name"
+                                icon: Icons.person_outline,
+                                controller: _lastNameController,
+                                screenWidth: MediaQuery.of(context).size.width,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: screenHeight * 0.02),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          'תאריך לידה',
+                          style: GoogleFonts.exo2(
+                            textStyle: TextStyle(
+                              color: const Color.fromARGB(255, 141, 126, 106),
+                              fontSize: screenHeight * 0.015,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-
-                    SizedBox(height: screenHeight * 0.02),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'תאריך לידה',
-                        style: GoogleFonts.exo2(
-                          textStyle: TextStyle(
-                            color: const Color.fromARGB(255, 141, 126, 106),
-                            fontSize: screenHeight * 0.015,
-                            fontWeight: FontWeight.w500,
+                      SizedBox(height: screenHeight * 0.01),
+                      buildDateOfBirthDropdowns(screenWidth),
+                      SizedBox(height: screenHeight * 0.01),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          'בחר תפקיד',
+                          style: GoogleFonts.exo2(
+                            textStyle: TextStyle(
+                              color: const Color.fromARGB(255, 141, 126, 106),
+                              fontSize: screenHeight * 0.015,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: screenHeight * 0.01),
-                    buildDateOfBirthDropdowns(screenWidth),
-                    SizedBox(height: screenHeight * 0.01),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'בחר תפקיד',
-                        style: GoogleFonts.exo2(
-                          textStyle: TextStyle(
-                            color: const Color.fromARGB(255, 141, 126, 106),
-                            fontSize: screenHeight * 0.015,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                    //SizedBox(height: screenHeight * 0.005),
-                    Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Set text direction to RTL
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Role Selection
-                          Row(
-                            children: [
-                              Expanded(
-                                child: RadioListTile<String>(
-                                  value: 'מנהל', // Hebrew for "Manager"
-                                  groupValue: selectedRole,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedRole = value;
-                                      selectedTruckType =
-                                          null; // Reset the truck type
-                                      selectedSize = null; // Reset the size
-                                    });
-                                  },
-                                  title: const Text('מנהל'),
-                                ),
-                              ),
-                              Expanded(
-                                child: RadioListTile<String>(
-                                  value: 'שליח', // Hebrew for "Delivery Person"
-                                  groupValue: selectedRole,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedRole = value;
-                                      selectedTruckType =
-                                          null; // Reset the truck type
-                                      selectedSize = null; // Reset the size
-                                    });
-                                  },
-                                  title: const Text('שליח'),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Truck Type Selection
-                          if (selectedRole ==
-                              'שליח') // Show only if "Delivery Person" is selected
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      //SizedBox(height: screenHeight * 0.005),
+                      Directionality(
+                        textDirection:
+                            TextDirection.rtl, // Set text direction to RTL
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Role Selection
+                            Row(
                               children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Align(
-                                            alignment: Alignment.centerRight,
-                                            child: Text(
-                                              'בחר סוג משאית',
-                                              style: GoogleFonts.exo2(
-                                                textStyle: TextStyle(
-                                                  color: const Color.fromARGB(
-                                                      255, 141, 126, 106),
-                                                  fontSize:
-                                                      screenHeight * 0.015,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          dropdownFieldFromList(
-                                            'סוג',
-                                            ['פלטה', 'צובר', 'תפזורת'],
-                                            selectedTruckType,
-                                            (value) {
-                                              setState(() {
-                                                selectedTruckType = value;
-                                                selectedSize =
-                                                    null; // Reset size when truck type changes
-                                              });
-                                            },
-                                            MediaQuery.of(context).size.width,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (selectedTruckType == 'פלטה' ||
-                                        selectedTruckType == 'תפזורת')
+                                Expanded(
+                                  child: RadioListTile<String>(
+                                    value: 'מנהל', // Hebrew for "Manager"
+                                    groupValue: selectedRole,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedRole = value;
+                                        selectedTruckType =
+                                            null; // Reset the truck type
+                                        selectedSize = null; // Reset the size
+                                      });
+                                    },
+                                    title: const Text('מנהל'),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: RadioListTile<String>(
+                                    value:
+                                        'שליח', // Hebrew for "Delivery Person"
+                                    groupValue: selectedRole,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedRole = value;
+                                        selectedTruckType =
+                                            null; // Reset the truck type
+                                        selectedSize = null; // Reset the size
+                                      });
+                                    },
+                                    title: const Text('שליח'),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Truck Type Selection
+                            if (selectedRole ==
+                                'שליח') // Show only if "Delivery Person" is selected
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:
@@ -243,7 +213,7 @@ class _SignupStep1State extends State<SignupStep1> {
                                             Align(
                                               alignment: Alignment.centerRight,
                                               child: Text(
-                                                'בחר גודל',
+                                                'בחר סוג משאית',
                                                 style: GoogleFonts.exo2(
                                                   textStyle: TextStyle(
                                                     color: const Color.fromARGB(
@@ -256,12 +226,14 @@ class _SignupStep1State extends State<SignupStep1> {
                                               ),
                                             ),
                                             dropdownFieldFromList(
-                                              'בחר גודל',
-                                              ['גדול', 'קטן'],
-                                              selectedSize,
+                                              'סוג',
+                                              ['פלטה', 'צובר', 'תפזורת'],
+                                              selectedTruckType,
                                               (value) {
                                                 setState(() {
-                                                  selectedSize = value;
+                                                  selectedTruckType = value;
+                                                  selectedSize =
+                                                      null; // Reset size when truck type changes
                                                 });
                                               },
                                               MediaQuery.of(context).size.width,
@@ -269,25 +241,70 @@ class _SignupStep1State extends State<SignupStep1> {
                                           ],
                                         ),
                                       ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                        ],
+                                      if (selectedTruckType == 'פלטה' ||
+                                          selectedTruckType == 'תפזורת')
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: Text(
+                                                  'בחר גודל',
+                                                  style: GoogleFonts.exo2(
+                                                    textStyle: TextStyle(
+                                                      color:
+                                                          const Color.fromARGB(
+                                                              255,
+                                                              141,
+                                                              126,
+                                                              106),
+                                                      fontSize:
+                                                          screenHeight * 0.015,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              dropdownFieldFromList(
+                                                'בחר גודל',
+                                                ['גדול', 'קטן'],
+                                                selectedSize,
+                                                (value) {
+                                                  setState(() {
+                                                    selectedSize = value;
+                                                  });
+                                                },
+                                                MediaQuery.of(context)
+                                                    .size
+                                                    .width,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    SizedBox(height: screenHeight * 0.02),
-                    nextButton(screenWidth, screenHeight),
-                    SizedBox(height: screenHeight * 0.00000000001),
-                    cancelButton(context, screenHeight, screenWidth),
-                    SizedBox(height: screenHeight * 0.01),
-                  ],
+                      SizedBox(height: screenHeight * 0.02),
+                      nextButton(screenWidth, screenHeight),
+                      SizedBox(height: screenHeight * 0.00000000001),
+                      cancelButton(context, screenHeight, screenWidth),
+                      SizedBox(height: screenHeight * 0.01),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -402,7 +419,7 @@ class _SignupStep1State extends State<SignupStep1> {
   }
 
   Widget backArrow(BuildContext context) => IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+        icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
         onPressed: () => Navigator.pop(context),
       );
 

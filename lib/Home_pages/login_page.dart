@@ -1,19 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/custom_text_field.dart';
-import 'package:flutter_application_1/date_of_birth_dropdowns.dart';
-import 'package:flutter_application_1/dropdown_helpers.dart';
-import 'package:flutter_application_1/firebase_auth_services.dart';
-import 'package:flutter_application_1/forgot_password_page.dart';
-import 'package:flutter_application_1/phone_field.dart';
+import '../Designed_helper_fields/custom_text_field.dart';
+import '../Designed_helper_fields/date_of_birth_dropdowns.dart';
+import '../Designed_helper_fields/dropdown_helpers.dart';
+import '../Designed_helper_fields/firebase_auth_services.dart';
+import 'forgot_password_page.dart';
+import '../Designed_helper_fields/phone_field.dart';
 import 'package:google_fonts/google_fonts.dart'; // Google fonts package
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Font Awesome package for icons
 import 'package:google_sign_in/google_sign_in.dart';
-import 'admin_home_page.dart';
+import '../Admin_pages/admin_home_page.dart';
 import 'signup_step1.dart'; // Make sure this path is correct
 import 'terms_of_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'employee_home_page.dart';
+import '../Employee_pages/employee_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -662,251 +662,257 @@ class LoginPageState extends State<LoginPage> {
     final double screenWidth = screenSize.width;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Image
-          Container(
-            height: screenHeight,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: const AssetImage('assets/images/image1.png'),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  const Color.fromARGB(255, 57, 51, 42).withOpacity(0.6),
-                  BlendMode.darken,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: screenHeight * 0.1,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Image.asset(
-                'assets/images/logo_zmitut.png',
-                height: screenHeight * 0.15, // Adjust the height as needed
-              ),
-            ),
-          ),
-
-          // White frame coming up from the bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: screenHeight * 0.65, // Adjust height as needed
+      body: GestureDetector(
+        onTap: () {
+          // Unfocus the current focus node to dismiss the keyboard
+          FocusScope.of(context).unfocus();
+        },
+        child: Stack(
+          children: [
+            // Background Image
+            Container(
+              height: screenHeight,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(screenWidth * 0.1),
-                  topRight: Radius.circular(screenWidth * 0.1),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
+                image: DecorationImage(
+                  image: const AssetImage('assets/images/image1.png'),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    const Color.fromARGB(255, 57, 51, 42).withOpacity(0.6),
+                    BlendMode.darken,
                   ),
-                ],
+                ),
               ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: screenHeight * 0.03),
+            ),
+            Positioned(
+              top: screenHeight * 0.1,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Image.asset(
+                  'assets/images/logo_zmitut.png',
+                  height: screenHeight * 0.15, // Adjust the height as needed
+                ),
+              ),
+            ),
 
-                    // "Sign in to continue" Text
-                    Center(
-                      child: Text(
-                        'התחבר כדי להמשיך',
-                        style: GoogleFonts.exo2(
-                          textStyle: TextStyle(
-                            color: const Color.fromARGB(255, 141, 126, 106),
-                            fontSize: screenHeight * 0.027,
-                            fontWeight: FontWeight.w500,
+            // White frame coming up from the bottom
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: screenHeight * 0.65, // Adjust height as needed
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(screenWidth * 0.1),
+                    topRight: Radius.circular(screenWidth * 0.1),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(height: screenHeight * 0.03),
+
+                      // "Sign in to continue" Text
+                      Center(
+                        child: Text(
+                          'התחבר כדי להמשיך',
+                          style: GoogleFonts.exo2(
+                            textStyle: TextStyle(
+                              color: const Color.fromARGB(255, 141, 126, 106),
+                              fontSize: screenHeight * 0.027,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: screenHeight * 0.03),
+                      SizedBox(height: screenHeight * 0.03),
 
-                    // Email Field
-                    Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Set text direction to RTL
-                      child: MouseRegion(
-                        onEnter: (_) => setState(() => isHoveredEmail = true),
-                        onExit: (_) => setState(() => isHoveredEmail = false),
-                        child: buildTextField(
-                          'אימייל', // Hebrew for "Email"
-                          Icons.email,
-                          screenWidth,
-                          focusNode: emailFocusNode,
-                          isFocused: isEmailFocused,
-                          isHovered: isHoveredEmail,
-                          controller:
-                              emailController, // Use controller to access text
+                      // Email Field
+                      Directionality(
+                        textDirection:
+                            TextDirection.rtl, // Set text direction to RTL
+                        child: MouseRegion(
+                          onEnter: (_) => setState(() => isHoveredEmail = true),
+                          onExit: (_) => setState(() => isHoveredEmail = false),
+                          child: buildTextField(
+                            'אימייל', // Hebrew for "Email"
+                            Icons.email,
+                            screenWidth,
+                            focusNode: emailFocusNode,
+                            isFocused: isEmailFocused,
+                            isHovered: isHoveredEmail,
+                            controller:
+                                emailController, // Use controller to access text
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: screenHeight * 0.02),
+                      SizedBox(height: screenHeight * 0.02),
 
 // Password Field
-                    Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Set text direction to RTL
-                      child: MouseRegion(
-                        onEnter: (_) =>
-                            setState(() => isHoveredPassword = true),
-                        onExit: (_) =>
-                            setState(() => isHoveredPassword = false),
-                        child: buildTextField(
-                          'סיסמה', // Hebrew for "Password"
-                          Icons.lock,
-                          screenWidth,
-                          focusNode: passwordFocusNode,
-                          isFocused: isPasswordFocused,
-                          isHovered: isHoveredPassword,
-                          obscureText: true,
-                          controller: passwordController,
-                        ),
-                      ),
-                    ),
-
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ForgotPasswordPage()),
-                          );
-                        },
-                        child: Text(
-                          '?שכחת סיסמה',
-                          style: GoogleFonts.exo2(
-                            color: const Color.fromARGB(255, 141, 126, 106),
+                      Directionality(
+                        textDirection:
+                            TextDirection.rtl, // Set text direction to RTL
+                        child: MouseRegion(
+                          onEnter: (_) =>
+                              setState(() => isHoveredPassword = true),
+                          onExit: (_) =>
+                              setState(() => isHoveredPassword = false),
+                          child: buildTextField(
+                            'סיסמה', // Hebrew for "Password"
+                            Icons.lock,
+                            screenWidth,
+                            focusNode: passwordFocusNode,
+                            isFocused: isPasswordFocused,
+                            isHovered: isHoveredPassword,
+                            obscureText: true,
+                            controller: passwordController,
                           ),
                         ),
                       ),
-                    ),
 
-                    SizedBox(height: screenHeight * 0.01),
-
-                    // Login Button
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 141, 126, 106),
-                        padding:
-                            EdgeInsets.symmetric(vertical: screenHeight * 0.01),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(screenWidth * 0.05),
-                        ),
-                      ),
-                      onPressed: handleLogin, // Call handleLogin on press
-                      child: Text(
-                        'התחבר',
-                        style: GoogleFonts.exo2(
-                          color: Colors.white,
-                          fontSize: screenHeight * 0.023,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 2.3,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.01),
-
-                    // Sign Up Link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const SignupStep1()),
+                                  builder: (context) => ForgotPasswordPage()),
                             );
                           },
                           child: Text(
-                            'הרשמה',
+                            '?שכחת סיסמה',
                             style: GoogleFonts.exo2(
                               color: const Color.fromARGB(255, 141, 126, 106),
                             ),
                           ),
                         ),
-                        Text(
-                          ' ?אין לך חשבון',
-                          style: GoogleFonts.exo2(color: Colors.black),
-                        ),
-                      ],
-                    ),
+                      ),
 
-                    SizedBox(height: screenHeight * 0.04),
+                      SizedBox(height: screenHeight * 0.01),
 
-                    // Social Media Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: buildSocialButton(
-                            FontAwesomeIcons.google,
-                            screenWidth,
-                            screenHeight,
-                            const Color.fromARGB(255, 141, 126, 106),
+                      // Login Button
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromARGB(255, 141, 126, 106),
+                          padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.01),
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(screenWidth * 0.05),
                           ),
                         ),
-                      ],
+                        onPressed: handleLogin, // Call handleLogin on press
+                        child: Text(
+                          'התחבר',
+                          style: GoogleFonts.exo2(
+                            color: Colors.white,
+                            fontSize: screenHeight * 0.023,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 2.3,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.01),
+
+                      // Sign Up Link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const SignupStep1()),
+                              );
+                            },
+                            child: Text(
+                              'הרשמה',
+                              style: GoogleFonts.exo2(
+                                color: const Color.fromARGB(255, 141, 126, 106),
+                              ),
+                            ),
+                          ),
+                          Text(
+                            ' ?אין לך חשבון',
+                            style: GoogleFonts.exo2(color: Colors.black),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: screenHeight * 0.04),
+
+                      // Social Media Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: buildSocialButton(
+                              FontAwesomeIcons.google,
+                              screenWidth,
+                              screenHeight,
+                              const Color.fromARGB(255, 141, 126, 106),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Bottom Section (Terms of Service)
+            Positioned(
+              bottom: 0,
+              child: Container(
+                alignment: Alignment.bottomCenter,
+                padding: EdgeInsets.only(bottom: screenHeight * 0.02),
+                width: screenWidth,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'By using Zmitut 81 App, you are agreeing to our',
+                      style: GoogleFonts.exo2(
+                        color: const Color.fromARGB(255, 0, 0, 0),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const TermsOfServicePage()),
+                        );
+                      },
+                      child: Text(
+                        'Terms of Service',
+                        style: GoogleFonts.exo2(
+                          color: const Color.fromARGB(255, 141, 126, 106),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-
-          // Bottom Section (Terms of Service)
-          Positioned(
-            bottom: 0,
-            child: Container(
-              alignment: Alignment.bottomCenter,
-              padding: EdgeInsets.only(bottom: screenHeight * 0.02),
-              width: screenWidth,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'By using Zmitut 81 App, you are agreeing to our',
-                    style: GoogleFonts.exo2(
-                      color: const Color.fromARGB(255, 0, 0, 0),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const TermsOfServicePage()),
-                      );
-                    },
-                    child: Text(
-                      'Terms of Service',
-                      style: GoogleFonts.exo2(
-                        color: const Color.fromARGB(255, 141, 126, 106),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

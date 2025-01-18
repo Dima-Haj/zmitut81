@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'customer_management_page.dart';
 import 'employee_management_page.dart';
 import 'admin_dashboard_page.dart';
-import 'login_page.dart';
-import 'terms_of_service.dart';
+import '../Home_pages/terms_of_service.dart';
+import '../Home_pages/login_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   final Map<String, dynamic> managerDetails;

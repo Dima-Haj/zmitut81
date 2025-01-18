@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/firebase_auth_services.dart';
+import 'package:flutter_application_1/Home_pages/signup_step4.dart';
+import '../Designed_helper_fields/firebase_auth_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_page.dart'; // Import the login page for the cancel button
 
-class SignupStep3 extends StatelessWidget {
+class SignupStep3 extends StatefulWidget {
   final String firstName;
   final String lastName;
   final String day;
@@ -31,7 +32,22 @@ class SignupStep3 extends StatelessWidget {
     required this.truckSize,
   });
 
+  @override
+  _SignupStep3State createState() => _SignupStep3State();
+}
+
+class _SignupStep3State extends State<SignupStep3> {
   final FirebaseAuthServices _auth = FirebaseAuthServices(); // Initialize here
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController confirmEmailController = TextEditingController();
+
+  @override
+  void dispose() {
+    // Dispose controllers to free up resources
+    emailController.dispose();
+    confirmEmailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,122 +55,90 @@ class SignupStep3 extends StatelessWidget {
     final double screenHeight = screenSize.height;
     final double screenWidth = screenSize.width;
 
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController confirmEmailController =
-        TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-    final TextEditingController confirmPasswordController =
-        TextEditingController();
-
     return Scaffold(
-      body: Stack(
-        children: [
-          background(screenHeight),
-          Positioned(
-            top: screenHeight * 0.05,
-            left: screenWidth * 0.05,
-            child: backArrow(context),
-          ),
-          Positioned(
-            top: screenHeight * 0.03,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Image.asset(
-                'assets/images/logo_zmitut.png',
-                height: screenHeight * 0.06,
-              ),
+      body: GestureDetector(
+        onTap: () {
+          // Unfocus the current focus node to dismiss the keyboard
+          FocusScope.of(context).unfocus();
+        },
+        child: Stack(
+          children: [
+            background(screenHeight),
+            Positioned(
+              top: screenHeight * 0.05,
+              left: screenWidth * 0.05,
+              child: backArrow(context),
             ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: screenHeight * 0.65,
-              decoration: whiteFrame(screenWidth),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: screenHeight * 0.05),
-                    Center(
-                      child: Text(
-                        'צור חשבון',
-                        style: GoogleFonts.exo2(
-                          textStyle: TextStyle(
-                            color: const Color.fromARGB(255, 141, 126, 106),
-                            fontSize: screenHeight * 0.027,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.03),
-                    Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Set text direction to RTL
-                      child: buildTextField(
-                        'אימייל', // Hebrew for "Email"
-                        Icons.email,
-                        emailController,
-                        screenWidth,
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.02),
-                    Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Set text direction to RTL
-                      child: buildTextField(
-                        'אישור אימייל', // Hebrew for "Confirm Email"
-                        Icons.email_outlined,
-                        confirmEmailController,
-                        screenWidth,
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.02),
-                    Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Set text direction to RTL
-                      child: buildTextFieldWithPasswordInfo(
-                        context,
-                        'סיסמה', // Hebrew for "Password"
-                        Icons.lock,
-                        passwordController,
-                        screenWidth,
-                        true,
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.02),
-                    Directionality(
-                      textDirection:
-                          TextDirection.rtl, // Set text direction to RTL
-                      child: buildTextField(
-                        'אישור סיסמה', // Hebrew for "Confirm Password"
-                        Icons.lock_outline,
-                        confirmPasswordController,
-                        screenWidth,
-                        obscureText: true,
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.03),
-                    signUpButton(
-                        context,
-                        screenHeight,
-                        screenWidth,
-                        emailController,
-                        confirmEmailController,
-                        passwordController,
-                        confirmPasswordController),
-                    SizedBox(height: screenHeight * 0.02),
-                    cancelButton(context, screenHeight, screenWidth),
-                  ],
+            Positioned(
+              top: screenHeight * 0.03,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Image.asset(
+                  'assets/images/logo_zmitut.png',
+                  height: screenHeight * 0.06,
                 ),
               ),
             ),
-          ),
-        ],
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: screenHeight * 0.55,
+                decoration: whiteFrame(screenWidth),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(height: screenHeight * 0.05),
+                      Center(
+                        child: Text(
+                          'צור חשבון',
+                          style: GoogleFonts.exo2(
+                            textStyle: TextStyle(
+                              color: const Color.fromARGB(255, 141, 126, 106),
+                              fontSize: screenHeight * 0.027,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.03),
+                      Directionality(
+                        textDirection:
+                            TextDirection.rtl, // Set text direction to RTL
+                        child: buildTextField(
+                          'אימייל', // Hebrew for "Email"
+                          Icons.email,
+                          emailController,
+                          screenWidth,
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.02),
+                      Directionality(
+                        textDirection:
+                            TextDirection.rtl, // Set text direction to RTL
+                        child: buildTextField(
+                          'אישור אימייל', // Hebrew for "Confirm Email"
+                          Icons.email_outlined,
+                          confirmEmailController,
+                          screenWidth,
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.03),
+                      NextButton(context, screenHeight, screenWidth,
+                          emailController, confirmEmailController),
+                      SizedBox(height: screenHeight * 0.02),
+                      cancelButton(context, screenHeight, screenWidth),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -257,14 +241,12 @@ class SignupStep3 extends StatelessWidget {
         ],
       );
 
-  Widget signUpButton(
+  Widget NextButton(
     BuildContext context,
     double screenHeight,
     double screenWidth,
     TextEditingController emailController,
     TextEditingController confirmEmailController,
-    TextEditingController passwordController,
-    TextEditingController confirmPasswordController,
   ) =>
       ElevatedButton(
         style: ElevatedButton.styleFrom(
@@ -277,9 +259,7 @@ class SignupStep3 extends StatelessWidget {
         ),
         onPressed: () async {
           if (emailController.text.isEmpty ||
-              confirmEmailController.text.isEmpty ||
-              passwordController.text.isEmpty ||
-              confirmPasswordController.text.isEmpty) {
+              confirmEmailController.text.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Directionality(
@@ -305,82 +285,27 @@ class SignupStep3 extends StatelessWidget {
             );
             return;
           }
-
-          if (passwordController.text != confirmPasswordController.text) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Directionality(
-                  textDirection: TextDirection.rtl, // Ensure RTL alignment
-                  child: const Text(
-                      'הסיסמאות אינן תואמות'), // Hebrew for "Passwords do not match"
-                ),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SignupStep4(
+                firstName: widget.firstName,
+                lastName: widget.lastName,
+                day: widget.day,
+                month: widget.month,
+                year: widget.year,
+                phone: widget.phone,
+                id: widget.id,
+                role: widget.role,
+                truckType: widget.truckType,
+                truckSize: widget.truckSize,
+                email: emailController.text,
               ),
-            );
-
-            return;
-          }
-
-          User? user = await _auth.signUpWithEmailAndPassword(
-              emailController.text, passwordController.text);
-
-          if (user != null) {
-            Map<String, dynamic> commonData = {
-              'firstName': firstName,
-              'lastName': lastName,
-              'birthDay': day,
-              'birthMonth': month,
-              'birthYear': year,
-              'phone': phone,
-              'id': id,
-              'email': emailController.text,
-            };
-
-            if (role == "מנהל") {
-              await FirebaseFirestore.instance
-                  .collection('Managers')
-                  .doc(user.uid)
-                  .set(commonData);
-            } else {
-              Map<String, dynamic> employeeData = {
-                ...commonData,
-                if (truckType != 'defaultTruckType') 'truckType': truckType,
-                if (truckSize != 'defaultSize') 'truckSize': truckSize,
-              };
-
-              await FirebaseFirestore.instance
-                  .collection('Employees')
-                  .doc(user.uid)
-                  .set(employeeData);
-            }
-
-            // Notify user about successful signup
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: const Text(
-                      'המשתמש נוסף בהצלחה'), // Hebrew for "User added successfully"
-                ),
-              ),
-            );
-
-            // Navigate back to the initial route
-            Navigator.popUntil(context, (route) => route.isFirst);
-          } else {
-            // ignore: use_build_context_synchronously
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Directionality(
-                  textDirection: TextDirection.rtl, // Ensure RTL alignment
-                  child: const Text(
-                      'ההרשמה נכשלה'), // Hebrew for "Failed to sign up"
-                ),
-              ),
-            );
-          }
+            ),
+          );
         },
         child: Text(
-          'הירשם',
+          'הבא',
           style: GoogleFonts.exo2(
             color: Colors.white,
             fontSize: screenHeight * 0.023,
@@ -431,7 +356,7 @@ class SignupStep3 extends StatelessWidget {
   }
 
   Widget backArrow(BuildContext context) => IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+        icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 30),
         onPressed: () => Navigator.pop(context),
       );
 }
