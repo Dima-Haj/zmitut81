@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'stopwatch_widget.dart';
 import 'timesheet_page.dart';
 import 'clients_for_today_page.dart';
-import 'login_page.dart';
+import '../Home_pages/login_page.dart';
 
 class EmployeeHomePage extends StatefulWidget {
   final Map<String, dynamic> employeeDetails;

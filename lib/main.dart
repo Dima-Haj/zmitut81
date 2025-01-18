@@ -3,8 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart'; // Import for locale data initialization
-import 'login_page.dart';
-import 'signup_step1.dart'; // Import the login_page.dart file
+import 'Home_pages/login_page.dart';
+import 'Home_pages/signup_step1.dart'; // Import the login_page.dart file
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

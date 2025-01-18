@@ -7,10 +7,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'client.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
-import 'login_page.dart'; // Import the utility file
+import '../Home_pages/login_page.dart'; // Import the utility file
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'current_location.dart';
+import '../Designed_helper_fields/current_location.dart';
 
 class ClientsForTodayPage extends StatefulWidget {
   const ClientsForTodayPage({super.key});
