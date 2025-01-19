@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'full_calendar_page.dart'; // Import the FullCalendarPage from its file
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -33,50 +31,78 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
     firstName = widget.managerDetails['firstName'] ?? 'Manager';
     email = widget.managerDetails['email'] ?? 'Unknown Email';
 
-    // Fetch the delivery counts
+    // Fetch delivery data
     _fetchDeliveryCounts();
     _fetchPreviousDeliveries();
   }
 
-  void _fetchDeliveryCounts() async {
+  Future<List<Map<String, dynamic>>> _fetchTodaysDeliveries() async {
     try {
-      // Get the current logged-in user
-      User? user = FirebaseAuth.instance.currentUser;
+      // Get today's start and end times
+      DateTime today = DateTime.now();
+      DateTime startOfDay = DateTime(today.year, today.month, today.day);
+      DateTime endOfDay = startOfDay.add(const Duration(days: 1));
 
-      if (user == null) {
-        // If the user is not logged in
-        print('User is not logged in');
-        return;
+      List<Map<String, dynamic>> deliveries = [];
+
+      // Fetch all employees
+      QuerySnapshot employeesSnapshot =
+          await FirebaseFirestore.instance.collection('Employees').get();
+
+      for (var employeeDoc in employeesSnapshot.docs) {
+        // Fetch daily deliveries for the employee
+        QuerySnapshot deliveriesSnapshot = await FirebaseFirestore.instance
+            .collection('Employees')
+            .doc(employeeDoc.id)
+            .collection('dailyDeliveries')
+            .get();
+
+        for (var doc in deliveriesSnapshot.docs) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          String? departureTimeString = data['departureTime'];
+
+          if (departureTimeString != null) {
+            try {
+              // Parse the departureTime string into a DateTime object
+              DateTime departureTime = DateTime.parse(departureTimeString);
+
+              // Check if the departure time falls within today's range
+              if (departureTime.isAfter(startOfDay) &&
+                  departureTime.isBefore(endOfDay)) {
+                deliveries.add(data);
+              }
+            } catch (e) {
+              print('Error parsing departureTime: $e');
+            }
+          }
+        }
       }
 
-      // Get the UID of the logged-in user
-      String userId = user.uid;
-      print("Logged in user UID: $userId");
+      //print("Deliveries found: ${deliveries.length}");
+      return deliveries;
+    } catch (e) {
+      print('Error fetching today\'s deliveries: $e');
+      return [];
+    }
+  }
 
-      // Fetch all deliveries in "dailyDeliveries" collection across all employees
-      QuerySnapshot employeesSnapshot = await FirebaseFirestore.instance
-          .collection('Employees') // The root collection for all employees
-          .get(); // Fetch all employee documents
+  void _fetchDeliveryCounts() async {
+    try {
+      QuerySnapshot employeesSnapshot =
+          await FirebaseFirestore.instance.collection('Employees').get();
 
       int newCount = 0;
       int activeCount = 0;
-      //int completedcount = 0;
 
-      int total = 0;
-
-      // Iterate through each employee document
       for (var employeeDoc in employeesSnapshot.docs) {
-        // For each employee, fetch their "dailyDeliveries" sub-collection
         QuerySnapshot deliveriesSnapshot = await FirebaseFirestore.instance
             .collection('Employees')
-            .doc(employeeDoc.id) // Employee document ID
-            .collection(
-                'dailyDeliveries') // Sub-collection containing deliveries
+            .doc(employeeDoc.id)
+            .collection('dailyDeliveries')
             .get();
 
-        // Iterate through all the fetched deliveries and count by status
         for (var doc in deliveriesSnapshot.docs) {
-          String status = doc['status']; // Get the status field
+          String status = doc['status'];
 
           if (status == 'חדשה') {
             newCount++;
@@ -85,18 +111,13 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
           }
         }
       }
-      // Update total deliveries count (pending + active)
-      total += newCount + activeCount;
 
-      // Update the UI with the counts
-      if (mounted) {
-        setState(() {
-          this.pendingCount = newCount;
-          this.activeCount = activeCount;
-          //this.completedCount = completedcount;
-          this.total = total; // Set the total deliveries value
-        });
-      }
+      setState(() {
+        pendingCount = newCount;
+        this.activeCount = activeCount;
+        //print('PendingCount: $pendingCount, ActiveCount: $activeCount');
+        _updateTotal();
+      });
     } catch (e) {
       print('Error fetching delivery data: $e');
     }
@@ -104,40 +125,21 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
 
   void _fetchPreviousDeliveries() async {
     try {
-      // Get the current logged-in user
-      User? user = FirebaseAuth.instance.currentUser;
-
-      if (user == null) {
-        // If the user is not logged in
-        print('User is not logged in');
-        return;
-      }
-
-      // Get the UID of the logged-in user
-      String userId = user.uid;
-      print("Logged in user UID: $userId");
-
-      // Fetch all deliveries in "previousDeliveries" collection across all clients
-      QuerySnapshot clientsSnapshot = await FirebaseFirestore.instance
-          .collection('clients') // The root collection for all clients
-          .get(); // Fetch all client documents
+      QuerySnapshot clientsSnapshot =
+          await FirebaseFirestore.instance.collection('clients').get();
 
       int completedCount = 0;
 
-      // Iterate through each client document
       for (var clientDoc in clientsSnapshot.docs) {
-        // For each client, fetch their "previousDeliveries" sub-collection
         QuerySnapshot previousDeliveriesSnapshot = await FirebaseFirestore
             .instance
             .collection('clients')
-            .doc(clientDoc.id) // client document ID
-            .collection(
-                'previousDeliveries') // Sub-collection containing previous deliveries
+            .doc(clientDoc.id)
+            .collection('previousDeliveries')
             .get();
 
-        // Iterate through all the fetched deliveries and count by status
         for (var doc in previousDeliveriesSnapshot.docs) {
-          String status = doc['status']; // Get the status field
+          String status = doc['status'];
 
           if (status == 'נמסר') {
             completedCount++;
@@ -145,19 +147,21 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
         }
       }
 
-      // Update the UI with the count of completed deliveries
-      // Add completed deliveries to the total count
-      if (mounted) {
-        setState(() {
-          this.completedCount =
-              completedCount; // Update completed deliveries count
-          this.total +=
-              completedCount; // Add completed deliveries to the total count
-        });
-      }
+      setState(() {
+        this.completedCount = completedCount;
+        _updateTotal();
+      });
     } catch (e) {
       print('Error fetching delivery data: $e');
     }
+  }
+
+  void _updateTotal() {
+    // print('UpdateTotal called');
+    setState(() {
+      total = pendingCount + activeCount + completedCount;
+      // print('Pending: $pendingCount, Active: $activeCount, Completed: $completedCount, Total: $total');
+    });
   }
 
   @override
@@ -192,15 +196,22 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
                   ),
                 ),
                 backgroundColor: const Color.fromARGB(255, 141, 126, 106),
-                automaticallyImplyLeading: false, // Disables the back arrow
+                automaticallyImplyLeading: false,
               ),
               Expanded(
-                child: DashboardPage(
-                  categories: widget.categories,
-                  completedCount: completedCount,
-                  activeCount: activeCount,
-                  pendingCount: pendingCount,
-                  totalCount: total,
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: screenHeight * 0.02),
+                      _buildDeliveryOverviewSection(
+                          screenHeight, widget.categories, context),
+                      SizedBox(height: screenHeight * 0.02),
+                      _buildTodaysDeliveriesSection(),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -209,42 +220,8 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
       ),
     );
   }
-}
 
-class DashboardPage extends StatelessWidget {
-  final List<Map<String, dynamic>> categories;
-  final int completedCount;
-  final int activeCount;
-  final int pendingCount;
-  final int totalCount;
-
-  const DashboardPage({
-    super.key,
-    required this.categories,
-    required this.completedCount,
-    required this.activeCount,
-    required this.pendingCount,
-    required this.totalCount,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
-      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          SizedBox(height: screenHeight * 0.03),
-          _buildDeliveryOverviewWidget(screenHeight, categories, context),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeliveryOverviewWidget(double screenHeight,
+  Widget _buildDeliveryOverviewSection(double screenHeight,
       List<Map<String, dynamic>> categories, BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: screenHeight * 0.03),
@@ -280,17 +257,16 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
           SizedBox(height: screenHeight * 0.02),
+
           // Completed Deliveries Progress Bar
           Row(
             children: [
               InkWell(
                 onTap: () {
-                  // Navigate to the Completed Orders Page when tapped
                   Navigator.push(
-                    context, // The correct context is the one provided by the widget's build method
+                    context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          CompletedOrdersPage(), // Replace with your actual page
+                      builder: (context) => CompletedOrdersPage(),
                     ),
                   );
                 },
@@ -300,7 +276,7 @@ class DashboardPage extends StatelessWidget {
                         color: Colors.blue, size: screenHeight * 0.025),
                     SizedBox(width: screenHeight * 0.01),
                     Text(
-                      "הושלם",
+                      "נמסר",
                       style: TextStyle(
                         fontSize: screenHeight * 0.02,
                         fontWeight: FontWeight.bold,
@@ -312,10 +288,11 @@ class DashboardPage extends StatelessWidget {
               ),
             ],
           ),
+
           SizedBox(height: screenHeight * 0.01),
           LinearProgressIndicator(
-            value: totalCount > 0
-                ? completedCount / totalCount
+            value: total > 0
+                ? completedCount / total
                 : 0.0, // Dynamically calculate progress
             backgroundColor: Colors.grey.shade300,
             color: Colors.blue,
@@ -323,7 +300,7 @@ class DashboardPage extends StatelessWidget {
           ),
           SizedBox(height: screenHeight * 0.01),
           Text(
-            "$completedCount / $totalCount", // Completed deliveries count
+            "$completedCount / $total", // Completed deliveries count
             style: TextStyle(
               fontSize: screenHeight * 0.018,
               color: Colors.black54,
@@ -331,26 +308,24 @@ class DashboardPage extends StatelessWidget {
           ),
 
           SizedBox(height: screenHeight * 0.02),
-          // Active and Pending Deliveries
-          //  SizedBox(height: screenHeight * 0.03),
+
           // Active and Pending Deliveries
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center, // Center the content horizontally
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Wrap Expanded inside a Flex or Column to ensure it's used correctly
+              // Active Deliveries Card
               Expanded(
                 child: InkWell(
                   onTap: () {
                     Navigator.push(
-                      context, // The correct context is the one provided by the widget's build method
+                      context,
                       MaterialPageRoute(
                         builder: (context) => ActiveOrdersPage(),
                       ),
                     );
                   },
                   child: _buildActivePendingCard(
-                    title: "פעיל",
+                    title: "בתהליך",
                     count: activeCount,
                     color: Colors.green,
                     icon: Icons.local_shipping,
@@ -358,26 +333,24 @@ class DashboardPage extends StatelessWidget {
                   ),
                 ),
               ),
+              SizedBox(width: screenHeight * 0.02), // Space between the cards
 
-              SizedBox(
-                  width:
-                      screenHeight * 0.02), // Add some space between the cards
-              // Wrap Expanded inside a Flex or Column to ensure it's used correctly
+              // Pending Deliveries Card
               Expanded(
                 child: InkWell(
                   onTap: () {
                     Navigator.push(
-                      context, // The correct context is the one provided by the widget's build method
+                      context,
                       MaterialPageRoute(
                         builder: (context) => PendingOrdersPage(),
                       ),
                     );
                   },
                   child: _buildActivePendingCard(
-                    title: "בהמתנה",
+                    title: "חדשה",
                     count: pendingCount,
                     color: Colors.orange,
-                    icon: Icons.access_time,
+                    icon: Icons.new_releases,
                     screenHeight: screenHeight,
                   ),
                 ),
@@ -386,7 +359,6 @@ class DashboardPage extends StatelessWidget {
           ),
 
           SizedBox(height: screenHeight * 0.03),
-          DeliveryCalendarWidget(categories: categories),
         ],
       ),
     );
@@ -404,7 +376,7 @@ class DashboardPage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: screenHeight * 0.02, color: color),
+            Icon(icon, size: screenHeight * 0.025, color: color),
             SizedBox(width: screenHeight * 0.005),
             Text(
               title,
@@ -428,113 +400,137 @@ class DashboardPage extends StatelessWidget {
       ],
     );
   }
-}
 
-class DeliveryCalendarWidget extends StatelessWidget {
-  final List<Map<String, dynamic>> categories;
-
-  const DeliveryCalendarWidget({super.key, required this.categories});
-
-  @override
-  Widget build(BuildContext context) {
-    Map<DateTime, List<String>> eventMap = {};
-
-    for (var category in categories) {
-      if (category.containsKey('Date')) {
-        DateTime deliveryDate = DateTime.parse(category['Date']);
-        deliveryDate =
-            DateTime(deliveryDate.year, deliveryDate.month, deliveryDate.day);
-        String deliveryDetails = category['product'];
-
-        if (eventMap.containsKey(deliveryDate)) {
-          eventMap[deliveryDate]!.add(deliveryDetails);
-        } else {
-          eventMap[deliveryDate] = [deliveryDetails];
+  Widget _buildTodaysDeliveriesSection() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchTodaysDeliveries(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
         }
-      }
-    }
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Error: ${snapshot.error}'),
+          );
+        }
+        final deliveries = snapshot.data ?? [];
 
-    DateTime today = DateTime.now();
-
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => FullCalendarPage(eventMap: eventMap),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 10,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "משלוחים להיום",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              //const SizedBox(height: 0.1),
+              deliveries.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'אין משלוחים להיום.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: deliveries.length,
+                      itemBuilder: (context, index) {
+                        final delivery = deliveries[index];
+                        return Card(
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          color: const Color.fromARGB(255, 255, 255, 255),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 12.0),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
+                              children: [
+                                // Leading Icon
+                                CircleAvatar(
+                                  radius: 25,
+                                  backgroundColor: Colors.blueAccent,
+                                  child: Icon(
+                                    Icons.local_shipping,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Delivery Details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        delivery['name'] ?? 'No Name',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        delivery['clientAddress'] ??
+                                            'No Address',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color.fromARGB(
+                                              255, 130, 130, 130),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "Status: ${delivery['status'] ?? 'No Status'}",
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ],
           ),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              spreadRadius: 5,
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Center(
-              child: Text(
-                "לוח חודש",
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            //const SizedBox(height: 5),
-            SizedBox(
-              height: 340, // Adjust the height to make the calendar smaller
-              child: TableCalendar(
-                locale: 'he_IL',
-                focusedDay: DateTime.now(),
-                firstDay: DateTime(2020),
-                lastDay: DateTime(2030),
-                calendarFormat: CalendarFormat.month,
-                eventLoader: (day) {
-                  DateTime normalizedDate =
-                      DateTime(day.year, day.month, day.day); // Normalize day
-                  return eventMap[normalizedDate] ?? [];
-                },
-                headerStyle: HeaderStyle(
-                  titleCentered: true,
-                  formatButtonVisible: false,
-                  titleTextStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  leftChevronIcon: const Icon(Icons.chevron_right),
-                  rightChevronIcon: const Icon(Icons.chevron_left),
-                ),
-                calendarStyle: CalendarStyle(
-                  selectedDecoration: BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    shape: BoxShape.circle,
-                  ),
-                  weekendTextStyle: const TextStyle(color: Colors.red),
-                  defaultTextStyle: const TextStyle(fontSize: 14),
-                ),
-                onDaySelected: (selectedDay, focusedDay) {
-                  // Handle the day selection if needed
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -544,7 +540,7 @@ class PendingOrdersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('הזמנות בהמתנה'),
+        title: const Text('הזמנות חדשות'),
         backgroundColor: const Color.fromARGB(255, 141, 126, 106),
       ),
       body: GestureDetector(
