@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'customer_management_page.dart';
 import 'employee_management_page.dart';
 import 'admin_dashboard_page.dart';
-import '../Home_pages/terms_of_service.dart';
 import '../Home_pages/login_page.dart';
 
 class AdminHomePage extends StatefulWidget {
@@ -29,12 +28,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
     email = widget.managerDetails['email'] ?? 'Unknown Email';
 
     _pages = [
-      _wrapWithSettingsIcon(const CustomerManagementPage()),
-      _wrapWithSettingsIcon(AdminDashboardPage(
+      const CustomerManagementPage(),
+      AdminDashboardPage(
         managerDetails: widget.managerDetails,
         categories: [],
-      )),
-      _wrapWithSettingsIcon(const EmployeeManagementPage()),
+      ),
+      const EmployeeManagementPage(),
     ];
   }
 
@@ -44,101 +43,23 @@ class _AdminHomePageState extends State<AdminHomePage> {
     });
   }
 
-  void _showSettingsDrawer(BuildContext context) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (BuildContext context, _, __) {
-          return Material(
-            color: Colors.transparent,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.6,
-                height: MediaQuery.of(context).size.height,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(20),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    top: 66.0, // Adjust this value to move content down
-                    left: 16.0,
-                    right: 16.0,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.admin_panel_settings),
-                        title: const Text('תנאי שירות'),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TermsOfServicePage(),
-                            ),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.logout),
-                        title: const Text('יציאה'),
-                        onTap: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginPage()),
-                          );
-                        },
-                      ),
-                      const Spacer(),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context); // Close drawer
-                          },
-                          child: const Text('סגור'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0); // Slide from the right
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-
-          var tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          var offsetAnimation = animation.drive(tween);
-
-          return SlideTransition(
-            position: offsetAnimation,
-            child: child,
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _wrapWithSettingsIcon(Widget child) {
+  Widget _buildPageWithLogout(Widget page) {
     return Stack(
       children: [
-        child,
+        page,
         Positioned(
-          top: 45,
-          right: 12,
+          top: 48, // Adjust the position of the button as needed
+          left: 10,
           child: IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () => _showSettingsDrawer(context),
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginPage(),
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -171,53 +92,22 @@ class _AdminHomePageState extends State<AdminHomePage> {
               ),
             ),
             Positioned(
-              top: screenHeight * 0.07,
+              top: screenHeight * 0.15,
               left: 0,
               right: 0,
               child: Center(
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const LoginPage()),
-                            );
-                          },
-                        ),
-                        Expanded(
-                          child: Image.asset(
-                            'assets/images/logo_zmitut.png',
-                            height: screenHeight * 0.06,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.settings, color: Colors.white),
-                          onPressed: () => _showSettingsDrawer(context),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: screenHeight * 0.02),
-                    Text(
-                      'Hello, $firstName!',
-                      style: TextStyle(
-                        fontSize: screenHeight * 0.03,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Hello, $firstName!',
+                  style: TextStyle(
+                    fontSize: screenHeight * 0.03,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
             Center(
-              child: _pages.elementAt(_selectedIndex),
+              child: _buildPageWithLogout(_pages.elementAt(_selectedIndex)),
             ),
           ],
         ),
@@ -229,8 +119,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
             label: 'לקוחות',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'לוּחַ מַחווָנִים',
+            icon: Icon(Icons.local_shipping),
+            label: 'משלוחים',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
