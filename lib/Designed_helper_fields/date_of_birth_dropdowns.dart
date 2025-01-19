@@ -61,7 +61,7 @@ class DateOfBirthDropdowns extends StatelessWidget {
           ),
           dropdownField(
             label: 'שנה', // Hebrew for "Year"
-            start: 1980,
+            start: 1930,
             end: DateTime.now().year,
             currentValue: selectedYear,
             onChanged: onYearChanged,

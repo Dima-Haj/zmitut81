@@ -72,7 +72,7 @@ class _SignupStep2State extends State<SignupStep2> {
               left: 0,
               right: 0,
               child: Container(
-                height: screenHeight * 0.65,
+                height: screenHeight * 0.6,
                 decoration: whiteFrame(screenWidth),
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),

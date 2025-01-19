@@ -238,10 +238,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: const Color.fromARGB(255, 131, 107, 81),
-        unselectedItemColor: const Color.fromARGB(255, 151, 151, 151),
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.white,
         onTap: _onItemTapped,
-        backgroundColor: const Color.fromARGB(255, 248, 248, 248),
+        backgroundColor: Colors.grey[800],
       ),
     );
   }

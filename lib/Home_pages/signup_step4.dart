@@ -53,8 +53,6 @@ class _SignupStep4State extends State<SignupStep4> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final passwordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
     final double screenHeight = screenSize.height;
     final double screenWidth = screenSize.width;
 

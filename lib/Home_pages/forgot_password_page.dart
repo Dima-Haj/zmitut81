@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../Designed_helper_fields/custom_text_field.dart'; // Import your CustomTextField
 
 class ForgotPasswordPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -62,22 +63,13 @@ class ForgotPasswordPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.02), // Responsive spacing
-                TextField(
+                CustomTextField(
+                  hintText: 'אימייל', // "Email" in Hebrew
+                  icon: Icons.email,
                   controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'אימייל', // "Email" in Hebrew
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(screenWidth * 0.02),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: screenHeight * 0.015,
-                      horizontal: screenWidth * 0.04,
-                    ), // Responsive content padding
-                  ),
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.02, // Responsive font size
-                  ),
+                  screenWidth: screenWidth,
+                  keyboardType:
+                      TextInputType.emailAddress, // Use email keyboard
                 ),
                 SizedBox(height: screenHeight * 0.03), // Responsive spacing
                 SizedBox(
