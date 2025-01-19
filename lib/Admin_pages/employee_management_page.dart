@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/Designed_helper_fields/custom_text_field.dart';
+import 'package:flutter_application_1/Designed_helper_fields/dropdown_helpers.dart';
+import 'package:flutter_application_1/Designed_helper_fields/phone_field.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/Designed_helper_fields/date_of_birth_dropdowns.dart'; // Import the DateOfBirthDropdowns class
 
 class EmployeeManagementPage extends StatefulWidget {
   final Map<String, dynamic>? managerDetails;
@@ -184,7 +188,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
           'birthDay': birthDay,
           'birthMonth': birthMonth,
           'birthYear': birthYear,
-          'truckSize': truckSize,
+          if (truckType != 'צובר') 'truckSize': truckSize,
           'truckType': truckType,
         };
 
@@ -222,7 +226,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
           'birthDay': birthDay,
           'birthMonth': birthMonth,
           'birthYear': birthYear,
-          'truckSize': truckSize,
+          if (truckType != 'צובר') 'truckSize': truckSize,
           'truckType': truckType,
         });
 
@@ -249,8 +253,15 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
         TextEditingController(text: employee['firstName']);
     final lastNameController =
         TextEditingController(text: employee['lastName']);
-    final phoneNumberController =
-        TextEditingController(text: employee['phone']);
+    final fullPhoneNumber =
+        employee['phone'] ?? ''; // Get the phone number or an empty string
+    final String firstPart = fullPhoneNumber.substring(2, 3); // Extract "05"
+    final String secondPart = fullPhoneNumber.substring(3); // Extract the rest
+    final TextEditingController firstPartPhoneController =
+        TextEditingController(text: firstPart);
+    final TextEditingController secondPartPhoneController =
+        TextEditingController(text: secondPart);
+
     final birthDayController =
         TextEditingController(text: employee['birthDay']);
     final birthMonthController =
@@ -275,240 +286,485 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-          title: Center(
-            child: Text(
-              'עריכת עובד',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 131, 107, 81),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
               ),
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: _formKey, // Link the form to the key
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  TextFormField(
-                    controller: firstNameController,
-                    decoration: InputDecoration(
-                      labelText: 'שם פרטי',
-                      labelStyle: const TextStyle(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'שם פרטי חייב להיות מלא';
-                      }
-                      return null;
-                    },
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+              title: Center(
+                child: Text(
+                  'עריכת עובד',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: const Color.fromARGB(255, 131, 107, 81),
                   ),
-                  TextFormField(
-                    controller: lastNameController,
-                    decoration: InputDecoration(
-                      labelText: 'שם משפחה',
-                      labelStyle: const TextStyle(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'שם משפחה חייב להיות מלא';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: idController,
-                    decoration: InputDecoration(
-                      labelText: 'ת.ז',
-                      labelStyle: const TextStyle(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'ת.ז חייבת להיות מלאה';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: phoneNumberController,
-                    decoration: InputDecoration(
-                      labelText: 'מספר טלפון',
-                      labelStyle: const TextStyle(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'מספר טלפון חייב להיות מלא';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: 'אימייל',
-                      labelStyle: const TextStyle(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'אימייל חייב להיות מלא';
-                      }
-                      return null;
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedBirthMonth,
-                    decoration: InputDecoration(
-                      labelText: 'חודש הלידה',
-                      labelStyle: const TextStyle(
-                        color: Color.fromARGB(255, 131, 107, 81),
-                      ),
-                    ),
-                    items: [
-                      'ינואר',
-                      'פברואר',
-                      'מרץ',
-                      'אפריל',
-                      'מאי',
-                      'יוני',
-                      'יולי',
-                      'אוגוסט',
-                      'ספטמבר',
-                      'אוקטובר',
-                      'נובמבר',
-                      'דצמבר'
-                    ].map((month) {
-                      return DropdownMenuItem(value: month, child: Text(month));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedBirthMonth = value;
-                      });
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedBirthDay,
-                    decoration: InputDecoration(labelText: 'יום הלידה'),
-                    items: List.generate(31, (index) {
-                      final day = (index + 1).toString();
-                      return DropdownMenuItem(value: day, child: Text(day));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedBirthDay = value;
-                      });
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedBirthYear,
-                    decoration: InputDecoration(labelText: 'שנת הלידה'),
-                    items: List.generate(46, (index) {
-                      final year = 1980 + index;
-                      return DropdownMenuItem(
-                          value: year.toString(), child: Text(year.toString()));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedBirthYear = value;
-                      });
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedTruckSize,
-                    decoration: InputDecoration(labelText: 'גודל רכב'),
-                    items: ['גדול', 'קטן'].map((size) {
-                      return DropdownMenuItem(value: size, child: Text(size));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedTruckSize = value;
-                      });
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedTruckType,
-                    decoration: InputDecoration(labelText: 'סוג רכב'),
-                    items: ['פלטה', 'צובר', 'תפזורת'].map((type) {
-                      return DropdownMenuItem(value: type, child: Text(type));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedTruckType = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: const Color.fromARGB(255, 131, 107, 81),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                  child: const Text('ביטול'),
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      _editEmployee(
-                        index,
-                        firstNameController.text,
-                        lastNameController.text,
-                        phoneNumberController.text,
-                        emailController.text,
-                        idController.text,
-                        selectedBirthDay ?? '',
-                        selectedBirthMonth ?? '',
-                        selectedBirthYear ?? '',
-                        selectedTruckSize ?? '',
-                        selectedTruckType ?? '',
-                      );
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 131, 107, 81),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
+              ),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: _formKey, // Link the form to the key
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'שם פרטי', // Label for "First Name" in Hebrew
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          CustomTextField(
+                            hintText:
+                                'הזן שם פרטי', // Hint inside the text field
+                            icon: Icons.person, // Use an appropriate icon
+                            controller: firstNameController,
+                            screenWidth: MediaQuery.of(context).size.width,
+                          ),
+                        ],
+                      ),
+                      if (firstNameController.text.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'שם פרטי חייב להיות מלא', // Hebrew for "First Name is required"
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'שם משפחה', // Label for "Last Name" in Hebrew
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          CustomTextField(
+                            hintText:
+                                'הזן שם משפחה', // Hint inside the text field
+                            icon:
+                                Icons.person_outline, // Use an appropriate icon
+                            controller: lastNameController,
+                            screenWidth: MediaQuery.of(context).size.width,
+                          ),
+                        ],
+                      ),
+                      if (lastNameController.text.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'שם משפחה חייב להיות מלא', // Hebrew for "Last Name is required"
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ת.ז', // Label for ID in Hebrew
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          CustomTextField(
+                            hintText:
+                                'הזן ת.ז כאן', // Hint inside the text field
+                            icon: Icons.badge, // Icon for the field
+                            controller: idController,
+                            screenWidth: MediaQuery.of(context).size.width,
+                            keyboardType:
+                                TextInputType.number, // ID is typically numeric
+                          ),
+                        ],
+                      ),
+                      if (idController.text.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'ת.ז חייבת להיות מלאה', // Hebrew for "ID must be filled"
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'מספר טלפון', // Label for "Phone Number" in Hebrew
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          Directionality(
+                            textDirection:
+                                TextDirection.ltr, // Ensure LTR alignment
+                            child: PhoneField(
+                              firstPartController:
+                                  firstPartPhoneController, // Swap controllers
+                              secondPartController: secondPartPhoneController,
+                            ),
+                          ),
+                          if (firstPartPhoneController.text.isEmpty ||
+                              secondPartPhoneController.text.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                'מספר טלפון חייב להיות מלא', // Hebrew for "Phone number is required"
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'אימייל', // Label for "Email" in Hebrew
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          CustomTextField(
+                            hintText:
+                                'הזן אימייל', // Hint inside the text field
+                            icon: Icons.email, // Use an appropriate icon
+                            controller: emailController,
+                            screenWidth: MediaQuery.of(context).size.width,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          if (emailController.text.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                'אימייל חייב להיות מלא', // Hebrew for "Email is required"
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Align(
+                        alignment: Alignment
+                            .centerRight, // Aligns the text to the right
+                        child: const Text(
+                          'תאריך לידה', // Label for "Birth Date" in Hebrew
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 131, 107, 81),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.001),
+                      DateOfBirthDropdowns(
+                        selectedDay: selectedBirthDay,
+                        selectedMonth: selectedBirthMonth,
+                        selectedYear: selectedBirthYear,
+                        onDayChanged: (value) {
+                          setDialogState(() {
+                            selectedBirthDay = value; // Update selected day
+                          });
+                        },
+                        onMonthChanged: (value) {
+                          setDialogState(() {
+                            selectedBirthMonth = value; // Update selected month
+                          });
+                        },
+                        onYearChanged: (value) {
+                          setDialogState(() {
+                            selectedBirthYear = value; // Update selected year
+                          });
+                        },
+                        screenWidth: MediaQuery.of(context).size.width,
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment
+                            .start, // Align labels to the right
+                        children: [
+                          const Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              'סוג משאית', // Label for "Vehicle Type" in Hebrew
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 131, 107, 81),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                              height: MediaQuery.of(context).size.height *
+                                  0.001), // Spacing between label and dropdown
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: dropdownFieldFromList(
+                              label: '', // Empty label as it's already above
+                              items: [
+                                'פלטה',
+                                'צובר',
+                                'תפזורת'
+                              ], // The dropdown options
+                              currentValue: selectedTruckType,
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedTruckType = value;
+                                });
+                              },
+                              screenWidth: MediaQuery.of(context).size.width *
+                                  0.8, // Adjust size
+                            ),
+                          ),
+                          if (selectedTruckType != "צובר")
+                            SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.01),
+                          if (selectedTruckType != "צובר") ...[
+                            const Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'גודל משאית', // Label for "Vehicle Size" in Hebrew
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 131, 107, 81),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.001),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: dropdownFieldFromList(
+                                label: '', // Empty label as it's already above
+                                items: ['גדול', 'קטן'], // The dropdown options
+                                currentValue: selectedTruckSize,
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    selectedTruckSize = value;
+                                  });
+                                },
+                                screenWidth: MediaQuery.of(context).size.width *
+                                    0.8, // Adjust size
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
-                  child: const Text('שמירה'),
+                ),
+              ),
+              actions: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color.fromARGB(255, 251, 1, 1),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                      ),
+                      child: const Text('ביטול'),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState?.validate() ?? false) {
+                          if (firstNameController.text.isEmpty ||
+                              lastNameController.text.isEmpty ||
+                              firstPartPhoneController.text.isEmpty ||
+                              secondPartPhoneController.text.isEmpty ||
+                              emailController.text.isEmpty ||
+                              idController.text.isEmpty ||
+                              selectedBirthDay == null ||
+                              selectedBirthMonth == null ||
+                              selectedBirthYear == null ||
+                              selectedTruckType == null ||
+                              ((selectedTruckType == "פלטה" ||
+                                      selectedTruckType == "תפזורת") &&
+                                  selectedTruckSize == null)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'אנא מלא את כל השדות'), // "Please fill in all the fields"
+                              ),
+                            );
+                            return;
+                          }
+                          final nameRegex = RegExp(
+                              r'^[א-תa-zA-Z\s]+$'); // Hebrew and English letters only
+                          if (!nameRegex.hasMatch(firstNameController.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'שם פרטי חייב להיות ללא מספרים')), // "First name must not contain numbers"
+                            );
+                            return;
+                          }
+
+                          if (!nameRegex.hasMatch(lastNameController.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'שם משפחה חייב להיות ללא מספרים')), // "Last name must not contain numbers"
+                            );
+                            return;
+                          }
+
+                          // Check if phone number is exactly 10 digits
+                          final phoneRegex = RegExp(r'^\d{10}$');
+                          final fullPhoneNumber = '05' +
+                              firstPartPhoneController.text +
+                              secondPartPhoneController.text;
+                          if (!phoneRegex.hasMatch(fullPhoneNumber)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'מספר הטלפון חייב להיות 10 ספרות')), // "Phone number must be 10 digits"
+                            );
+                            return;
+                          }
+
+                          // Check if email is valid
+                          final emailRegex = RegExp(
+                              r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                          if (!emailRegex.hasMatch(emailController.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'אנא הזן אימייל תקין')), // "Please enter a valid email"
+                            );
+                            return;
+                          }
+
+                          // Check if ID is exactly 9 digits
+                          final idRegex = RegExp(r'^\d{9}$');
+                          if (!idRegex.hasMatch(idController.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'תעודת זהות חייבת להיות 9 ספרות')), // "ID must be 9 digits"
+                            );
+                            return;
+                          }
+                          if (selectedBirthDay == null ||
+                              selectedBirthMonth == null ||
+                              selectedBirthYear == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'יש לבחור תאריך לידה מלא')), // "Select a complete birth date"
+                            );
+                            return;
+                          }
+                          if (selectedTruckType == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'יש לבחור סוג רכב')), // "Select a vehicle type"
+                            );
+                            return;
+                          }
+                          if ((selectedTruckType == "פלטה" ||
+                                  selectedTruckType == "תפזורת") &&
+                              selectedTruckSize == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'יש לבחור גודל רכב')), // "Select a vehicle size"
+                            );
+                            return;
+                          }
+                          _editEmployee(
+                            index,
+                            firstNameController.text,
+                            lastNameController.text,
+                            '05' +
+                                firstPartPhoneController.text +
+                                secondPartPhoneController.text,
+                            emailController.text,
+                            idController.text,
+                            selectedBirthDay ?? '',
+                            selectedBirthMonth ?? '',
+                            selectedBirthYear ?? '',
+                            selectedTruckSize ?? '',
+                            selectedTruckType ?? '',
+                          );
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 4, 16, 249),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                      ),
+                      child: const Text('שמירה'),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -654,7 +910,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                           ),
                           Text('מספר טלפון: ${employee['phone']}'),
                           Text('סוג משאית: ${employee['truckType']}'),
-                          if (employee['truckSize'] != null)
+                          if (employee['truckType'] != 'צובר')
                             Text('גודל משאית: ${employee['truckSize']}'),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -712,12 +968,15 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
   void _showAddEmployeeDialog() {
     final firstNameController = TextEditingController();
     final lastNameController = TextEditingController();
-    final phoneNumberController = TextEditingController();
+    final TextEditingController firstPartPhoneController =
+        TextEditingController();
+    final TextEditingController secondPartPhoneController =
+        TextEditingController();
     final birthDayController = TextEditingController();
     final birthMonthController = TextEditingController();
     final birthYearController = TextEditingController();
     final idController = TextEditingController();
-    final emailConroller = TextEditingController();
+    final emailController = TextEditingController();
     final truckSizeController = TextEditingController();
     final truckTypeController = TextEditingController();
 
@@ -726,209 +985,371 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          title: Center(
-            child: Text(
-              'הוספת עובד',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 131, 107, 81),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
               ),
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: _formKey, // Link the form to the key
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  TextFormField(
-                    controller: firstNameController,
-                    decoration: InputDecoration(labelText: 'שם פרטי'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'שם פרטי חייב להיות מלא';
-                      }
-                      return null;
-                    },
+              title: Center(
+                child: Text(
+                  'הוספת עובד',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: const Color.fromARGB(255, 131, 107, 81),
                   ),
-                  TextFormField(
-                    controller: lastNameController,
-                    decoration: InputDecoration(labelText: 'שם משפחה'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'שם משפחה חייב להיות מלא';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: idController,
-                    decoration: InputDecoration(labelText: 'ת.ז'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'ת.ז חייבת להיות מלאה';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: phoneNumberController,
-                    decoration: InputDecoration(labelText: 'מספר טלפון'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'מספר טלפון חייב להיות מלא';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: emailConroller,
-                    decoration: InputDecoration(labelText: 'אימייל'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'אימייל חייב להיות מלא';
-                      }
-                      return null;
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedBirthMonth,
-                    decoration: InputDecoration(labelText: 'חודש הלידה'),
-                    items: [
-                      'ינואר',
-                      'פברואר',
-                      'מרץ',
-                      'אפריל',
-                      'מאי',
-                      'יוני',
-                      'יולי',
-                      'אוגוסט',
-                      'ספטמבר',
-                      'אוקטובר',
-                      'נובמבר',
-                      'דצמבר'
-                    ].map((month) {
-                      return DropdownMenuItem(value: month, child: Text(month));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedBirthMonth = value;
-                      });
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedBirthDay,
-                    decoration: InputDecoration(labelText: 'יום הלידה'),
-                    items: List.generate(31, (index) {
-                      final day = (index + 1).toString();
-                      return DropdownMenuItem(value: day, child: Text(day));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedBirthDay = value;
-                      });
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedBirthYear,
-                    decoration: InputDecoration(labelText: 'שנת הלידה'),
-                    items: List.generate(46, (index) {
-                      final year = 1980 + index;
-                      return DropdownMenuItem(
-                          value: year.toString(), child: Text(year.toString()));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedBirthYear = value;
-                      });
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedTruckSize,
-                    decoration: InputDecoration(labelText: 'גודל רכב'),
-                    items: ['גדול', 'קטן'].map((size) {
-                      return DropdownMenuItem(value: size, child: Text(size));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedTruckSize = value;
-                      });
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: selectedTruckType,
-                    decoration: InputDecoration(labelText: 'סוג רכב'),
-                    items: ['פלטה', 'צובר', 'תפזורת'].map((type) {
-                      return DropdownMenuItem(value: type, child: Text(type));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedTruckType = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: const Color.fromARGB(255, 131, 107, 81),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                  child: const Text('ביטול'),
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      _addEmployee(
-                        firstNameController.text,
-                        lastNameController.text,
-                        phoneNumberController.text,
-                        emailConroller.text,
-                        idController.text,
-                        selectedBirthDay ?? '',
-                        selectedBirthMonth ?? '',
-                        selectedBirthYear ?? '',
-                        selectedTruckSize ?? '',
-                        selectedTruckType ?? '',
-                      );
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 131, 107, 81),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
+              ),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: _formKey, // Link the form to the key
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      CustomTextField(
+                        hintText: 'שם פרטי', // Hint inside the text field
+                        icon: Icons.person, // Use an appropriate icon
+                        controller: firstNameController,
+                        screenWidth: MediaQuery.of(context).size.width,
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      CustomTextField(
+                        hintText: 'שם משפחה', // Hint inside the text field
+                        icon: Icons.person_outline, // Use an appropriate icon
+                        controller: lastNameController,
+                        screenWidth: MediaQuery.of(context).size.width,
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      CustomTextField(
+                        hintText: 'ת.ז', // Hint inside the text field
+                        icon: Icons.badge, // Icon for the field
+                        controller: idController,
+                        screenWidth: MediaQuery.of(context).size.width,
+                        keyboardType:
+                            TextInputType.number, // ID is typically numeric
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'מספר טלפון', // Label for "Phone Number" in Hebrew
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          Directionality(
+                            textDirection:
+                                TextDirection.ltr, // Ensure LTR alignment
+                            child: PhoneField(
+                              firstPartController:
+                                  firstPartPhoneController, // Swap controllers
+                              secondPartController: secondPartPhoneController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      CustomTextField(
+                        hintText: 'הזן אימייל', // Hint inside the text field
+                        icon: Icons.email, // Use an appropriate icon
+                        controller: emailController,
+                        screenWidth: MediaQuery.of(context).size.width,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Align(
+                        alignment: Alignment
+                            .centerRight, // Aligns the text to the right
+                        child: const Text(
+                          'תאריך לידה', // Label for "Birth Date" in Hebrew
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 131, 107, 81),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.001),
+                      DateOfBirthDropdowns(
+                        selectedDay: selectedBirthDay,
+                        selectedMonth: selectedBirthMonth,
+                        selectedYear: selectedBirthYear,
+                        onDayChanged: (value) {
+                          setDialogState(() {
+                            selectedBirthDay = value; // Update selected day
+                          });
+                        },
+                        onMonthChanged: (value) {
+                          setDialogState(() {
+                            selectedBirthMonth = value; // Update selected month
+                          });
+                        },
+                        onYearChanged: (value) {
+                          setDialogState(() {
+                            selectedBirthYear = value; // Update selected year
+                          });
+                        },
+                        screenWidth: MediaQuery.of(context).size.width,
+                      ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment
+                            .start, // Align labels to the right
+                        children: [
+                          const Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              'סוג רכב', // Label for "Vehicle Type" in Hebrew
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 131, 107, 81),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height *
+                                0.001, // Spacing
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: dropdownFieldFromList(
+                              label: '', // Empty label as it's already above
+                              items: [
+                                'פלטה',
+                                'צובר',
+                                'תפזורת'
+                              ], // The dropdown options
+                              currentValue: selectedTruckType,
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedTruckType = value;
+
+                                  // Clear selectedTruckSize if "צובר" is selected
+                                  if (value == "צובר") {
+                                    selectedTruckSize = null;
+                                  }
+                                });
+                              },
+                              screenWidth: MediaQuery.of(context).size.width *
+                                  0.8, // Adjust size
+                            ),
+                          ),
+                          if (selectedTruckType == "פלטה" ||
+                              selectedTruckType == "תפזורת") ...[
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height *
+                                  0.01, // Spacing
+                            ),
+                            const Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'גודל רכב', // Label for "Vehicle Size" in Hebrew
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 131, 107, 81),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height *
+                                  0.001, // Spacing
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: dropdownFieldFromList(
+                                label: '', // Empty label as it's already above
+                                items: ['גדול', 'קטן'], // The dropdown options
+                                currentValue: selectedTruckSize,
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    selectedTruckSize = value;
+                                  });
+                                },
+                                screenWidth: MediaQuery.of(context).size.width *
+                                    0.8, // Adjust size
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
-                  child: const Text('הוספה'),
+                ),
+              ),
+              actions: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color.fromARGB(255, 254, 4, 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                      ),
+                      child: const Text('ביטול'),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState?.validate() ?? false) {
+                          if (firstNameController.text.isEmpty ||
+                              lastNameController.text.isEmpty ||
+                              firstPartPhoneController.text.isEmpty ||
+                              secondPartPhoneController.text.isEmpty ||
+                              emailController.text.isEmpty ||
+                              idController.text.isEmpty ||
+                              selectedBirthDay == null ||
+                              selectedBirthMonth == null ||
+                              selectedBirthYear == null ||
+                              selectedTruckType == null ||
+                              ((selectedTruckType == "פלטה" ||
+                                      selectedTruckType == "תפזורת") &&
+                                  selectedTruckSize == null)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'אנא מלא את כל השדות'), // "Please fill in all the fields"
+                              ),
+                            );
+                            return;
+                          }
+                          final nameRegex = RegExp(
+                              r'^[א-תa-zA-Z\s]+$'); // Hebrew and English letters only
+                          if (!nameRegex.hasMatch(firstNameController.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'שם פרטי חייב להיות ללא מספרים')), // "First name must not contain numbers"
+                            );
+                            return;
+                          }
+
+                          if (!nameRegex.hasMatch(lastNameController.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'שם משפחה חייב להיות ללא מספרים')), // "Last name must not contain numbers"
+                            );
+                            return;
+                          }
+
+                          // Check if phone number is exactly 10 digits
+                          final phoneRegex = RegExp(r'^\d{10}$');
+                          final fullPhoneNumber = '05' +
+                              firstPartPhoneController.text +
+                              secondPartPhoneController.text;
+                          if (!phoneRegex.hasMatch(fullPhoneNumber)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'מספר הטלפון חייב להיות 10 ספרות')), // "Phone number must be 10 digits"
+                            );
+                            return;
+                          }
+
+                          // Check if email is valid
+                          final emailRegex = RegExp(
+                              r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                          if (!emailRegex.hasMatch(emailController.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'אנא הזן אימייל תקין')), // "Please enter a valid email"
+                            );
+                            return;
+                          }
+
+                          // Check if ID is exactly 9 digits
+                          final idRegex = RegExp(r'^\d{9}$');
+                          if (!idRegex.hasMatch(idController.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'תעודת זהות חייבת להיות 9 ספרות')), // "ID must be 9 digits"
+                            );
+                            return;
+                          }
+                          if (selectedBirthDay == null ||
+                              selectedBirthMonth == null ||
+                              selectedBirthYear == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'יש לבחור תאריך לידה מלא')), // "Select a complete birth date"
+                            );
+                            return;
+                          }
+                          if (selectedTruckType == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'יש לבחור סוג רכב')), // "Select a vehicle type"
+                            );
+                            return;
+                          }
+                          if ((selectedTruckType == "פלטה" ||
+                                  selectedTruckType == "תפזורת") &&
+                              selectedTruckSize == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'יש לבחור גודל רכב')), // "Select a vehicle size"
+                            );
+                            return;
+                          }
+                          _addEmployee(
+                            firstNameController.text,
+                            lastNameController.text,
+                            '05' +
+                                firstPartPhoneController.text +
+                                secondPartPhoneController.text,
+                            emailController.text,
+                            idController.text,
+                            selectedBirthDay ?? '',
+                            selectedBirthMonth ?? '',
+                            selectedBirthYear ?? '',
+                            selectedTruckSize ?? '',
+                            selectedTruckType ?? '',
+                          );
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 25, 9, 251),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                      ),
+                      child: const Text('הוספה'),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
+            );
+          },
         );
       },
     );

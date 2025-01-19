@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/Home_pages/signup_step4.dart';
-import '../Designed_helper_fields/firebase_auth_services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../Designed_helper_fields/custom_text_field.dart'; // Import your CustomTextField
 import 'login_page.dart'; // Import the login page for the cancel button
 
 class SignupStep3 extends StatefulWidget {
@@ -37,7 +35,6 @@ class SignupStep3 extends StatefulWidget {
 }
 
 class _SignupStep3State extends State<SignupStep3> {
-  final FirebaseAuthServices _auth = FirebaseAuthServices(); // Initialize here
   final TextEditingController emailController = TextEditingController();
   final TextEditingController confirmEmailController = TextEditingController();
 
@@ -109,22 +106,26 @@ class _SignupStep3State extends State<SignupStep3> {
                       Directionality(
                         textDirection:
                             TextDirection.rtl, // Set text direction to RTL
-                        child: buildTextField(
-                          'אימייל', // Hebrew for "Email"
-                          Icons.email,
-                          emailController,
-                          screenWidth,
+                        child: CustomTextField(
+                          hintText: 'אימייל', // "Email" in Hebrew
+                          icon: Icons.email,
+                          controller: emailController,
+                          screenWidth: screenWidth,
+                          keyboardType:
+                              TextInputType.emailAddress, // Use email keyboard
                         ),
                       ),
                       SizedBox(height: screenHeight * 0.02),
                       Directionality(
                         textDirection:
                             TextDirection.rtl, // Set text direction to RTL
-                        child: buildTextField(
-                          'אישור אימייל', // Hebrew for "Confirm Email"
-                          Icons.email_outlined,
-                          confirmEmailController,
-                          screenWidth,
+                        child: CustomTextField(
+                          hintText:
+                              'אישור אימייל', // Hebrew for "Confirm Email"
+                          icon: Icons.email_outlined,
+                          controller: confirmEmailController,
+                          screenWidth: screenWidth,
+                          keyboardType: TextInputType.emailAddress,
                         ),
                       ),
                       SizedBox(height: screenHeight * 0.03),
@@ -213,34 +214,6 @@ class _SignupStep3State extends State<SignupStep3> {
         ),
       );
 
-  Widget buildTextFieldWithPasswordInfo(
-    BuildContext context,
-    String hintText,
-    IconData icon,
-    TextEditingController controller,
-    double screenWidth, [
-    bool obscureText = false,
-  ]) =>
-      Stack(
-        children: [
-          buildTextField(
-            hintText,
-            icon,
-            controller,
-            screenWidth,
-            obscureText: obscureText,
-          ),
-          Positioned(
-            left: 10, // Position on the left side
-            top: 5, // Maintain the vertical position
-            child: IconButton(
-              icon: Icon(Icons.info_outline, size: 20, color: Colors.red),
-              onPressed: () => showPasswordInfo(context),
-            ),
-          ),
-        ],
-      );
-
   Widget NextButton(
     BuildContext context,
     double screenHeight,
@@ -265,11 +238,27 @@ class _SignupStep3State extends State<SignupStep3> {
                 content: Directionality(
                   textDirection: TextDirection.rtl, // Ensure RTL alignment
                   child: const Text(
-                      'יש למלא את כל השדות'), // Hebrew for "All fields must be filled"
+                      'יש למלא את כל השדות'), // "All fields must be filled" in Hebrew
                 ),
               ),
             );
 
+            return;
+          }
+
+          // Email validation regex
+          final emailRegex = RegExp(
+              r"^[a-zA-Z0-9.a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$");
+          if (!emailRegex.hasMatch(emailController.text)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Directionality(
+                  textDirection: TextDirection.rtl, // Ensure RTL alignment
+                  child: const Text(
+                      'האימייל שהוזן אינו תקין'), // "Invalid email format" in Hebrew
+                ),
+              ),
+            );
             return;
           }
 
@@ -279,12 +268,13 @@ class _SignupStep3State extends State<SignupStep3> {
                 content: Directionality(
                   textDirection: TextDirection.rtl, // Ensure RTL alignment
                   child: const Text(
-                      'האימיילים אינם תואמים'), // Hebrew for "Emails do not match"
+                      'האימיילים אינם תואמים'), // "Emails do not match" in Hebrew
                 ),
               ),
             );
             return;
           }
+
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -334,26 +324,6 @@ class _SignupStep3State extends State<SignupStep3> {
           ),
         ],
       );
-
-  void showPasswordInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl, // Ensure RTL alignment
-        child: AlertDialog(
-          title: const Text('חוזק סיסמה'), // Hebrew for "Password Strength"
-          content: const Text(
-              'על הסיסמאות להיות באורך של לפחות 8 תווים ולכלול מספרים, סימנים, ואותיות גדולות/קטנות.'), // Hebrew translation
-          actions: [
-            TextButton(
-              child: const Text('הבנתי'), // Hebrew for "Got it"
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget backArrow(BuildContext context) => IconButton(
         icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 30),

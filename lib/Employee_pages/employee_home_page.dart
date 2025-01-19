@@ -82,35 +82,48 @@ class EmployeeHomePageState extends State<EmployeeHomePage> {
             child: Center(
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: Transform(
-                          alignment: Alignment.center,
-                          transform: Matrix4.rotationY(
-                              3.14159), // Rotate 180 degrees along the Y-axis
-                          child: const Icon(Icons.logout, color: Colors.white),
+                  Directionality(
+                    textDirection: TextDirection.ltr, // Set RTL for the layout
+                    child: Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween, // Spread items evenly
+                      children: [
+                        // Icon on the left
+                        IconButton(
+                          icon: Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.rotationY(
+                                3.14159), // Flip the icon for RTL
+                            child:
+                                const Icon(Icons.logout, color: Colors.white),
+                          ),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => LoginPage()),
+                            );
+                          },
                         ),
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => LoginPage()),
-                          );
-                        },
-                      ),
-                      Expanded(
-                        child: Image.asset(
-                          'assets/images/logo_zmitut.png',
-                          height: screenHeight * 0.06,
-                          fit: BoxFit.contain,
+
+                        // Logo centered
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Image.asset(
+                              'assets/images/logo_zmitut.png',
+                              height: screenHeight * 0.06,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                          width: screenWidth *
-                              0.1), // Placeholder for spacing symmetry
-                    ],
+
+                        // Empty space on the right
+                        SizedBox(
+                            width: screenWidth *
+                                0.134), // Adjust width as needed for symmetry
+                      ],
+                    ),
                   ),
                   SizedBox(height: screenHeight * 0.02),
                   Text(
