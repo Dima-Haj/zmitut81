@@ -547,62 +547,71 @@ class PendingOrdersPage extends StatelessWidget {
         title: const Text('הזמנות בהמתנה'),
         backgroundColor: const Color.fromARGB(255, 141, 126, 106),
       ),
-      body: FutureBuilder(
-        future: FirebaseFirestore.instance
-            .collection('Employees')
-            .get() // Fetching the Employees collection
-            .then((QuerySnapshot snapshot) {
-          List<Future<QuerySnapshot>> deliveryFetches = [];
-
-          // Iterate through all employees and fetch their daily deliveries
-          for (var employeeDoc in snapshot.docs) {
-            deliveryFetches.add(
-              FirebaseFirestore.instance
-                  .collection('Employees')
-                  .doc(employeeDoc.id)
-                  .collection('dailyDeliveries')
-                  .where('status', isEqualTo: 'חדשה') // Only "חדשה" deliveries
-                  .get(),
-            );
-          }
-
-          // Combine all fetched deliveries into one list
-          return Future.wait(deliveryFetches);
-        }),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-                child: Text('Error fetching deliveries: ${snapshot.error}'));
-          }
-
-          final allPendingDeliveries = <QueryDocumentSnapshot>[];
-
-          // Combine all the documents from each employee's deliveries collection
-          for (var result in snapshot.data as List<QuerySnapshot>) {
-            allPendingDeliveries.addAll(result.docs);
-          }
-
-          if (allPendingDeliveries.isEmpty) {
-            return const Center(child: Text('אין הזמנות בהמתנה.'));
-          }
-
-          return ListView.builder(
-            itemCount: allPendingDeliveries.length,
-            itemBuilder: (context, index) {
-              final order =
-                  allPendingDeliveries[index].data() as Map<String, dynamic>;
-              return ListTile(
-                title: Text(order['product'] ?? 'No product'),
-                subtitle: Text(order['clientName'] ?? 'No client name'),
-                trailing: Text(order['date'] ?? 'No date'),
-              );
-            },
-          );
+      body: GestureDetector(
+        onTap: () {
+          // Unfocus the current focus node to dismiss the keyboard
+          FocusScope.of(context).unfocus();
         },
+        child: FutureBuilder(
+          future: FirebaseFirestore.instance
+              .collection('Employees')
+              .get() // Fetching the Employees collection
+              .then((QuerySnapshot snapshot) {
+            List<Future<QuerySnapshot>> deliveryFetches = [];
+
+            // Iterate through all employees and fetch their daily deliveries
+            for (var employeeDoc in snapshot.docs) {
+              deliveryFetches.add(
+                FirebaseFirestore.instance
+                    .collection('Employees')
+                    .doc(employeeDoc.id)
+                    .collection('dailyDeliveries')
+                    .where('status', whereIn: [
+                  'חדשה',
+                  'באיחור'
+                ]) // Check for multiple values
+                    .get(),
+              );
+            }
+
+            // Combine all fetched deliveries into one list
+            return Future.wait(deliveryFetches);
+          }),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                  child: Text('Error fetching deliveries: ${snapshot.error}'));
+            }
+
+            final allPendingDeliveries = <QueryDocumentSnapshot>[];
+
+            // Combine all the documents from each employee's deliveries collection
+            for (var result in snapshot.data as List<QuerySnapshot>) {
+              allPendingDeliveries.addAll(result.docs);
+            }
+
+            if (allPendingDeliveries.isEmpty) {
+              return const Center(child: Text('אין הזמנות בהמתנה.'));
+            }
+
+            return ListView.builder(
+              itemCount: allPendingDeliveries.length,
+              itemBuilder: (context, index) {
+                final order =
+                    allPendingDeliveries[index].data() as Map<String, dynamic>;
+                return ListTile(
+                  title: Text(order['product'] ?? 'No product'),
+                  subtitle: Text(order['clientName'] ?? 'No client name'),
+                  trailing: Text(order['date'] ?? 'No date'),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

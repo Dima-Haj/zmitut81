@@ -1,3 +1,5 @@
+// ignore_for_file: use_function_type_syntax_for_parameters
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -58,10 +60,18 @@ class TimesheetPageState extends State<TimesheetPage> {
 
       for (var doc in workShiftsCollection.docs) {
         Map<String, dynamic> data = doc.data();
-        if (data.containsKey('start') && data.containsKey('end')) {
+        if ((data.containsKey('start') && data.containsKey('end')) ||
+            (data.containsKey('startTime') && data.containsKey('endTime'))) {
           try {
-            DateTime startTime = DateTime.parse(data['start']);
-            DateTime endTime = DateTime.parse(data['end']);
+            DateTime startTime;
+            DateTime endTime;
+            if (data.containsKey('start') && data.containsKey('end')) {
+              startTime = DateTime.parse(data['start']);
+              endTime = DateTime.parse(data['end']);
+            } else {
+              startTime = DateTime.parse(data['startTime']);
+              endTime = DateTime.parse(data['endTime']);
+            }
             Duration shiftDuration = endTime.difference(startTime);
 
             final monthKey =

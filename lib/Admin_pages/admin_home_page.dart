@@ -150,85 +150,91 @@ class _AdminHomePageState extends State<AdminHomePage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            height: screenHeight,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: const AssetImage('assets/images/image1.png'),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.7),
-                  BlendMode.darken,
+      body: GestureDetector(
+        onTap: () {
+          // Unfocus the current focus node to dismiss the keyboard
+          FocusScope.of(context).unfocus();
+        },
+        child: Stack(
+          children: [
+            Container(
+              height: screenHeight,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: const AssetImage('assets/images/image1.png'),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.7),
+                    BlendMode.darken,
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: screenHeight * 0.07,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.white),
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginPage()),
-                          );
-                        },
-                      ),
-                      Expanded(
-                        child: Image.asset(
-                          'assets/images/logo_zmitut.png',
-                          height: screenHeight * 0.06,
-                          fit: BoxFit.contain,
+            Positioned(
+              top: screenHeight * 0.07,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.logout, color: Colors.white),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginPage()),
+                            );
+                          },
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.settings, color: Colors.white),
-                        onPressed: () => _showSettingsDrawer(context),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-                  Text(
-                    'Hello, $firstName!',
-                    style: TextStyle(
-                      fontSize: screenHeight * 0.03,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Image.asset(
+                            'assets/images/logo_zmitut.png',
+                            height: screenHeight * 0.06,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.settings, color: Colors.white),
+                          onPressed: () => _showSettingsDrawer(context),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    SizedBox(height: screenHeight * 0.02),
+                    Text(
+                      'Hello, $firstName!',
+                      style: TextStyle(
+                        fontSize: screenHeight * 0.03,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Center(
-            child: _pages.elementAt(_selectedIndex),
-          ),
-        ],
+            Center(
+              child: _pages.elementAt(_selectedIndex),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Customers',
+            label: 'לקוחות',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            label: 'לוּחַ מַחווָנִים',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
-            label: 'Employees',
+            label: 'עובדים',
           ),
         ],
         currentIndex: _selectedIndex,

@@ -39,18 +39,28 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
 
     final List<Map<String, dynamic>> fetchedEmployees = [];
     for (var doc in snapshot.docs) {
-      fetchedEmployees.add({
-        'firstName': doc['firstName'],
-        'lastName': doc['lastName'],
-        'id': doc['id'],
-        'phone': doc['phone'],
-        'birthDay': doc['birthDay'],
-        'birthMonth': doc['birthMonth'],
-        'birthYear': doc['birthYear'],
-        'email': doc['email'],
-        'truckSize': doc['truckSize'],
-        'truckType': doc['truckType']
-      });
+      final data =
+          doc.data() as Map<String, dynamic>?; // Cast to Map<String, dynamic>
+      if (data != null) {
+        final employeeData = {
+          'firstName': data['firstName'],
+          'lastName': data['lastName'],
+          'id': data['id'],
+          'phone': data['phone'],
+          'birthDay': data['birthDay'],
+          'birthMonth': data['birthMonth'],
+          'birthYear': data['birthYear'],
+          'email': data['email'],
+          'truckType': data['truckType'],
+        };
+
+        // Add 'truckSize' only if it exists
+        if (data.containsKey('truckSize')) {
+          employeeData['truckSize'] = data['truckSize'];
+        }
+
+        fetchedEmployees.add(employeeData);
+      }
     }
 
     setState(() {
@@ -644,7 +654,8 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                           ),
                           Text('מספר טלפון: ${employee['phone']}'),
                           Text('סוג משאית: ${employee['truckType']}'),
-                          Text('גודל משאית: ${employee['truckSize']}'),
+                          if (employee['truckSize'] != null)
+                            Text('גודל משאית: ${employee['truckSize']}'),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
