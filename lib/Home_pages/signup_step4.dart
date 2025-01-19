@@ -244,7 +244,6 @@ class _SignupStep4State extends State<SignupStep4> {
           ),
         ],
       );
-
   Widget signUpButton(
     BuildContext context,
     double screenHeight,
@@ -295,6 +294,34 @@ class _SignupStep4State extends State<SignupStep4> {
               widget.email, passwordController.text);
 
           if (user != null) {
+            // Check if user is already in WaitingManagers or WaitingEmployees
+            final waitingManagerDoc = await FirebaseFirestore.instance
+                .collection('WaitingManagers')
+                .doc(user.uid)
+                .get();
+
+            final waitingEmployeeDoc = await FirebaseFirestore.instance
+                .collection('WaitingEmployees')
+                .doc(user.uid)
+                .get();
+
+            if (waitingManagerDoc.exists || waitingEmployeeDoc.exists) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: const Text(
+                        'הפרטים כבר נשלחו, אנא המתן לאישור המנהל'), // Hebrew for "Details already submitted, please wait for manager approval"
+                  ),
+                ),
+              );
+
+              // Navigate back to the initial route
+              Navigator.popUntil(context, (route) => route.isFirst);
+              return;
+            }
+
+            // Add user to the waiting list
             Map<String, dynamic> commonData = {
               'firstName': widget.firstName,
               'lastName': widget.lastName,
@@ -308,7 +335,7 @@ class _SignupStep4State extends State<SignupStep4> {
 
             if (widget.role == "מנהל") {
               await FirebaseFirestore.instance
-                  .collection('Managers')
+                  .collection('WaitingManagers')
                   .doc(user.uid)
                   .set(commonData);
             } else {
@@ -321,18 +348,18 @@ class _SignupStep4State extends State<SignupStep4> {
               };
 
               await FirebaseFirestore.instance
-                  .collection('Employees')
+                  .collection('WaitingEmployees')
                   .doc(user.uid)
                   .set(employeeData);
             }
 
-            // Notify user about successful signup
+            // Notify user about successful submission
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Directionality(
                   textDirection: TextDirection.rtl,
                   child: const Text(
-                      'המשתמש נוסף בהצלחה'), // Hebrew for "User added successfully"
+                      'הפרטים התקבלו בהצלחה, ממתינים לאישור המנהל'), // Hebrew for "Details received successfully, awaiting manager approval"
                 ),
               ),
             );
@@ -340,7 +367,6 @@ class _SignupStep4State extends State<SignupStep4> {
             // Navigate back to the initial route
             Navigator.popUntil(context, (route) => route.isFirst);
           } else {
-            // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Directionality(

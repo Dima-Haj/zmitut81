@@ -104,7 +104,14 @@ class LoginPageState extends State<LoginPage> {
           .collection('Employees')
           .doc(user.uid)
           .get();
-
+      final WaitingEmployeeDoc = await FirebaseFirestore.instance
+          .collection('WaitingEmployees')
+          .doc(user.uid)
+          .get();
+      final WaitingManagerDoc = await FirebaseFirestore.instance
+          .collection('WaitingManagers')
+          .doc(user.uid)
+          .get();
       if (managerDoc.exists) {
         // Navigate to Manager Home Page
         Navigator.of(context).pushReplacement(
@@ -128,6 +135,17 @@ class LoginPageState extends State<LoginPage> {
                 'email': user.email ?? '',
                 ...employeeDoc.data()!,
               },
+            ),
+          ),
+        );
+      } else if (WaitingEmployeeDoc.exists || WaitingManagerDoc.exists) {
+        // Notify user that they are in the waiting list
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Directionality(
+              textDirection: TextDirection.rtl, // Hebrew alignment
+              child: const Text(
+                  'הבקשה שלך ממתינה לאישור המנהל, אנא המתן.'), // "Your request is awaiting manager approval, please wait."
             ),
           ),
         );

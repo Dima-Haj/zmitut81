@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/Admin_pages/user_requests_page.dart';
 import 'customer_management_page.dart';
 import 'employee_management_page.dart';
 import 'admin_dashboard_page.dart';
@@ -35,6 +36,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         categories: [],
       )),
       _wrapWithSettingsIcon(const EmployeeManagementPage()),
+      _wrapWithSettingsIcon(UserRequestsPage()), // Add this line
     ];
   }
 
@@ -223,18 +225,24 @@ class _AdminHomePageState extends State<AdminHomePage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed, // Ensure fixed behavior
+
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'לקוחות',
+            label: 'לקוחות', // Customers
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
-            label: 'לוּחַ מַחווָנִים',
+            label: 'לוּחַ מַחווָנִים', // Dashboard
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
-            label: 'עובדים',
+            label: 'עובדים', // Employees
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pending_actions),
+            label: 'בקשות', // Requests
           ),
         ],
         currentIndex: _selectedIndex,
