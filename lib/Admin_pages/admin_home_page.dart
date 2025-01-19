@@ -29,12 +29,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
     email = widget.managerDetails['email'] ?? 'Unknown Email';
 
     _pages = [
-      const CustomerManagementPage(),
-      AdminDashboardPage(
+      _wrapWithSettingsIcon(const CustomerManagementPage()),
+      _wrapWithSettingsIcon(AdminDashboardPage(
         managerDetails: widget.managerDetails,
         categories: [],
-      ),
-      const EmployeeManagementPage(),
+      )),
+      _wrapWithSettingsIcon(const EmployeeManagementPage()),
+      _wrapWithSettingsIcon(UserRequestsPage()), // Add this line
     ];
   }
 
