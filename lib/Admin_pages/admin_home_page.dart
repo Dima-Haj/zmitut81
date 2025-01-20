@@ -35,7 +35,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         categories: [],
       ),
       const EmployeeManagementPage(),
-      UserRequestsPage(),
+      UserRequestsPage(), // Add this line
     ];
   }
 
