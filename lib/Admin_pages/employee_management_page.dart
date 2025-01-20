@@ -37,14 +37,14 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
   }
 
   // Fetch employees from Firestore
+  // Fetch employees from Firestore
   void _fetchEmployees() async {
     final QuerySnapshot snapshot =
         await FirebaseFirestore.instance.collection('Employees').get();
 
     final List<Map<String, dynamic>> fetchedEmployees = [];
     for (var doc in snapshot.docs) {
-      final data =
-          doc.data() as Map<String, dynamic>?; // Cast to Map<String, dynamic>
+      final data = doc.data() as Map<String, dynamic>?;
       if (data != null) {
         final employeeData = {
           'firstName': data['firstName'],
@@ -56,11 +56,29 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
           'birthYear': data['birthYear'],
           'email': data['email'],
           'truckType': data['truckType'],
+          'totalHours': 0,
         };
 
-        // Add 'truckSize' only if it exists
         if (data.containsKey('truckSize')) {
           employeeData['truckSize'] = data['truckSize'];
+        }
+
+        try {
+          final QuerySnapshot workHoursSnapshot = await FirebaseFirestore
+              .instance
+              .collection('Employees')
+              .doc(doc.id)
+              .collection('monthlyWorkHours')
+              .get();
+
+          int totalHours = 0;
+          for (var workHourDoc in workHoursSnapshot.docs) {
+            final workHourData = workHourDoc.data() as Map<String, dynamic>;
+            totalHours += (workHourData['totalHours'] as num).toInt();
+          }
+          employeeData['totalHours'] = totalHours;
+        } catch (e) {
+          print('Error fetching work hours for employee ${data['id']}: $e');
         }
 
         fetchedEmployees.add(employeeData);
@@ -84,7 +102,8 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
       String birthMonth,
       String birthYear,
       String truckSize,
-      String truckType) async {
+      String truckType,
+      int totalHours) async {
     setState(() {
       final newEmployee = {
         'firstName': firstName,
@@ -97,13 +116,12 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
         'birthYear': birthYear,
         'truckSize': truckSize,
         'truckType': truckType,
-        //'birthday': '$birthDay/$birthMonth/$birthYear', // Combined birthday
+        'totalHours': totalHours,
       };
       employees.add(newEmployee);
-      originalEmployees.add(newEmployee); // Sync the original list
+      originalEmployees.add(newEmployee);
     });
 
-    // Add the new employee to Firebase Firestore
     try {
       final employeeRef =
           FirebaseFirestore.instance.collection('Employees').doc();
@@ -118,15 +136,13 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
         'birthYear': birthYear,
         'truckSize': truckSize,
         'truckType': truckType,
-        //'id': employeeRef.id, // Store the Firestore document ID
+        'totalHours': totalHours,
       });
 
-      // Success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('העובד נוסף בהצלחה')),
       );
     } catch (e) {
-      // Handle any error that may occur
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('שגיאה בהוספת העובד: $e')),
       );
@@ -170,51 +186,47 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
       String lastName,
       String phone,
       String email,
-      String id, // Employee ID
+      String id,
       String birthDay,
       String birthMonth,
       String birthYear,
       String truckSize,
-      String truckType) async {
+      String truckType,
+      int totalHours) async {
     try {
-      // Update the local employee data
       setState(() {
         final updatedEmployee = {
           'firstName': firstName,
           'lastName': lastName,
           'phone': phone,
           'email': email,
-          'id': id, // Keep employee ID
+          'id': id,
           'birthDay': birthDay,
           'birthMonth': birthMonth,
           'birthYear': birthYear,
           if (truckType != 'צובר') 'truckSize': truckSize,
           'truckType': truckType,
+          'totalHours': totalHours,
         };
 
-        employees[index] = updatedEmployee; // Update local list with new data
+        employees[index] = updatedEmployee;
 
-        final originalIndex = originalEmployees.indexWhere((employee) =>
-            employee['id'] ==
-            employees[index]['id']); // Match by 'id' instead of first name
+        final originalIndex = originalEmployees
+            .indexWhere((employee) => employee['id'] == employees[index]['id']);
         if (originalIndex != -1) {
-          originalEmployees[originalIndex] =
-              updatedEmployee; // Sync with the original list
+          originalEmployees[originalIndex] = updatedEmployee;
         }
       });
 
-      // Find the Firestore document ID by searching for the employee ID
       final employeeDoc = await FirebaseFirestore.instance
           .collection('Employees')
-          .where('id', isEqualTo: id) // Search by employee 'id'
-          .limit(1) // We expect a single document
+          .where('id', isEqualTo: id)
+          .limit(1)
           .get();
 
-      // If the employee document is found
       if (employeeDoc.docs.isNotEmpty) {
-        final documentId = employeeDoc.docs.first.id; // Get the document ID
+        final documentId = employeeDoc.docs.first.id;
 
-        // Now, update the employee data in Firestore using the document ID
         await FirebaseFirestore.instance
             .collection('Employees')
             .doc(documentId)
@@ -228,20 +240,18 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
           'birthYear': birthYear,
           if (truckType != 'צובר') 'truckSize': truckSize,
           'truckType': truckType,
+          'totalHours': totalHours,
         });
 
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('פרטי העובד עודכנו בהצלחה')),
         );
       } else {
-        // If no employee document is found with the given ID, show an error message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('לא נמצא עובד עם ת.ז זו')),
         );
       }
     } catch (e) {
-      // Handle any error that may occur during the update
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('שגיאה בעדכון פרטי העובד: $e')),
       );
@@ -274,6 +284,8 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
         TextEditingController(text: employee['truckSize']);
     final truckTypeController =
         TextEditingController(text: employee['truckType']);
+    final totalHoursController =
+        TextEditingController(text: employee['totalHours'].toString());
 
     String? selectedBirthDay = employee['birthDay'];
     String? selectedBirthMonth = employee['birthMonth'];
@@ -597,6 +609,25 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                               ),
                             ),
                           ],
+
+                          Text(
+                            'שעות עבודה חודשיות', // Label for Total Hours
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          CustomTextField(
+                            hintText:
+                                'הזן שעות עבודה חודשיות', // Hint inside the text field
+                            icon: Icons.timer, // Icon for the field
+                            controller: totalHoursController,
+                            screenWidth: MediaQuery.of(context).size.width,
+                            keyboardType: TextInputType.number, // Numeric input
+                          ),
                         ],
                       ),
                     ],
@@ -731,6 +762,18 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             );
                             return;
                           }
+                          // Validate totalHours
+                          final totalHours =
+                              int.tryParse(totalHoursController.text);
+                          if (totalHours == null || totalHours < 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'אנא הזן ערך חוקי לשעות עבודה')), // "Please enter a valid value for total hours"
+                            );
+                            return;
+                          }
+
                           _editEmployee(
                             index,
                             firstNameController.text,
@@ -745,6 +788,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             selectedBirthYear ?? '',
                             selectedTruckSize ?? '',
                             selectedTruckType ?? '',
+                            totalHours,
                           );
                           Navigator.of(context).pop();
                         }
@@ -912,6 +956,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                           Text('סוג משאית: ${employee['truckType']}'),
                           if (employee['truckType'] != 'צובר')
                             Text('גודל משאית: ${employee['truckSize']}'),
+                          Text('שעות עבודה חודשיות: ${employee['totalHours']}'),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -979,6 +1024,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
     final emailController = TextEditingController();
     final truckSizeController = TextEditingController();
     final truckTypeController = TextEditingController();
+    final totalHoursController = TextEditingController();
 
     final _formKey = GlobalKey<FormState>(); // Form key for validation
 
@@ -1183,6 +1229,24 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                               ),
                             ),
                           ],
+                          Text(
+                            'שעות עבודה חודשיות', // Label for Total Hours
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          CustomTextField(
+                            hintText:
+                                'הזן שעות עבודה חודשיות', // Hint inside the text field
+                            icon: Icons.timer, // Icon for the field
+                            controller: totalHoursController,
+                            screenWidth: MediaQuery.of(context).size.width,
+                            keyboardType: TextInputType.number, // Numeric input
+                          ),
                         ],
                       ),
                     ],
@@ -1317,6 +1381,17 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             );
                             return;
                           }
+                          // Validate totalHours
+                          final totalHours =
+                              int.tryParse(totalHoursController.text);
+                          if (totalHours == null || totalHours < 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'אנא הזן ערך חוקי לשעות עבודה')), // "Please enter a valid value for total hours"
+                            );
+                            return;
+                          }
                           _addEmployee(
                             firstNameController.text,
                             lastNameController.text,
@@ -1330,6 +1405,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             selectedBirthYear ?? '',
                             selectedTruckSize ?? '',
                             selectedTruckType ?? '',
+                            totalHours,
                           );
                           Navigator.of(context).pop();
                         }
