@@ -15,7 +15,7 @@ const calculateTravelTime = async (origin, destination, departureTime) => {
     try {
       const destinationString = `${destination.latitude},${destination.longitude}`;
       const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${origin.latitude},${origin.longitude}&destinations=${destinationString}&mode=driving&departure_time=${departureTime}&traffic_model=best_guess&key=${GOOGLE_API_KEY}`;
-      const response = await axios.get(url);    
+      const response = await axios.get(url);   
       const result = response.data && response.data.rows &&
         response.data.rows[0] && response.data.rows[0].elements &&
         response.data.rows[0].elements[0];

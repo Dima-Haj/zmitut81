@@ -32,155 +32,110 @@ const optimizeRouteForDriverEfficiently = async (order, COMPANY_LOCATION, PREPAR
 const separateOrdersByTruckType = async () => {
   try {
 
-    const orderspostponed = await db.collection("PostponedDeliveries").get();
-
-    const clientsSnapshot = await db.collection("clients").get();
+    // const orderspostponed = await db.collection("PostponedDeliveries").get();
+    const lateOrders = [];
+    const newOrders = [];
     const allOrders = {
-      פלטה: {small: [], big: []},
+      פלטה: { small: [], big: [] },
       צובר: [],
-      תפזורת: {double: [], regular: []},
+      תפזורת: { double: [], regular: [] },
     };
+    const clientsSnapshot = await db.collection("clients").get();
 
-    if (!orderspostponed.empty) {
-        for (const postponedDoc of orderspostponed.docs) {
-            const postponed = postponedDoc.data();
-
-            if (postponed.isPackaged) {
-                if (
-                (postponed.weightType === "ק\"ג" && postponed.weight <= 12000) ||
-                    (postponed.weightType === "טון" && postponed.weight <= 12)
-                ) {
-                allOrders.פלטה.small.push({
-                    ...postponed,
-                });
-                } else {
-                const splitOrders = await splitOrder(postponed, 12000, "ק\"ג");
-                allOrders.פלטה.big.push(...splitOrders);
-                }
-            } else if (
-                postponed.product === "אבן גיר" ||
-                postponed["Sub-Product"] === "אבו גיר"
-            ) {
-                if (postponed.weight > 36) {
-                const splitOrders = await splitOrder(postponed, 36, "טון");
-                allOrders.צובר.push(...splitOrders);
-                } else {
-                allOrders.צובר.push({
-                    ...postponed,
-                });
-                }
-            } else {
-                if (
-                (postponed.weightType === "טון" && postponed.weight <= 20) ||
-                    (postponed.weightType === "ק\"ג" && postponed.weight <= 20000)
-                ) {
-                allOrders.תפזורת.regular.push({
-                    ...postponed,
-                });
-                } else if (
-                (postponed.weightType === "טון" && postponed.weight <= 40) ||
-                    (postponed.weightType === "ק\"ג" && postponed.weight <= 40000)
-                ) {
-                allOrders.תפזורת.double.push({
-                    ...postponed,
-                });
-                }
-            }
-        }
-        console.log("No postponed deliveries to save.");
-
-    }
     for (const clientDoc of clientsSnapshot.docs) {
       const clientId = clientDoc.id;
+      const clientData = clientDoc.data();
       const ordersSnapshot = await db
-          .collection("clients")
-          .doc(clientId)
-          .collection("orders")
-          .get();
-
+        .collection("clients")
+        .doc(clientId)
+        .collection("orders")
+        .get();
+    
       for (const orderDoc of ordersSnapshot.docs) {
         const order = orderDoc.data();
-
-        if (order.isPackaged) {
-          if (
-            (order.weightType === "ק\"ג" && order.weight <= 12000) ||
-              (order.weightType === "טון" && order.weight <= 12)
-          ) {
-            if (!allOrders.פלטה.small.some((order) => order.orderId === orderDoc.id)) {
-                allOrders.פלטה.small.push({
-                    clientId,
-                    orderId: orderDoc.id,
-                    ...order,
-                });
-            }
-          } else {
-            const splitOrders = await splitOrder(order, 12000, "ק\"ג");
-            allOrders.פלטה.big.push(...splitOrders);
-          }
-        } else if (
-          order.product === "אבן גיר" ||
-            order["Sub-Product"] === "אבו גיר"
-        ) {
-          if (!allOrders.צובר.some((order) => order.orderId === orderDoc.id)) {
-            if (order.weight > 36) {
-                const splitOrders = await splitOrder(order, 36, "טון");
-                allOrders.צובר.push(...splitOrders);
-            } else {
-                allOrders.צובר.push({
-                clientId,
-                orderId: orderDoc.id,
-                ...order,
-                });
-            }
-        }
-        } else {
-          if (
-            (order.weightType === "טון" && order.weight <= 20) ||
-              (order.weightType === "ק\"ג" && order.weight <= 20000)
-          ) {
-            if (!allOrders.תפזורת.regular.some((order) => order.orderId === orderDoc.id)) {
-                allOrders.תפזורת.regular.push({
-                clientId,
-                orderId: orderDoc.id,
-                ...order,
-                });
-            }
-          } else if (
-            (order.weightType === "טון" && order.weight <= 40) ||
-              (order.weightType === "ק\"ג" && order.weight <= 40000)
-          ) {
-            if (!allOrders.תפזורת.double.some((order) => order.orderId === orderDoc.id)) {
-                allOrders.תפזורת.double.push({
-                clientId,
-                orderId: orderDoc.id,
-                ...order,
-                });
-            }
-          }
-        }
+        const targetArray = order.status === 'באיחור' ? lateOrders : newOrders;
+        targetArray.push({ clientId,
+          clientAddress: clientData.address,
+          clientPhone: clientData.phone,
+          clientName: clientData.name, 
+          orderId: orderDoc.id,
+          ...order
+         });
       }
     }
+    
+    
+    if (lateOrders.length > 0) {
+      for (const postponed of lateOrders) {
+        await processOrderNewLate(postponed, allOrders);
+      }
+    } else {
+      console.log("No postponed deliveries to save.");
+    }
+    if (newOrders.length > 0) {
+      for (const order of newOrders) {
+        await processOrderNewLate(order, allOrders);
+      }
+    } else {
+      console.log("No New deliveries to save.");
+    }
 
-    const categorizedOrdersRef = await db.collection("categorizedOrders");
-
-    await categorizedOrdersRef.doc("פלטה").set(allOrders.פלטה);
-
-    await categorizedOrdersRef.doc("צובר").set({orders: allOrders.צובר});
-
-    await categorizedOrdersRef.doc("תפזורת").set(allOrders.תפזורת);
-
-    console.log("Categorized orders saved to Firestore.");
     return allOrders;
   } catch (error) {
     console.error("Error categorizing orders:", error);
     throw error;
   }
 };
+const processOrderNewLate = async (orderData, allOrders) => {
+  console.log(orderData.clientAddress);
+  if (orderData.isPackaged) {
+    const limit = orderData.weightType === "ק\"ג" ? 12000 : 12;
+    const bigLimit = orderData.weightType === "ק\"ג" ? 30000 : 30;
+
+    if (orderData.weight <= limit) {
+      allOrders.פלטה.small.push(orderData);
+    } else if (orderData.weight <= bigLimit) {
+      allOrders.פלטה.big.push(orderData);
+    } else {
+      const splitOrders = await splitOrder(orderData, 30000, "ק\"ג");
+      splitOrders.forEach((splitOrder) =>
+        (splitOrder.weight <= limit ? allOrders.פלטה.small : allOrders.פלטה.big
+        ).push(splitOrder)
+      );
+    }
+  } else if (["אבן גיר", "אבו גיר"].includes(orderData.product || orderData["Sub-Product"])) {
+    const maxWeight = orderData.weightType === "טון" ? 36 : 360000;
+    if (orderData.weight > maxWeight) {
+      const splitOrders = await splitOrder(orderData, 36, "טון");
+      allOrders.צובר.push(...splitOrders);
+    } else {
+      allOrders.צובר.push(orderData);
+    }
+  } else {
+    const regularLimit = orderData.weightType === "טון" ? 20 : 20000;
+    const doubleLimit = orderData.weightType === "טון" ? 40 : 40000;
+
+    if (orderData.weight <= regularLimit) {
+      allOrders.תפזורת.regular.push(orderData);
+    } else if (orderData.weight <= doubleLimit) {
+      allOrders.תפזורת.double.push(orderData);
+    } else {
+      const splitOrders = await splitOrder(orderData, 40, "טון");
+      splitOrders.forEach((splitOrder) => {
+        console.log(splitOrder.weight);
+      });
+      
+      splitOrders.forEach((splitOrder) =>
+        (splitOrder.weight <= regularLimit ? allOrders.תפזורת.regular : allOrders.תפזורת.double
+        ).push(splitOrder)
+      );
+    }
+  }
+};
+
 
 const processOrders = async () => {
     try {
-        await separateOrdersByTruckType();
-        console.log("Orders have been processed and categorized.");
         await assignDeliveries().then(() => {
           console.log("Completed delivery assignments");
         }).catch((error) => {
@@ -198,8 +153,6 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
 
     const assignDeliveries = async () => {
     try {
-      const PREPARATION_TIME = 30; // 30 minutes in seconds
-      const CLIENT_WAITING_TIME = 30; // 30 minutes in seconds
       const postponedDeliveries = []; // Store postponed deliveries for the next day
   
       // Fetch employees and orders
@@ -212,58 +165,175 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
         totalDurationMinutes: 0,
       }));
   
-      const clientsSnapshot = await db.collection("clients").get();
-      const allOrders = [];
-  
-      for (const clientDoc of clientsSnapshot.docs) {
-        const clientId = clientDoc.id;
-        const clientData = clientDoc.data();
-  
-        const ordersSnapshot = await db
-          .collection("clients")
-          .doc(clientId)
-          .collection("orders")
-          .get();
-        for (const orderDoc of ordersSnapshot.docs) {
-          allOrders.push({
-            clientId,
-            clientAddress: clientData.address,
-            clientPhone: clientData.phone,
-            clientName: clientData.name,
-            ...orderDoc.data(),
-          });
-        }
-      }
-  
+      const allOrders = await separateOrdersByTruckType();
       // Group orders by truck type
       const ordersByTruckType = {
-        פלטה: allOrders
-          .filter((order) => order.isPackaged)
-          .sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
-        צובר: allOrders
-          .filter((order) => !order.isPackaged && order.product === "אבן גיר")
-          .sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
-        תפזורת: allOrders
-          .filter((order) => !order.isPackaged && order.product !== "אבן גיר")
-          .sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
+        פלטה: {
+          small: allOrders.פלטה.small.sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
+          big: allOrders.פלטה.big.sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
+        },
+        צובר: allOrders.צובר.sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
+        תפזורת: {
+          regular: allOrders.תפזורת.regular.sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
+          double: allOrders.תפזורת.double.sort((a, b) => (a.status === "באיחור" && b.status !== "באיחור" ? -1 : 0)),
+        },
       };
-
+      
+      // Process each truck type and subtype
       for (const truckType in ordersByTruckType) {
         if (Object.prototype.hasOwnProperty.call(ordersByTruckType, truckType)) {
-          const orders = ordersByTruckType[truckType];
-          const truckEmployees = employees.filter((e) => e.truckType === truckType);
-      
-          if (orders.length === 0 || truckEmployees.length === 0) {
-            continue;
+          const subtypes = ordersByTruckType[truckType];
+          // Handle subtypes for פלטה and תפזורת
+          if (truckType === "פלטה" || truckType === "תפזורת") {
+            for (const subtype in subtypes) {
+              if (Object.prototype.hasOwnProperty.call(subtypes, subtype)) {
+                const orders = subtypes[subtype];
+                let newsubtype = "גדול";
+                if (subtype === 'regular' || subtype === 'small') {
+                  newsubtype = 'קטן';
+                }
+
+                const truckEmployees = employees.filter(
+                  (e) => e.truckType === truckType && e.truckSize === newsubtype
+                );
+                console.log("orders: ", +subtypes.subtype);
+                console.log("length of orders:", +orders.length);
+                console.log("length of employees: ", +truckEmployees.length);
+                if (orders.length === 0 || truckEmployees.length === 0) {
+                  continue;
+                }
+
+                // Assign orders to minimize drivers and balance workload
+                const assignments = await balanceOrdersAmongDrivers(orders, truckEmployees);
+
+                // Further processing for assignments (same logic as before)
+                for (const assignment of assignments) {
+                  const driver = truckEmployees.find(
+                    (e) => e.employeeDocId === assignment.driverId
+                  );
+                  if (!driver) continue;
+
+                  // Process driver routes and postponed orders (same logic as before)
+
+                  const postponed = await processDriverAssignments(driver, assignment.orders);
+                  if (postponed.length != 0) {
+                    postponedDeliveries.push(...postponed);
+                  }
+                }
+              }
+            }
+          } else {
+            // Handle צובר
+            const orders = subtypes;
+
+            const truckEmployees = employees.filter((e) => e.truckType === truckType);
+            console.log("length of employees even geer: ", +truckEmployees.length);
+
+
+            if (orders.length === 0 || truckEmployees.length === 0) {
+              continue;
+            }
+
+            const assignments = await balanceOrdersAmongDrivers(orders, truckEmployees);
+
+            for (const assignment of assignments) {
+              const driver = truckEmployees.find((e) => e.employeeDocId === assignment.driverId);
+              if (!driver) continue;
+
+              const postponed = await processDriverAssignments(driver, assignment.orders);
+              if (postponed.length != 0) {
+                postponedDeliveries.push(...postponed);
+              }
+            }
           }
+        }
+      }
+
+      // Save assignments to Firestore
+      for (const driver of employees) {
+        const dailyDeliveriesRef = await db
+        .collection("Employees")
+        .doc(driver.employeeDocId)
+        .collection("dailyDeliveries");
+
+      const batch = db.batch();
+      const existingDeliveriesSnapshot = await dailyDeliveriesRef.get();
+
+      existingDeliveriesSnapshot.forEach((doc) => batch.delete(doc.ref));
+      if (!existingDeliveriesSnapshot.empty) await batch.commit();
+      console.log("Batch operations committed.");
+        if (driver.deliveries.length > 0) {
+          const date = new Date().toISOString().split("T")[0];
+          for (const delivery of driver.deliveries) {
+            await dailyDeliveriesRef.doc(`${date}-${delivery.orderId}`).set({
+                ...delivery,
+              date,
+            });
+          }
+        }
+      }
+        const nextDay = DateTime.now()
+        .setZone('Asia/Jerusalem')
+        .plus({ days: 2 })
+        .startOf('day')
+        .toISODate();
+            
+        try {
+            const postponedRef = await db.collection("PostponedDeliveries");
+        // First, update the status of each postponed delivery
+        for (const postponedOrder of postponedDeliveries) {
+            const orderRef = await db
+            .collection("clients")
+            .doc(postponedOrder.clientId)
+            .collection("orders")
+            .doc(postponedOrder.orderId);
+    
+            await orderRef.update({ status: "באיחור" });
+        }
+
+        const existingOrdersPostponed = await postponedRef.get();
+        const batch = db.batch();
+
+        existingOrdersPostponed.forEach((doc) => batch.delete(doc.ref));
+        if (!existingOrdersPostponed.empty) await batch.commit();
+    
+        console.log("All documents in PostponedDeliveries have been deleted.");
+        // Create an array of promises to save all postponed orders to the PostponedDeliveries collection
+        if (postponedDeliveries.length > 0) {
+        const promises = postponedDeliveries.map((postponed) => {
+          // Create a new object with the updated status
+          const updatedPostponed = {
+              ...postponed, // spread existing properties
+              status: "באיחור", // update status to "באיחור"
+              date: nextDay, // set the date
+          };
       
-          // Assign orders to minimize drivers and balance workload
-          const assignments = await balanceOrdersAmongDrivers(orders, truckEmployees);
+          console.log("Saving postponed order:", updatedPostponed.orderId);
       
-          for (const assignment of assignments) {
-            const driver = truckEmployees.find((e) => e.employeeDocId === assignment.driverId);
-            if (!driver) continue;
+          return postponedRef.doc(`${nextDay}-${updatedPostponed.orderId}`).set(updatedPostponed);
+      });  
       
+    
+        // Wait for all promises to resolve
+        await Promise.all(promises);
+        console.log("All postponed orders saved successfully.");
+         }
+        } catch (error) {
+        console.error("Error saving postponed deliveries:", error);
+        }
+  
+  
+      console.log("Delivery assignments completed.");
+    } catch (error) {
+      console.error("Error assigning deliveries:", error);
+    }
+  };
+  
+  processOrders();
+
+  const processDriverAssignments = async (driver, assignedOrders) => {
+            const PREPARATION_TIME = 30; // 30 minutes in seconds
+            const CLIENT_WAITING_TIME = 30; // 30 minutes in seconds
             const START_TIME = DateTime.now().setZone('Asia/Jerusalem').startOf('day').plus({ days: 1, hours: 8 });
             const queue = new PriorityQueue((a, b) => {
               // Prioritize states with more late orders
@@ -279,8 +349,8 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
             });
       
             const visited = new Set(); // Track visited states to avoid redundant calculations
-            const lateOrders = assignment.orders.filter((order) => order.status === "באיחור");
-            const newOrders = assignment.orders.filter((order) => order.status !== "באיחור");
+            const lateOrders = assignedOrders.filter((order) => order.status === "באיחור");
+            const newOrders = assignedOrders.filter((order) => order.status !== "באיחור");
       
             console.log("New Orders length: ", newOrders.length);
             console.log("Late Orders length: ", lateOrders.length);
@@ -390,10 +460,6 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
                 }
               }
             }
-      
-            console.log("Queue processing completed.");
-            console.log("Optimal postponedRoute length:", optimalPostponedRoute.length);
-      
             // Save the optimal route to the driver's deliveries
             for (const order of optimalRoute) {
               const optimizedRoute = await optimizeRouteForDriverEfficiently(order, COMPANY_LOCATION, PREPARATION_TIME, CLIENT_WAITING_TIME, currentTime);
@@ -401,101 +467,8 @@ const COMPANY_LOCATION = {latitude: 32.849758840523386,
       
               currentTime += optimizedRoute[0].totalDeliveryTime.hours * 3600 + optimizedRoute[0].totalDeliveryTime.minutes * 60;
             }
-      
-            // Save postponed orders
-            if (optimalPostponedRoute.length !== 0) {
-              postponedDeliveries.push(...optimalPostponedRoute); // Add all postponed orders to the array
-              console.log("Postponed orders added to postponedDeliveries:", optimalPostponedRoute.length);
-            }
-          }
-        }
-      }
-      console.log("2) reached");
-      // Save assignments to Firestore
-      for (const driver of employees) {
-        if (driver.deliveries.length > 0) {
-          const date = new Date().toISOString().split("T")[0];
-          const dailyDeliveriesRef = await db
-            .collection("Employees")
-            .doc(driver.employeeDocId)
-            .collection("dailyDeliveries");
-  
-          const batch = db.batch();
-          const existingDeliveriesSnapshot = await dailyDeliveriesRef.get();
-  
-          existingDeliveriesSnapshot.forEach((doc) => batch.delete(doc.ref));
-          if (!existingDeliveriesSnapshot.empty) await batch.commit();
-          console.log("Batch operations committed.");
-  
-          for (const delivery of driver.deliveries) {
-            await dailyDeliveriesRef.doc(`${date}-${delivery.orderId}`).set({
-                ...delivery,
-              date,
-            });
-          }
-        }
-      }
-    if (postponedDeliveries.length > 0) {
-        console.log("length is more than 0", postponedDeliveries.length);
-        console.log("Postponed deliveries: ", postponedDeliveries);
-        const nextDay = DateTime.now()
-        .setZone('Asia/Jerusalem')
-        .plus({ days: 2 })
-        .startOf('day')
-        .toISODate();
-            
-        try {
-            const postponedRef = await db.collection("PostponedDeliveries");
-        // First, update the status of each postponed delivery
-        for (const postponedOrder of postponedDeliveries) {
-            const orderRef = await db
-            .collection("clients")
-            .doc(postponedOrder.clientId)
-            .collection("orders")
-            .doc(postponedOrder.orderId);
-    
-            await orderRef.update({ status: "באיחור" });
-        }
-
-        const existingOrdersPostponed = await postponedRef.get();
-        const batch = db.batch();
-
-        existingOrdersPostponed.forEach((doc) => batch.delete(doc.ref));
-        if (!existingOrdersPostponed.empty) await batch.commit();
-    
-        console.log("All documents in PostponedDeliveries have been deleted.");
-        // Create an array of promises to save all postponed orders to the PostponedDeliveries collection
-        const promises = postponedDeliveries.map((postponed) => {
-          // Create a new object with the updated status
-          const updatedPostponed = {
-              ...postponed, // spread existing properties
-              status: "באיחור", // update status to "באיחור"
-              date: nextDay, // set the date
-          };
-      
-          console.log("Saving postponed order:", updatedPostponed.orderId);
-      
-          return postponedRef.doc(`${nextDay}-${updatedPostponed.orderId}`).set(updatedPostponed);
-      });      
-      
-    
-        // Wait for all promises to resolve
-        await Promise.all(promises);
-        console.log("All postponed orders saved successfully.");
-        } catch (error) {
-        console.error("Error saving postponed deliveries:", error);
-        }
-    } else {
-        console.log("No postponed deliveries to save.");
-    }  
-  
-      console.log("Delivery assignments completed.");
-    } catch (error) {
-      console.error("Error assigning deliveries:", error);
-    }
+      return optimalPostponedRoute;
   };
-  
-  processOrders();
 
   const calculateMonthlyWorkHours = async () => {
     const currentDate = new Date();

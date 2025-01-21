@@ -9,16 +9,23 @@
 const splitOrder = (order, maxWeight, weightType) => {
     const splitOrders = [];
     let remainingWeight = order.weight;
+    if (order.weightType != weightType) {
+      if (weightType == 'טון') {
+          maxWeight *=1000;
+      } else {
+        maxWeight /=1000;
+      }
+    }
     let splitCount = 1;
-  
+    const orderId = order.orderId;
     while (remainingWeight > 0) {
       const currentWeight = Math.min(remainingWeight, maxWeight);
       const splitOrder = {
         ...order,
         weight: currentWeight,
-        originalOrderId: order.orderId,
+        orderId: orderId + " " +splitCount, 
+        originalOrderId: orderId,
         splitNumber: splitCount,
-        weightType,
       };
       splitOrders.push(splitOrder);
       remainingWeight -= currentWeight;
