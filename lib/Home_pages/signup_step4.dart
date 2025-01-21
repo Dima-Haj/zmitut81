@@ -19,7 +19,7 @@ class SignupStep4 extends StatefulWidget {
   final String truckSize;
   final String email;
 
-  SignupStep4({
+  const SignupStep4({
     super.key,
     required this.firstName,
     required this.lastName,

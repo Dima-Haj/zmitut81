@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+//import 'package:firebase_auth/firebase_auth.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   final Map<String, dynamic> managerDetails;
@@ -536,6 +536,8 @@ class _AdminDashboardState extends State<AdminDashboardPage> {
 }
 
 class PendingOrdersPage extends StatelessWidget {
+  const PendingOrdersPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -614,6 +616,8 @@ class PendingOrdersPage extends StatelessWidget {
 }
 
 class ActiveOrdersPage extends StatelessWidget {
+  const ActiveOrdersPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -679,6 +683,8 @@ class ActiveOrdersPage extends StatelessWidget {
 }
 
 class CompletedOrdersPage extends StatelessWidget {
+  const CompletedOrdersPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
