@@ -1,6 +1,5 @@
 // client.dart
 
-
 class Client {
   final String fullName;
   final String phoneNumber;
@@ -12,6 +11,7 @@ class Client {
   final String departureTime;
   final String orderId;
   final String clientId;
+  final String? originalOrderId; // Make this optional
 
   Client(
       {required this.fullName,
@@ -23,6 +23,6 @@ class Client {
       required this.status,
       required this.departureTime,
       required this.orderId,
-      required this.clientId
-      });
+      required this.clientId,
+      this.originalOrderId});
 }
