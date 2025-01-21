@@ -57,13 +57,13 @@ class _SignupStep1State extends State<SignupStep1> {
               child: backArrow(context),
             ),
             Positioned(
-              top: screenHeight * 0.03,
+              top: screenHeight * 0.09,
               left: 0,
               right: 0,
               child: Center(
                 child: Image.asset(
                   'assets/images/logo_zmitut.png', // Update the logo path as needed
-                  height: screenHeight * 0.06,
+                  height: screenHeight * 0.17,
                 ),
               ),
             ),

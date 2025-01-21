@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../Designed_helper_fields/custom_text_field.dart';
@@ -15,56 +17,70 @@ class CustomerManagementPage extends StatefulWidget {
 }
 
 class _CustomerManagementPageState extends State<CustomerManagementPage> {
+  final List<Map<String, dynamic>> customers = [];
+  StreamSubscription? _clientStreamSubscription;
+
   @override
   void initState() {
     super.initState();
     fetchClientsWithOrders(); // Fetch data when the widget initializes
   }
 
-  final List<Map<String, dynamic>> customers = [];
+  @override
+  void dispose() {
+    // Dispose of any active stream subscriptions
+    _clientStreamSubscription?.cancel();
+
+    // Add more resources to clean up if needed
+    super.dispose();
+  }
+
   Future<void> fetchClientsWithOrders() async {
     try {
       final firestore = FirebaseFirestore.instance;
 
-      // Get all clients
-      final clientsSnapshot = await firestore.collection('clients').get();
+      // Listen for updates to the 'clients' collection
+      _clientStreamSubscription =
+          firestore.collection('clients').snapshots().listen((snapshot) async {
+        List<Map<String, dynamic>> fetchedCustomers = [];
 
-      List<Map<String, dynamic>> fetchedCustomers = [];
+        for (var clientDoc in snapshot.docs) {
+          final clientData = clientDoc.data();
+          final clientId = clientDoc.id;
 
-      for (var clientDoc in clientsSnapshot.docs) {
-        final clientData = clientDoc.data();
-        final clientId = clientDoc.id;
+          final ordersSnapshot = await firestore
+              .collection('clients')
+              .doc(clientId)
+              .collection('orders')
+              .get();
 
-        // Get orders for the client
-        final ordersSnapshot = await firestore
-            .collection('clients')
-            .doc(clientId)
-            .collection('orders')
-            .get();
+          List<Map<String, dynamic>> orders =
+              ordersSnapshot.docs.map((orderDoc) {
+            return orderDoc.data();
+          }).toList();
 
-        List<Map<String, dynamic>> orders = ordersSnapshot.docs.map((orderDoc) {
-          return orderDoc.data();
-        }).toList();
+          fetchedCustomers.add({
+            'name': clientData['name'] ?? '',
+            'phone': clientData['phone'] ?? '',
+            'email': clientData['email'] ?? '',
+            'address': clientData['address'] ?? '',
+            'clientId': clientData['clientId'] ?? '',
+            'products': orders,
+          });
+        }
 
-        // Combine client data with their orders
-        fetchedCustomers.add({
-          'name': clientData['name'] ?? '',
-          'phone': clientData['phone'] ?? '',
-          'email': clientData['email'] ?? '',
-          'address': clientData['address'] ?? '',
-          'clientId': clientData['clientId'] ?? '',
-          'products': orders,
-        });
-      }
-
-      // Update state with fetched data
-      setState(() {
-        customers.clear();
-        customers.addAll(fetchedCustomers);
+        // Safely update state only if the widget is still mounted
+        if (mounted) {
+          setState(() {
+            customers.clear();
+            customers.addAll(fetchedCustomers);
+          });
+        }
       });
     } catch (e) {
-      print('Error fetching clients: $e');
-      // Show an error message or handle appropriately
+      if (mounted) {
+        print('Error fetching clients: $e');
+      }
     }
   }
 
@@ -211,7 +227,7 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                       overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
+                                      maxLines: 1, // Limit text to one line
                                     ),
                                     SizedBox(height: screenHeight * 0.005),
                                     Text(
@@ -219,6 +235,8 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                       style: GoogleFonts.exo2(
                                         fontSize: screenHeight * 0.016,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1, // Prevent overflow
                                     ),
                                     SizedBox(height: screenHeight * 0.004),
                                     Text(
@@ -226,12 +244,19 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                       style: GoogleFonts.exo2(
                                         fontSize: screenHeight * 0.016,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1, // Prevent overflow
                                     ),
                                     SizedBox(height: screenHeight * 0.004),
-                                    Text(
-                                      customer['address']!,
-                                      style: GoogleFonts.exo2(
-                                        fontSize: screenHeight * 0.016,
+                                    Flexible(
+                                      child: Text(
+                                        customer['address']!,
+                                        style: GoogleFonts.exo2(
+                                          fontSize: screenHeight * 0.016,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines:
+                                            2, // Limit to 2 lines to avoid overflow
                                       ),
                                     ),
                                   ],
@@ -269,55 +294,63 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                         },
                                         tooltip: 'צפיה בהזמנות',
                                       ),
-                                      IconButton(
-                                        icon: const Icon(Icons.edit,
-                                            color: Colors.orange), // Edit icon
-                                        onPressed: () {
-                                          showModalBottomSheet(
-                                            context: context,
-                                            isScrollControlled:
-                                                true, // Allow the panel to take up needed space
-                                            shape: const RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.vertical(
-                                                      top: Radius.circular(20)),
-                                            ),
-                                            builder: (BuildContext context) {
-                                              // Responsive screen sizing
+                                      Flexible(
+                                        child: IconButton(
+                                          icon: const Icon(Icons.edit,
+                                              color:
+                                                  Colors.orange), // Edit icon
+                                          onPressed: () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              isScrollControlled:
+                                                  true, // Allow the panel to take up needed space
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.vertical(
+                                                        top: Radius.circular(
+                                                            20)),
+                                              ),
+                                              builder: (BuildContext context) {
+                                                // Responsive screen sizing
 
-                                              // Split name into first name and last name
-                                              List<String> nameParts =
-                                                  (customer['name'] ?? '')
-                                                      .split(' ');
-                                              final TextEditingController
-                                                  firstNameController =
-                                                  TextEditingController(
-                                                      text: nameParts.isNotEmpty
-                                                          ? nameParts[0]
-                                                          : '');
-                                              final TextEditingController
-                                                  lastNameController =
-                                                  TextEditingController(
-                                                      text: nameParts.length > 1
-                                                          ? nameParts
-                                                              .sublist(1)
-                                                              .join(' ')
-                                                          : '');
-                                              final TextEditingController
-                                                  phoneController =
-                                                  TextEditingController(
-                                                      text: customer['phone']);
-                                              final TextEditingController
-                                                  emailController =
-                                                  TextEditingController(
-                                                      text: customer['email']);
-                                              final TextEditingController
-                                                  addressController =
-                                                  TextEditingController(
-                                                      text:
-                                                          customer['address']);
+                                                // Split name into first name and last name
+                                                List<String> nameParts =
+                                                    (customer['name'] ?? '')
+                                                        .split(' ');
+                                                final TextEditingController
+                                                    firstNameController =
+                                                    TextEditingController(
+                                                        text:
+                                                            nameParts.isNotEmpty
+                                                                ? nameParts[0]
+                                                                : '');
+                                                final TextEditingController
+                                                    lastNameController =
+                                                    TextEditingController(
+                                                        text:
+                                                            nameParts.length > 1
+                                                                ? nameParts
+                                                                    .sublist(1)
+                                                                    .join(' ')
+                                                                : '');
+                                                final TextEditingController
+                                                    phoneController =
+                                                    TextEditingController(
+                                                        text:
+                                                            customer['phone']);
+                                                final TextEditingController
+                                                    emailController =
+                                                    TextEditingController(
+                                                        text:
+                                                            customer['email']);
+                                                final TextEditingController
+                                                    addressController =
+                                                    TextEditingController(
+                                                        text: customer[
+                                                            'address']);
 
-                                              return Padding(
+                                                return Padding(
                                                   padding: EdgeInsets.only(
                                                     left: screenWidth * 0.04,
                                                     right: screenWidth * 0.04,
@@ -570,11 +603,13 @@ class _CustomerManagementPageState extends State<CustomerManagementPage> {
                                                         ),
                                                       ],
                                                     ),
-                                                  ));
-                                            },
-                                          );
-                                        },
-                                        tooltip: 'עריכת לקוח',
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                          tooltip: 'עריכת לקוח',
+                                        ),
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.delete,

@@ -30,81 +30,121 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
 
   //bool isFormValid = false;
 
+  // Track async task
+  bool _isFetchingEmployees = false;
+
   @override
   void initState() {
     super.initState();
     _fetchEmployees();
   }
 
+  @override
+  void dispose() {
+    _isFetchingEmployees = false; // Cancel ongoing fetch task
+    super.dispose();
+  }
+
   // Fetch employees from Firestore
   // Fetch employees from Firestore
   void _fetchEmployees() async {
-    final QuerySnapshot snapshot =
-        await FirebaseFirestore.instance.collection('Employees').get();
+    if (_isFetchingEmployees) return; // Avoid duplicate calls
+    _isFetchingEmployees = true;
 
-    final List<Map<String, dynamic>> fetchedEmployees = [];
-    for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>?;
-      if (data != null) {
-        final employeeData = {
-          'firstName': data['firstName'],
-          'lastName': data['lastName'],
-          'id': data['id'],
-          'phone': data['phone'],
-          'birthDay': data['birthDay'],
-          'birthMonth': data['birthMonth'],
-          'birthYear': data['birthYear'],
-          'email': data['email'],
-          'truckType': data['truckType'],
-          'totalHours': 0,
-        };
+    try {
+      final QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('Employees').get();
 
-        if (data.containsKey('truckSize')) {
-          employeeData['truckSize'] = data['truckSize'];
-        }
+      final List<Map<String, dynamic>> fetchedEmployees = [];
+      for (var doc in snapshot.docs) {
+        if (!mounted) return; // Stop if the widget is no longer in the tree
 
-        try {
-          final QuerySnapshot workHoursSnapshot = await FirebaseFirestore
-              .instance
-              .collection('Employees')
-              .doc(doc.id)
-              .collection('monthlyWorkHours')
-              .get();
-
-          int totalHours = 0;
-          for (var workHourDoc in workHoursSnapshot.docs) {
-            final workHourData = workHourDoc.data() as Map<String, dynamic>;
-            totalHours += (workHourData['totalHours'] as num).toInt();
+        final data = doc.data() as Map<String, dynamic>?;
+        if (data != null) {
+          double hourlyRate = 0.0;
+          if (data['hourlyRate'] is num) {
+            hourlyRate = (data['hourlyRate'] as num).toDouble();
+          } else if (data['hourlyRate'] is String) {
+            hourlyRate = double.tryParse(data['hourlyRate']) ?? 0.0;
           }
-          employeeData['totalHours'] = totalHours;
-        } catch (e) {
-          print('Error fetching work hours for employee ${data['id']}: $e');
+          int totalHours = 0;
+          try {
+            final QuerySnapshot workHoursSnapshot = await FirebaseFirestore
+                .instance
+                .collection('Employees')
+                .doc(doc.id)
+                .collection('monthlyWorkHours')
+                .get();
+
+            for (var workHourDoc in workHoursSnapshot.docs) {
+              if (!mounted)
+                return; // Stop if the widget is no longer in the tree
+
+              final workHourData = workHourDoc.data() as Map<String, dynamic>;
+              if (workHourData['totalHours'] is num) {
+                totalHours += (workHourData['totalHours'] as num).toInt();
+              } else if (workHourData['totalHours'] is String) {
+                totalHours += int.tryParse(workHourData['totalHours']) ?? 0;
+              }
+            }
+          } catch (e) {
+            print('Error fetching work hours for employee ${data['id']}: $e');
+          }
+
+          final employeeData = {
+            'firstName': data['firstName'],
+            'lastName': data['lastName'],
+            'id': data['id'],
+            'phone': data['phone'],
+            'birthDay': data['birthDay'],
+            'birthMonth': data['birthMonth'],
+            'birthYear': data['birthYear'],
+            'email': data['email'],
+            'truckType': data['truckType'],
+            'hourlyRate': hourlyRate,
+            'totalHours': totalHours,
+            'monthlyPay': hourlyRate * totalHours,
+          };
+
+          if (data.containsKey('truckSize')) {
+            employeeData['truckSize'] = data['truckSize'];
+          }
+
+          fetchedEmployees.add(employeeData);
         }
-
-        fetchedEmployees.add(employeeData);
       }
-    }
 
-    setState(() {
-      employees.clear();
-      employees.addAll(fetchedEmployees);
-      originalEmployees.addAll(fetchedEmployees);
-    });
+      if (mounted) {
+        setState(() {
+          employees.clear();
+          employees.addAll(fetchedEmployees);
+          originalEmployees.addAll(fetchedEmployees);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        print('Error fetching employees: $e');
+      }
+    } finally {
+      _isFetchingEmployees = false;
+    }
   }
 
   void _addEmployee(
-      String firstName,
-      String lastName,
-      String phone,
-      String email,
-      String id,
-      String birthDay,
-      String birthMonth,
-      String birthYear,
-      String truckSize,
-      String truckType,
-      int totalHours) async {
-    setState(() {
+    String firstName,
+    String lastName,
+    String phone,
+    String email,
+    String id,
+    String birthDay,
+    String birthMonth,
+    String birthYear,
+    String truckSize,
+    String truckType,
+    int totalHours,
+    double hourlyRate,
+  ) async {
+    try {
       final newEmployee = {
         'firstName': firstName,
         'lastName': lastName,
@@ -116,108 +156,104 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
         'birthYear': birthYear,
         'truckSize': truckSize,
         'truckType': truckType,
+        'hourlyRate': hourlyRate,
         'totalHours': totalHours,
+        'monthlyPay': hourlyRate * totalHours,
       };
-      employees.add(newEmployee);
-      originalEmployees.add(newEmployee);
-    });
 
-    try {
-      final employeeRef =
-          FirebaseFirestore.instance.collection('Employees').doc();
-      await employeeRef.set({
-        'firstName': firstName,
-        'lastName': lastName,
-        'phone': phone,
-        'email': email,
-        'id': id,
-        'birthDay': birthDay,
-        'birthMonth': birthMonth,
-        'birthYear': birthYear,
-        'truckSize': truckSize,
-        'truckType': truckType,
-        'totalHours': totalHours,
-      });
+      // Add to Firestore
+      await FirebaseFirestore.instance.collection('Employees').add(newEmployee);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('העובד נוסף בהצלחה')),
-      );
+      if (mounted) {
+        setState(() {
+          employees.add(newEmployee);
+          originalEmployees.add(newEmployee);
+        });
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('העובד נוסף בהצלחה')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('שגיאה בהוספת העובד: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('שגיאה בהוספת העובד: $e')),
+        );
+      }
     }
   }
 
   void _removeEmployee(int index) async {
-    // First, get the employee's ID before removing the employee from the list
-    final removedEmployeeId = employees[index]['id'];
-
-    // Remove the employee locally
-    setState(() {
-      final removedEmployee = employees.removeAt(index);
-      originalEmployees.removeWhere(
-          (employee) => employee['firstName'] == removedEmployee['firstName']);
-    });
-
-    // Now, remove the employee from Firebase
     try {
-      // Using the employee ID to delete the document from Firestore
+      final removedEmployeeId = employees[index]['id'];
+      if (mounted) {
+        setState(() {
+          employees.removeAt(index);
+        });
+      }
       await FirebaseFirestore.instance
           .collection('Employees')
-          .doc(removedEmployeeId) // Use the stored ID here
+          .doc(removedEmployeeId)
           .delete();
 
-      // A success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('העובד נמחק בהצלחה')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('העובד נמחק בהצלחה')),
+        );
+      }
     } catch (e) {
-      // Handle any error that may occur
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('שגיאה במחיקת העובד: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('שגיאה במחיקת העובד: $e')),
+        );
+      }
     }
   }
 
   void _editEmployee(
-      int index,
-      String firstName,
-      String lastName,
-      String phone,
-      String email,
-      String id,
-      String birthDay,
-      String birthMonth,
-      String birthYear,
-      String truckSize,
-      String truckType,
-      int totalHours) async {
+    int index,
+    String firstName,
+    String lastName,
+    String phone,
+    String email,
+    String id,
+    String birthDay,
+    String birthMonth,
+    String birthYear,
+    String truckSize,
+    String truckType,
+    int totalHours,
+    double hourlyRate,
+  ) async {
     try {
-      setState(() {
-        final updatedEmployee = {
-          'firstName': firstName,
-          'lastName': lastName,
-          'phone': phone,
-          'email': email,
-          'id': id,
-          'birthDay': birthDay,
-          'birthMonth': birthMonth,
-          'birthYear': birthYear,
-          if (truckType != 'צובר') 'truckSize': truckSize,
-          'truckType': truckType,
-          'totalHours': totalHours,
-        };
+      if (mounted) {
+        setState(() {
+          final updatedEmployee = {
+            'firstName': firstName,
+            'lastName': lastName,
+            'phone': phone,
+            'email': email,
+            'id': id,
+            'birthDay': birthDay,
+            'birthMonth': birthMonth,
+            'birthYear': birthYear,
+            if (truckType != 'צובר') 'truckSize': truckSize,
+            'truckType': truckType,
+            'hourlyRate': hourlyRate,
+            'totalHours': totalHours,
+            'monthlyPay': hourlyRate * totalHours
+          };
 
-        employees[index] = updatedEmployee;
+          employees[index] = updatedEmployee;
 
-        final originalIndex = originalEmployees
-            .indexWhere((employee) => employee['id'] == employees[index]['id']);
-        if (originalIndex != -1) {
-          originalEmployees[originalIndex] = updatedEmployee;
-        }
-      });
-
+          final originalIndex = originalEmployees.indexWhere(
+              (employee) => employee['id'] == employees[index]['id']);
+          if (originalIndex != -1) {
+            originalEmployees[originalIndex] = updatedEmployee;
+          }
+        });
+      }
       final employeeDoc = await FirebaseFirestore.instance
           .collection('Employees')
           .where('id', isEqualTo: id)
@@ -241,6 +277,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
           if (truckType != 'צובר') 'truckSize': truckSize,
           'truckType': truckType,
           'totalHours': totalHours,
+          'hourlyRate': hourlyRate,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -263,29 +300,32 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
         TextEditingController(text: employee['firstName']);
     final lastNameController =
         TextEditingController(text: employee['lastName']);
-    final fullPhoneNumber =
-        employee['phone'] ?? ''; // Get the phone number or an empty string
+    final fullPhoneNumber = employee['phone'] ?? '';
+    // Get the phone number or an empty string
     final String firstPart = fullPhoneNumber.substring(2, 3); // Extract "05"
     final String secondPart = fullPhoneNumber.substring(3); // Extract the rest
     final TextEditingController firstPartPhoneController =
         TextEditingController(text: firstPart);
     final TextEditingController secondPartPhoneController =
         TextEditingController(text: secondPart);
-
-    final birthDayController =
-        TextEditingController(text: employee['birthDay']);
-    final birthMonthController =
-        TextEditingController(text: employee['birthMonth']);
-    final birthYearController =
-        TextEditingController(text: employee['birthYear']);
-    final emailController = TextEditingController(text: employee['email']);
-    final idController = TextEditingController(text: employee['id']);
-    final truckSizeController =
-        TextEditingController(text: employee['truckSize']);
-    final truckTypeController =
-        TextEditingController(text: employee['truckType']);
+    final hourlyRateController = TextEditingController(
+      text: employee['hourlyRate'].toStringAsFixed(2),
+    );
     final totalHoursController =
         TextEditingController(text: employee['totalHours'].toString());
+    //final birthDayController =
+    // TextEditingController(text: employee['birthDay']);
+    //final birthMonthController =
+    // TextEditingController(text: employee['birthMonth']);
+    //final birthYearController =
+    // TextEditingController(text: employee['birthYear']);
+    final emailController = TextEditingController(text: employee['email']);
+    final idController = TextEditingController(text: employee['id']);
+    final hourlyRate = double.tryParse(hourlyRateController.text) ?? 0.0;
+    // final truckSizeController =
+    //TextEditingController(text: employee['truckSize']);
+    //final truckTypeController =
+    //TextEditingController(text: employee['truckType']);
 
     String? selectedBirthDay = employee['birthDay'];
     String? selectedBirthMonth = employee['birthMonth'];
@@ -293,7 +333,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
     String? selectedTruckSize = employee['truckSize'];
     String? selectedTruckType = employee['truckType'];
 
-    final _formKey = GlobalKey<FormState>(); // Form key for validation
+    final formKey = GlobalKey<FormState>(); // Form key for validation
 
     showDialog(
       context: context,
@@ -317,7 +357,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
               ),
               content: SingleChildScrollView(
                 child: Form(
-                  key: _formKey, // Link the form to the key
+                  key: formKey, // Link the form to the key
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
@@ -515,27 +555,130 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                         ),
                       ),
                       SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.001),
-                      DateOfBirthDropdowns(
-                        selectedDay: selectedBirthDay,
-                        selectedMonth: selectedBirthMonth,
-                        selectedYear: selectedBirthYear,
-                        onDayChanged: (value) {
-                          setDialogState(() {
-                            selectedBirthDay = value; // Update selected day
-                          });
-                        },
-                        onMonthChanged: (value) {
-                          setDialogState(() {
-                            selectedBirthMonth = value; // Update selected month
-                          });
-                        },
-                        onYearChanged: (value) {
-                          setDialogState(() {
-                            selectedBirthYear = value; // Update selected year
-                          });
-                        },
-                        screenWidth: MediaQuery.of(context).size.width,
+                          height: MediaQuery.of(context).size.height * 0.01),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Day Dropdown
+                          Flexible(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              value: selectedBirthDay != null &&
+                                      List.generate(
+                                              31,
+                                              (index) => (index + 1)
+                                                  .toString()
+                                                  .padLeft(2, '0'))
+                                          .contains(selectedBirthDay)
+                                  ? selectedBirthDay
+                                  : null,
+                              decoration: const InputDecoration(
+                                labelText: 'יום', // Day in Hebrew
+                                border: OutlineInputBorder(),
+                                isDense: true, // Reduce field height
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 8, horizontal: 8),
+                              ),
+                              items: List.generate(
+                                31,
+                                (index) {
+                                  final day =
+                                      (index + 1).toString().padLeft(2, '0');
+                                  return DropdownMenuItem(
+                                    value: day,
+                                    child: Text(day),
+                                  );
+                                },
+                              ),
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedBirthDay = value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8), // Spacing
+
+                          // Month Dropdown
+                          Flexible(
+                            flex:
+                                2, // Allocate slightly more space for the month field
+                            child: DropdownButtonFormField<String>(
+                              value: selectedBirthMonth != null &&
+                                      List.generate(
+                                              12,
+                                              (index) => (index + 1)
+                                                  .toString()
+                                                  .padLeft(2, '0'))
+                                          .contains(selectedBirthMonth)
+                                  ? selectedBirthMonth
+                                  : null,
+                              decoration: const InputDecoration(
+                                labelText: 'חודש', // Month in Hebrew
+                                border: OutlineInputBorder(),
+                                isDense: true, // Reduce field height
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 8, horizontal: 8),
+                              ),
+                              items: List.generate(
+                                12,
+                                (index) {
+                                  final month =
+                                      (index + 1).toString().padLeft(2, '0');
+                                  return DropdownMenuItem(
+                                    value: month,
+                                    child: Text(month),
+                                  );
+                                },
+                              ),
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedBirthMonth = value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8), // Spacing
+
+                          // Year Dropdown
+                          Flexible(
+                            flex: 3, // Allocate more space for the year field
+                            child: DropdownButtonFormField<String>(
+                              value: selectedBirthYear != null &&
+                                      List.generate(
+                                              100,
+                                              (index) =>
+                                                  (DateTime.now().year - index)
+                                                      .toString())
+                                          .contains(selectedBirthYear)
+                                  ? selectedBirthYear
+                                  : null,
+                              decoration: const InputDecoration(
+                                labelText: 'שנה', // Year in Hebrew
+                                border: OutlineInputBorder(),
+                                isDense: true, // Reduce field height
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 8, horizontal: 8),
+                              ),
+                              items: List.generate(
+                                100,
+                                (index) {
+                                  final year =
+                                      (DateTime.now().year - index).toString();
+                                  return DropdownMenuItem(
+                                    value: year,
+                                    child: Text(year),
+                                  );
+                                },
+                              ),
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedBirthYear = value;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(
                           height: MediaQuery.of(context).size.height * 0.01),
@@ -617,9 +760,6 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                               fontSize: 14,
                             ),
                           ),
-                          SizedBox(
-                              height:
-                                  MediaQuery.of(context).size.height * 0.001),
                           CustomTextField(
                             hintText:
                                 'הזן שעות עבודה חודשיות', // Hint inside the text field
@@ -627,6 +767,43 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             controller: totalHoursController,
                             screenWidth: MediaQuery.of(context).size.width,
                             keyboardType: TextInputType.number, // Numeric input
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          Text(
+                            'שכר לשעה: ${employee['hourlyRate'].toStringAsFixed(2)} ₪',
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          TextField(
+                            controller: hourlyRateController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'שכר לשעה',
+                              prefixIcon: const Icon(Icons.money),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              final hourlyRate = double.tryParse(value) ?? 0.0;
+                              setDialogState(() {
+                                employee['hourlyRate'] = hourlyRate;
+                                employee['monthlyPay'] =
+                                    hourlyRate * employee['totalHours'];
+                              });
+                            },
+                          ),
+                          Text(
+                            'שכר חודשי: ${employee['monthlyPay'].toStringAsFixed(2)} ₪',
+                            style: const TextStyle(
+                                color: Colors.green, fontSize: 16),
                           ),
                         ],
                       ),
@@ -656,7 +833,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
+                        if (formKey.currentState?.validate() ?? false) {
                           if (firstNameController.text.isEmpty ||
                               lastNameController.text.isEmpty ||
                               firstPartPhoneController.text.isEmpty ||
@@ -678,6 +855,11 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             );
                             return;
                           }
+                          // Set default values for missing fields
+                          selectedBirthDay ??= '01';
+                          selectedBirthMonth ??= '01';
+                          selectedBirthYear ??= DateTime.now().year.toString();
+
                           final nameRegex = RegExp(
                               r'^[א-תa-zA-Z\s]+$'); // Hebrew and English letters only
                           if (!nameRegex.hasMatch(firstNameController.text)) {
@@ -788,7 +970,8 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             selectedBirthYear ?? '',
                             selectedTruckSize ?? '',
                             selectedTruckType ?? '',
-                            totalHours,
+                            int.tryParse(totalHoursController.text) ?? 0,
+                            double.tryParse(hourlyRateController.text) ?? 0.0,
                           );
                           Navigator.of(context).pop();
                         }
@@ -857,23 +1040,25 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                     SizedBox(height: screenHeight * 0.02),
                     TextField(
                       onChanged: (value) {
-                        setState(() {
-                          if (value.isEmpty) {
-                            employees.clear();
-                            employees.addAll(
-                                originalEmployees); // Reset to all employees
-                          } else {
-                            employees.clear();
-                            employees.addAll(originalEmployees.where(
-                                (employee) =>
-                                    employee['firstName']
-                                        .toString()
-                                        .contains(value) ||
-                                    (employee['id'] ?? '')
-                                        .toString()
-                                        .contains(value)));
-                          }
-                        });
+                        if (mounted) {
+                          setState(() {
+                            if (value.isEmpty) {
+                              employees.clear();
+                              employees.addAll(
+                                  originalEmployees); // Reset to all employees
+                            } else {
+                              employees.clear();
+                              employees.addAll(originalEmployees.where(
+                                  (employee) =>
+                                      employee['firstName']
+                                          .toString()
+                                          .contains(value) ||
+                                      (employee['id'] ?? '')
+                                          .toString()
+                                          .contains(value)));
+                            }
+                          });
+                        }
                       },
                       decoration: InputDecoration(
                         labelText: 'חפש לפי שם עובד',
@@ -957,16 +1142,21 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                           if (employee['truckType'] != 'צובר')
                             Text('גודל משאית: ${employee['truckSize']}'),
                           Text('שעות עבודה חודשיות: ${employee['totalHours']}'),
+                          Text(
+                              'שכר לשעה: ${employee['hourlyRate'].toStringAsFixed(2)} ₪'),
+                          Text(
+                              'שכר חודשי: ${employee['monthlyPay'].toStringAsFixed(2)} ₪'),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               IconButton(
-                                icon:
-                                    const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () {
-                                  _showEditEmployeeDialog(index, employee);
-                                },
-                              ),
+                                  icon: const Icon(Icons.edit,
+                                      color: Colors.blue),
+                                  onPressed: () {
+                                    if (mounted) {
+                                      _showEditEmployeeDialog(index, employee);
+                                    }
+                                  }),
                               IconButton(
                                 icon:
                                     const Icon(Icons.delete, color: Colors.red),
@@ -1017,16 +1207,17 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
         TextEditingController();
     final TextEditingController secondPartPhoneController =
         TextEditingController();
-    final birthDayController = TextEditingController();
-    final birthMonthController = TextEditingController();
-    final birthYearController = TextEditingController();
+    //final birthDayController = TextEditingController();
+    //final birthMonthController = TextEditingController();
+    //final birthYearController = TextEditingController();
     final idController = TextEditingController();
     final emailController = TextEditingController();
-    final truckSizeController = TextEditingController();
-    final truckTypeController = TextEditingController();
+    //final truckSizeController = TextEditingController();
+    //final truckTypeController = TextEditingController();
     final totalHoursController = TextEditingController();
+    final hourlyRateController = TextEditingController();
 
-    final _formKey = GlobalKey<FormState>(); // Form key for validation
+    final formKey = GlobalKey<FormState>(); // Form key for validation
 
     showDialog(
       context: context,
@@ -1050,7 +1241,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
               ),
               content: SingleChildScrollView(
                 child: Form(
-                  key: _formKey, // Link the form to the key
+                  key: formKey, // Link the form to the key
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
@@ -1128,26 +1319,96 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                       ),
                       SizedBox(
                           height: MediaQuery.of(context).size.height * 0.001),
-                      DateOfBirthDropdowns(
-                        selectedDay: selectedBirthDay,
-                        selectedMonth: selectedBirthMonth,
-                        selectedYear: selectedBirthYear,
-                        onDayChanged: (value) {
-                          setDialogState(() {
-                            selectedBirthDay = value; // Update selected day
-                          });
-                        },
-                        onMonthChanged: (value) {
-                          setDialogState(() {
-                            selectedBirthMonth = value; // Update selected month
-                          });
-                        },
-                        onYearChanged: (value) {
-                          setDialogState(() {
-                            selectedBirthYear = value; // Update selected year
-                          });
-                        },
-                        screenWidth: MediaQuery.of(context).size.width,
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: DropdownButtonFormField<String>(
+                                value: selectedBirthDay,
+                                // Ensure value matches the items
+
+                                decoration: const InputDecoration(
+                                  labelText: 'יום',
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: List.generate(
+                                  31,
+                                  (index) {
+                                    final day =
+                                        (index + 1).toString().padLeft(2, '0');
+                                    return DropdownMenuItem(
+                                      value: day,
+                                      child: Text(day),
+                                    );
+                                  },
+                                ),
+                                onChanged: (value) {
+                                  if (value != null &&
+                                      value != selectedBirthDay) {
+                                    setState(() {
+                                      selectedBirthDay = value;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(
+                                width: 8), // Add spacing between dropdowns
+                            Flexible(
+                              child: DropdownButtonFormField<String>(
+                                value: selectedBirthMonth,
+                                decoration: const InputDecoration(
+                                  labelText: 'חודש',
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: List.generate(
+                                  12,
+                                  (index) => DropdownMenuItem(
+                                    value:
+                                        (index + 1).toString().padLeft(2, '0'),
+                                    child: Text(
+                                        (index + 1).toString().padLeft(2, '0')),
+                                  ),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedBirthMonth = value;
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8), // Spacing
+
+                            // Year Dropdown
+                            SizedBox(
+                              width:
+                                  90, // Explicitly set a fixed width for the year dropdown
+                              child: DropdownButtonFormField<String>(
+                                value: selectedBirthYear,
+                                decoration: const InputDecoration(
+                                  labelText: 'שנה',
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: List.generate(
+                                  100,
+                                  (index) => DropdownMenuItem(
+                                    value: (DateTime.now().year - index)
+                                        .toString(),
+                                    child: Text((DateTime.now().year - index)
+                                        .toString()),
+                                  ),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedBirthYear = value;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       SizedBox(
                           height: MediaQuery.of(context).size.height * 0.01),
@@ -1247,6 +1508,24 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             screenWidth: MediaQuery.of(context).size.width,
                             keyboardType: TextInputType.number, // Numeric input
                           ),
+                          Text(
+                            'שכר לשעה', // Label for hourly rate
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 131, 107, 81),
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.001),
+                          CustomTextField(
+                            hintText:
+                                'הזן שכר לשעה', // Hint inside the text field
+                            icon: Icons.attach_money, // Icon for hourly rate
+                            controller: hourlyRateController,
+                            screenWidth: MediaQuery.of(context).size.width,
+                            keyboardType: TextInputType.number, // Numeric input
+                          ),
                         ],
                       ),
                     ],
@@ -1275,7 +1554,7 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
+                        if (formKey.currentState?.validate() ?? false) {
                           if (firstNameController.text.isEmpty ||
                               lastNameController.text.isEmpty ||
                               firstPartPhoneController.text.isEmpty ||
@@ -1392,6 +1671,17 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             );
                             return;
                           }
+                          final hourlyRate =
+                              double.tryParse(hourlyRateController.text);
+                          if (hourlyRate == null || hourlyRate <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'אנא הזן ערך חוקי לשכר לשעה')), // "Please enter a valid hourly rate"
+                            );
+                            return;
+                          }
+
                           _addEmployee(
                             firstNameController.text,
                             lastNameController.text,
@@ -1405,7 +1695,8 @@ class _EmployeeManagementPageState extends State<EmployeeManagementPage> {
                             selectedBirthYear ?? '',
                             selectedTruckSize ?? '',
                             selectedTruckType ?? '',
-                            totalHours,
+                            int.tryParse(totalHoursController.text) ?? 0,
+                            hourlyRate,
                           );
                           Navigator.of(context).pop();
                         }

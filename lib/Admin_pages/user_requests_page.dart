@@ -6,6 +6,8 @@ import 'package:flutter_application_1/Designed_helper_fields/dropdown_helpers.da
 import 'package:flutter_application_1/Designed_helper_fields/phone_field.dart';
 
 class UserRequestsPage extends StatefulWidget {
+  const UserRequestsPage({super.key});
+
   @override
   _UserRequestsPageState createState() => _UserRequestsPageState();
 }
@@ -93,7 +95,7 @@ class _UserRequestsPageState extends State<UserRequestsPage> {
 
             return Align(
               alignment: Alignment.center,
-              child: Container(
+              child: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.9,
                 child: Card(
                   color: Colors.white.withOpacity(0.8),
