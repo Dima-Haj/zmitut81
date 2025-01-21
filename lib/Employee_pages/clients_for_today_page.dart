@@ -122,6 +122,8 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
             departureTime: data['departureTime'],
             orderId: data['orderId'],
             clientId: data['clientId'],
+            originalOrderId:
+                data['originalOrderId'], // Handles null automatically
           );
           if (client.status == "בתהליך" || client.status == "בדרך ללקוח") {
             setState(() {
@@ -356,40 +358,66 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     }
   }
 
-  Future<void> _updateClientStatusInFirestore(
-      String clientId, String orderId, String status) async {
+  Future<void> _updateClientStatusInFirestore(String clientId, String orderId,
+      String status, String? originalOrderId) async {
     try {
       final firestore = FirebaseFirestore.instance;
+      if (originalOrderId != null) {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final employeeDocRef =
+              firestore.collection('Employees').doc(user.uid);
 
-      // Update client status in the 'orders' collection
-      final clientOrderRef = firestore
-          .collection("clients")
-          .doc(clientId)
-          .collection("orders")
-          .doc(orderId);
-      await clientOrderRef.update({
-        'status': status,
-      });
+          // Reference to the dailyDeliveries subcollection and update the client's status
+          final dailyDeliveriesRef =
+              employeeDocRef.collection('dailyDeliveries');
+          final dailyDeliveryDoc = await dailyDeliveriesRef
+              .where('clientId', isEqualTo: clientId)
+              .where('orderId', isEqualTo: orderId)
+              .limit(1)
+              .get();
 
-      // Now update the status in the employee's 'dailyDeliveries' subcollection
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final employeeDocRef = firestore.collection('Employees').doc(user.uid);
+          if (dailyDeliveryDoc.docs.isNotEmpty) {
+            // Update status in the dailyDeliveries subcollection
+            final dailyDeliveryDocRef = dailyDeliveryDoc.docs.first.reference;
+            await dailyDeliveryDocRef.update({
+              'status': status,
+            });
+          }
+        }
+      } else {
+        // Update client status in the 'orders' collectio
+        final clientOrderRef = firestore
+            .collection("clients")
+            .doc(clientId)
+            .collection("orders")
+            .doc(orderId);
+        await clientOrderRef.update({
+          'status': status,
+        });
 
-        // Reference to the dailyDeliveries subcollection and update the client's status
-        final dailyDeliveriesRef = employeeDocRef.collection('dailyDeliveries');
-        final dailyDeliveryDoc = await dailyDeliveriesRef
-            .where('clientId', isEqualTo: clientId)
-            .where('orderId', isEqualTo: orderId)
-            .limit(1)
-            .get();
+        // Now update the status in the employee's 'dailyDeliveries' subcollection
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final employeeDocRef =
+              firestore.collection('Employees').doc(user.uid);
 
-        if (dailyDeliveryDoc.docs.isNotEmpty) {
-          // Update status in the dailyDeliveries subcollection
-          final dailyDeliveryDocRef = dailyDeliveryDoc.docs.first.reference;
-          await dailyDeliveryDocRef.update({
-            'status': status,
-          });
+          // Reference to the dailyDeliveries subcollection and update the client's status
+          final dailyDeliveriesRef =
+              employeeDocRef.collection('dailyDeliveries');
+          final dailyDeliveryDoc = await dailyDeliveriesRef
+              .where('clientId', isEqualTo: clientId)
+              .where('orderId', isEqualTo: orderId)
+              .limit(1)
+              .get();
+
+          if (dailyDeliveryDoc.docs.isNotEmpty) {
+            // Update status in the dailyDeliveries subcollection
+            final dailyDeliveryDocRef = dailyDeliveryDoc.docs.first.reference;
+            await dailyDeliveryDocRef.update({
+              'status': status,
+            });
+          }
         }
       }
     } catch (e) {
@@ -409,7 +437,7 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
   }
 
   Future<void> _updateDeliveredOrdersInFirestore(
-      String clientId, String orderId) async {
+      String clientId, String orderId, String? originalOrderId) async {
     try {
       final firestore = FirebaseFirestore.instance;
       final user = FirebaseAuth.instance.currentUser;
@@ -420,57 +448,143 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
       final israelTime = getIsraelTime();
 
       // Reference to the client's order in the 'orders' collection
-      final clientOrderRef = firestore
-          .collection("clients")
-          .doc(clientId)
-          .collection("orders")
-          .doc(orderId);
+      if (originalOrderId != null) {
+        final employeeDocRef = firestore.collection('Employees').doc(user.uid);
+        final dailyDeliveriesRef = employeeDocRef.collection('dailyDeliveries');
+        final dailyDeliveryDoc = await dailyDeliveriesRef
+            .where('clientId', isEqualTo: clientId)
+            .where('orderId', isEqualTo: orderId)
+            .limit(1)
+            .get();
+        if (dailyDeliveryDoc.docs.isNotEmpty) {
+          // Delete the order from the employee's 'dailyDeliveries' subcollection
+          final dailyDeliveryDocRef = dailyDeliveryDoc.docs.first.reference;
+          final deliveryOrderData =
+              dailyDeliveryDoc.docs.first.data(); // Access the data map
+          final clientOrderRef = firestore
+              .collection("clients")
+              .doc(clientId)
+              .collection("orders")
+              .doc(originalOrderId); // Use originalOrderId if not null
+          // Get the current order data before deleting
+          final clientOrderSnapshot = await clientOrderRef.get();
+          if (!clientOrderSnapshot.exists) {
+            return;
+          }
 
-      // Get the current order data before deleting
-      final clientOrderSnapshot = await clientOrderRef.get();
-      if (!clientOrderSnapshot.exists) {
-        return;
-      }
+          // Prepare the order data
+          final orderData = clientOrderSnapshot.data();
 
-      // Prepare the order data to move it to 'previousDeliveries'
-      final orderData = clientOrderSnapshot.data();
+          if (orderData == null) return;
+          // Create or reference the 'previousDeliveries' collection
+          final previousDeliveriesRef = firestore
+              .collection("clients")
+              .doc(clientId)
+              .collection("previousDeliveries");
 
-      // Create or reference the 'previousDeliveries' collection
-      final previousDeliveriesRef = firestore
-          .collection("clients")
-          .doc(clientId)
-          .collection("previousDeliveries");
+          final existingOrderQuery = await previousDeliveriesRef
+              .where('orderId', isEqualTo: originalOrderId)
+              .get();
 
-      // Add the order to 'previousDeliveries' and change status to 'נמסר'
-      await previousDeliveriesRef.add({
-        ...orderData!,
-        'status': 'נמסר', // Change the status to "Delivered"
-        'deliveryDate': israelTime, // Add a timestamp for delivery
-      });
+          if (existingOrderQuery.docs.isNotEmpty) {
+            // If the order exists, update the weight field
+            final existingOrderDoc = existingOrderQuery.docs.first;
+            final existingOrderData = existingOrderDoc.data();
 
-      // Now delete the order from 'orders' collection
-      await clientOrderRef.delete();
+            // Merge weights (ensure both have weight fields)
+            final newWeight = (existingOrderData['weight'] ?? 0) +
+                (deliveryOrderData['weight'] ?? 0);
+            final modifiedWeight = (clientOrderSnapshot['weight'] ?? 0) -
+                (deliveryOrderData['weight'] ?? 0);
+            if (modifiedWeight <= 0) {
+              await clientOrderRef.delete();
+            } else {
+              await clientOrderRef.update({
+                'weight': modifiedWeight, // Update the weight
+              });
+            }
 
-      // Delete the order from the employee's 'dailyDeliveries' subcollection
-      final employeeDocRef = firestore.collection('Employees').doc(user.uid);
-      final dailyDeliveriesRef = employeeDocRef.collection('dailyDeliveries');
-      final dailyDeliveryDoc = await dailyDeliveriesRef
-          .where('clientId', isEqualTo: clientId)
-          .where('orderId', isEqualTo: orderId)
-          .limit(1)
-          .get();
-
-      if (dailyDeliveryDoc.docs.isNotEmpty) {
-        // Delete the order from the employee's 'dailyDeliveries' subcollection
-        final dailyDeliveryDocRef = dailyDeliveryDoc.docs.first.reference;
-        await dailyDeliveryDocRef.delete();
+            await previousDeliveriesRef.doc(existingOrderDoc.id).update({
+              'weight': newWeight, // Update the weight
+              'deliveryDate': israelTime,
+            });
+          } else {
+            // If the order does not exist, add it to 'previousDeliveries'
+            await previousDeliveriesRef.add({
+              ...orderData,
+              'status': 'נמסר', // Change the status to "Delivered"
+              'deliveryDate': israelTime, // Add a timestamp for delivery
+              'weight': deliveryOrderData['weight'] ?? 0,
+            });
+            final modifiedWeight = (clientOrderSnapshot['weight'] ?? 0) -
+                (deliveryOrderData['weight'] ?? 0);
+            await clientOrderRef.update({
+              'weight': modifiedWeight, // Update the weight
+            });
+          }
+          await dailyDeliveryDocRef.delete();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('לא נמצא מסמך משלוח תואם ללקוח.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('לא נמצא מסמך משלוח תואם ללקוח.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        // Reference to the client's order in the 'orders' collection
+        final clientOrderRef = firestore
+            .collection("clients")
+            .doc(clientId)
+            .collection("orders")
+            .doc(orderId);
+
+        // Get the current order data before deleting
+        final clientOrderSnapshot = await clientOrderRef.get();
+        if (!clientOrderSnapshot.exists) {
+          return;
+        }
+
+        // Prepare the order data to move it to 'previousDeliveries'
+        final orderData = clientOrderSnapshot.data();
+
+        // Create or reference the 'previousDeliveries' collection
+        final previousDeliveriesRef = firestore
+            .collection("clients")
+            .doc(clientId)
+            .collection("previousDeliveries");
+
+        // Add the order to 'previousDeliveries' and change status to 'נמסר'
+        await previousDeliveriesRef.add({
+          ...orderData!,
+          'status': 'נמסר', // Change the status to "Delivered"
+          'deliveryDate': israelTime, // Add a timestamp for delivery
+        });
+
+        // Now delete the order from 'orders' collection
+        await clientOrderRef.delete();
+
+        // Delete the order from the employee's 'dailyDeliveries' subcollection
+        final employeeDocRef = firestore.collection('Employees').doc(user.uid);
+        final dailyDeliveriesRef = employeeDocRef.collection('dailyDeliveries');
+        final dailyDeliveryDoc = await dailyDeliveriesRef
+            .where('clientId', isEqualTo: clientId)
+            .where('orderId', isEqualTo: orderId)
+            .limit(1)
+            .get();
+
+        if (dailyDeliveryDoc.docs.isNotEmpty) {
+          // Delete the order from the employee's 'dailyDeliveries' subcollection
+          final dailyDeliveryDocRef = dailyDeliveryDoc.docs.first.reference;
+          await dailyDeliveryDocRef.delete();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('לא נמצא מסמך משלוח תואם ללקוח.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -482,13 +596,14 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
     }
   }
 
-  void _startPreparingOrder(String clientId, String orderId) {
+  void _startPreparingOrder(String clientId, String orderId, originalOrderId) {
     setState(() {
       isRunningOrder = true;
     });
 
     // Assuming you have a method to update the client status in your database
-    _updateClientStatusInFirestore(clientId, orderId, "בתהליך");
+    _updateClientStatusInFirestore(
+        clientId, orderId, "בתהליך", originalOrderId);
   }
 
   @override
@@ -947,7 +1062,9 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                                         client
                                                                             .clientId,
                                                                         client
-                                                                            .orderId);
+                                                                            .orderId,
+                                                                        client
+                                                                            .originalOrderId);
                                                                   },
                                                                 ),
                                                               ],
@@ -963,7 +1080,9 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                       client.status = "בתהליך";
                                                       _startPreparingOrder(
                                                           client.clientId,
-                                                          client.orderId);
+                                                          client.orderId,
+                                                          client
+                                                              .originalOrderId);
                                                     }
                                                   }
                                                 },
@@ -1138,7 +1257,9 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                                           .clientId,
                                                                       client
                                                                           .orderId,
-                                                                      "בדרך ללקוח");
+                                                                      "בדרך ללקוח",
+                                                                      client
+                                                                          .originalOrderId);
                                                                 },
                                                               ),
                                                             ],
@@ -1161,7 +1282,8 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                     _updateClientStatusInFirestore(
                                                         client.clientId,
                                                         client.orderId,
-                                                        "בדרך ללקוח");
+                                                        "בדרך ללקוח",
+                                                        client.originalOrderId);
                                                   }
                                                 },
                                               ),
@@ -1267,12 +1389,12 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                                       context:
                                                                           context,
                                                                       builder:
-                                                                          (_) =>
+                                                                          (dialogContext) =>
                                                                               AlertDialog(
-                                                                        title: Text(
-                                                                            "תודה על ההספקה!"),
+                                                                        title: const Text(
+                                                                            "תודה על ההספקה!"), // "Thank you for the delivery!"
                                                                         content:
-                                                                            Text("ההזמנה סופקה בהצלחה. האם תרצה לנווט חזרה לחברה?"), // "Order delivered successfully. Would you like to navigate back to the company?"
+                                                                            const Text("ההזמנה סופקה בהצלחה. האם תרצה לנווט חזרה לחברה?"), // "Order delivered successfully. Would you like to navigate back to the company?"
                                                                         actions: [
                                                                           Align(
                                                                             alignment:
@@ -1283,24 +1405,31 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                                               children: [
                                                                                 ElevatedButton(
                                                                                   onPressed: () {
-                                                                                    Navigator.pop(context); // Close this dialog
-                                                                                    _startNavigation(LatLng(companyLocation['latitude']!, companyLocation['longitude']!)); // Navigate back to the company
+                                                                                    Navigator.pop(dialogContext); // Use dialogContext to safely close the dialog
+                                                                                    _startNavigation(
+                                                                                      LatLng(
+                                                                                        companyLocation['latitude']!,
+                                                                                        companyLocation['longitude']!,
+                                                                                      ),
+                                                                                    ); // Navigate back to the company
                                                                                   },
-                                                                                  child: Text('נווט לחברה'), // "Navigate to Company"
+                                                                                  child: const Text('נווט לחברה'), // "Navigate to Company"
                                                                                   style: ElevatedButton.styleFrom(
-                                                                                    foregroundColor: Colors.white, backgroundColor: Colors.green, // Set text color
-                                                                                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                                                                    foregroundColor: Colors.white,
+                                                                                    backgroundColor: Colors.green, // Set button color
+                                                                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                                                                   ),
                                                                                 ),
-                                                                                SizedBox(width: 10),
+                                                                                const SizedBox(width: 10),
                                                                                 ElevatedButton(
                                                                                   onPressed: () {
-                                                                                    Navigator.pop(context); // Close the dialog without navigation
+                                                                                    Navigator.pop(dialogContext); // Use dialogContext to safely close the dialog
                                                                                   },
-                                                                                  child: Text('סגור'), // "Close"
+                                                                                  child: const Text('סגור'), // "Close"
                                                                                   style: ElevatedButton.styleFrom(
-                                                                                    foregroundColor: Colors.white, backgroundColor: Colors.grey, // Set text color
-                                                                                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                                                                    foregroundColor: Colors.white,
+                                                                                    backgroundColor: Colors.grey, // Set button color
+                                                                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                                                                   ),
                                                                                 ),
                                                                               ],
@@ -1309,11 +1438,16 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                                         ],
                                                                       ),
                                                                     );
+
                                                                     _updateDeliveredOrdersInFirestore(
                                                                         client
                                                                             .clientId,
                                                                         client
-                                                                            .orderId);
+                                                                            .orderId,
+                                                                        client
+                                                                            .originalOrderId // If this is null, null will be passed
+                                                                        );
+
                                                                     setState(
                                                                         () {
                                                                       isDeliveryStarted =
@@ -1430,7 +1564,11 @@ class _ClientsForTodayPageState extends State<ClientsForTodayPage> {
                                                     );
                                                     _updateDeliveredOrdersInFirestore(
                                                         client.clientId,
-                                                        client.orderId);
+                                                        client.orderId,
+                                                        client
+                                                            .originalOrderId // If this is null, null will be passed
+                                                        );
+
                                                     setState(() {
                                                       isDeliveryStarted = false;
                                                       isRunningOrder = false;

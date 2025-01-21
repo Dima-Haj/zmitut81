@@ -52,16 +52,19 @@ class _AdminHomePageState extends State<AdminHomePage> {
         Positioned(
           top: 48, // Adjust the position of the button as needed
           left: 10,
-          child: IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginPage(),
-                ),
-              );
-            },
+          child: Transform.rotate(
+            angle: 3.14159, // Rotate 180 degrees in radians (π radians)
+            child: IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ],
